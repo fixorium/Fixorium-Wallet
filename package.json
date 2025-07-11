@@ -1,3 +1,5 @@
+npm uninstall react-google-login
+npm install --legacy-peer-deps
 {
   "name": "fixorium-wallet",
   "version": "0.1.0",
