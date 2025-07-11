@@ -1,6 +1,5 @@
 import React from 'react';
 import { GoogleLogin as GoogleLoginButton } from 'react-google-login';
-
 const clientId = 'YOUR_CLIENT_ID';
 
 const GoogleLogin = () => {
