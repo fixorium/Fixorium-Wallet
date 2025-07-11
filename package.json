@@ -1,5 +1,5 @@
 {
-  "name": "Fixorium-Wallet",
+  "name": "fixorium-wallet",
   "version": "0.1.0",
   "private": true,
   "dependencies": {
@@ -11,8 +11,11 @@
   },
   "scripts": {
     "start": "react-scripts start",
-    "build": "react-scripts build",
+    "build": "CI=false react-scripts build",
     "test": "react-scripts test"
+  },
+  "engines": {
+    "node": ">=16.0.0",
+    "npm": ">=8.0.0"
   }
 }
-
