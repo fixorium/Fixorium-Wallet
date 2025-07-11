@@ -1,21 +1,16 @@
- {
-  "name": "fixorium-wallet",
+{
+  "name": "Fixorium-Wallet",
   "version": "0.1.0",
-  "private": true,
   "dependencies": {
-    "@react-oauth/google": "^0.11.1",
-    "@solana/web3.js": "^1.43.3",
     "react": "^18.2.0",
-    "react-dom": "^18.2.0",
-    "react-scripts": "5.0.1",
-    "web3": "^1.8.0"
+    "react-google-login": "^5.2.2"
+  },
+  "resolutions": {
+    "react-google-login/react": "^18.2.0"
   },
   "scripts": {
-    "start": "react-scripts start",
     "build": "react-scripts build",
+    "start": "react-scripts start",
     "test": "react-scripts test"
-  },
-  "engines": {
-    "node": ">=16.0.0"
   }
- }
+}
