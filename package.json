@@ -1,3 +1,15 @@
+npm install --legacy-peer-deps
+npm install @react-oauth/google"dependencies": {
+  "@react-oauth/google": "^0.11.1",
+  // ...
+}
+"dependencies": {
+  "react": "^17.0.2",
+  "react-dom": "^17.0.2",
+  // ...
+}
+  
+
 {
   "name": "fixorium-wallet",
   "version": "0.1.0",
