@@ -1,0 +1,762 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1.0" />
+  <title>FIXORIUM</title>
+  <link href="https://fonts.googleapis.com/css?family=Inter:400,500,700&display=swap" rel="stylesheet">
+  <style>
+  :root {
+    --primary: #9945FF;
+    --accent: #19FB9B;
+    --bg: #f8f9fa;
+    --box: #fff;
+    --border: #e3e7ed;
+    --text: #22223b;
+    --gray: #6c757d;
+    --radius: 18px;
+    --shadow: 0 6px 32px rgba(60,72,88,0.11);
+    --error: #d90429;
+    --success: #20c997;
+  }
+
+  html, body {
+    font-size: 13px !important;
+    background: var(--bg);
+    font-family: "Inter", "Segoe UI", Arial, sans-serif;
+    color: var(--text);
+    margin: 0;
+    min-height: 100vh;
+  }
+
+  .topbar {
+    position: relative;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: var(--box);
+    box-shadow: var(--shadow);
+    padding: 0.2rem 1.1rem 0.2rem 1.1rem;
+    min-height: 40px;
+    z-index: 10;
+    font-size: 14px;
+  }
+  .topbar-title {
+    font-weight: 700;
+    color: var(--primary);
+    font-size: 1.05rem;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+    flex: 1;
+    text-align: left;
+    min-width: 0;
+  }
+  .topbar-btn {
+    width: auto;
+    min-width: 98px;
+    font-size: 0.95rem;
+    margin-top: 0;
+    padding: 0.45rem 1rem;
+    background: var(--primary);
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    cursor: pointer;
+    transition: background 0.14s;
+    margin-left: auto;
+  }
+  .topbar-btn:hover {
+    filter: brightness(1.07);
+  }
+
+  .wallet-modal {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    left: 0; top: 0; right:0; bottom:0;
+    width: 100vw; height: 100vh;
+    background: rgba(0,0,0,0.18);
+    align-items: center;
+    justify-content: center;
+  }
+  .wallet-modal.open { display: flex !important; }
+  .wallet-modal-content {
+    background: #fff;
+    border-radius: 14px;
+    box-shadow: 0 4px 32px rgba(80,80,100,0.11);
+    padding: 2rem 1.5rem 1.5rem 1.5rem;
+    min-width: 250px;
+    min-height: 190px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  .wallet-modal button {
+    max-width: 220px;
+    width: 100%;
+    margin-left: 0;
+    margin-right: 0;
+    font-size: 1rem;
+  }
+
+  .fixorium-logo-center {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin: 1.2rem 0 1.5rem 0;
+  }
+  .fixorium-logo-center img {
+    max-width: 100%;
+    width: 175px;
+    height: 250px;
+  }
+
+  .container {
+    max-width: 400px;
+    margin: 0 auto;
+    background: var(--box);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    padding: 1.2rem 0.7rem 1.2rem 0.7rem;
+    font-size: 13px;
+  }
+
+  h1, h2, h3 {
+    margin: 0 0 0.8rem 0;
+    font-weight: 700;
+    color: var(--primary);
+    font-size: 1.2rem;
+    letter-spacing:0.01em;
+  }
+
+  .button, button, input[type="submit"] {
+    background: var(--primary);
+    color: #fff;
+    border: none;
+    border-radius: 7px;
+    padding: 0.48rem 1rem;
+    font-size: 0.98rem;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    cursor: pointer;
+    transition: background 0.15s;
+    margin-top: 0.42rem;
+    width: 100%;
+    box-sizing: border-box;
+  }
+  .button.secondary {
+    background: var(--accent);
+  }
+  .button:disabled, button:disabled {
+    opacity: 0.65;
+    cursor: not-allowed;
+  }
+  .button:hover:not(:disabled), button:hover:not(:disabled) {
+    filter: brightness(1.07);
+  }
+
+  input, select {
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 0.48rem 1rem;
+    font-size: 0.96rem;
+    margin-top: 0.28rem;
+    width: 100%;
+    box-sizing: border-box;
+    background: #f1f3f7;
+    color: var(--text);
+    outline: none;
+    transition: border-color 0.13s;
+  }
+  input:focus, select:focus {
+    border-color: var(--primary);
+  }
+  .section {
+    margin-bottom: 1.2rem;
+  }
+
+  .wallet-card {
+    background: linear-gradient(120deg, var(--primary) 65%, var(--accent));
+    color: #fff;
+    border-radius: var(--radius);
+    padding: 0.8rem 0.7rem;
+    margin-bottom: 1.2rem;
+    box-shadow: var(--shadow);
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+    font-size: 12px;
+  }
+  .wallet-address {
+    font-size: 0.92rem;
+    letter-spacing: 1px;
+    word-break: break-all;
+    opacity: 0.97;
+  }
+  .wallet-balance {
+    font-size: 0.97rem;
+    font-weight: bold;
+    margin-top: 0.32rem;
+    color: #fff;
+    word-break: break-all;
+  }
+
+  .swap-box {
+    background: #f9fafb;
+    border-radius: 12px;
+    padding: 1rem 0.6rem;
+    box-shadow: 0 2px 12px rgba(130,87,230,0.07);
+    margin-bottom: 1.1rem;
+    font-size: 13px;
+  }
+  .swap-row {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    margin-bottom: 0.8rem;
+  }
+  .swap-row:last-child {
+    margin-bottom: 0;
+  }
+  .swap-label {
+    flex: 0 0 67px;
+    font-weight: 500;
+    color: var(--gray);
+    font-size: 0.97rem;
+  }
+  .swap-input {
+    flex: 1;
+  }
+  .swap-select {
+    flex: 0 0 93px;
+    font-size: 0.95rem;
+  }
+
+  .swap-token-img {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: #fafafa;
+    object-fit: contain;
+    border: 1px solid #ccc;
+    margin-right: 5px;
+    vertical-align: middle;
+  }
+  .slippage-row {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    margin-bottom: 0.8rem;
+    font-size:12px;
+  }
+  .slippage-label {
+    flex: 0 0 67px;
+    font-weight: 500;
+    color: var(--gray);
+    font-size: 0.91rem;
+  }
+  .slippage-input {
+    width: 50px;
+    text-align: right;
+    font-size: 0.92rem;
+    border-radius: 6px;
+  }
+
+  #errorMsg, .error-msg {
+    color: var(--error);
+    background: #ffe0e6;
+    border-radius: 5px;
+    padding: 6px 8px;
+    font-size: 0.97rem;
+    margin-bottom: 0.8rem;
+    display: none;
+  }
+  #successMsg, .success-msg {
+    color: var(--success);
+    background: #e5fff7;
+    border-radius: 5px;
+    padding: 6px 8px;
+    font-size: 0.97rem;
+    margin-bottom: 0.8rem;
+    display: none;
+  }
+  .tx-history {
+    margin-top: 1.5rem;
+  }
+  .tx-title {
+    font-size: 0.97rem;
+    color: var(--gray);
+    font-weight: 500;
+    margin-bottom: 0.4rem;
+  }
+  .tx-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+  .tx-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: #f3f4f6;
+    padding: 0.5rem 0.7rem;
+    border-radius: 7px;
+    margin-bottom: 0.3rem;
+    font-size: 0.93rem;
+  }
+  .tx-item:last-child {
+    margin-bottom: 0;
+  }
+  .tx-type {
+    font-weight: 500;
+  }
+  .tx-value {
+    font-weight: 700;
+    color: var(--primary);
+  }
+
+  @media (max-width: 600px) {
+    .container {
+      padding: 0.6rem 0.1rem;
+      max-width: 98vw;
+    }
+    .wallet-card, .swap-box {
+      padding: 0.75rem 0.2rem;
+    }
+    .swap-select {
+      flex: 0 0 78px;
+    }
+    .fixorium-logo-center img {
+      width: 120px;
+      height: 180px;
+    }
+  }
+  </style>
+  <script src="https://cdn.jsdelivr.net/npm/@solana/web3.js@1.95.2/lib/index.iife.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@solana/spl-token@0.4.0/lib/index.iife.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"></script>
+</head>
+<body>
+  <div class="topbar">
+    <span class="topbar-title">FIXORIUM</span>
+    <button id="connectWalletBtn" class="button topbar-btn">Connect Wallet</button>
+  </div>
+
+  <div id="fixoriumLogo" class="fixorium-logo-center">
+    <img src="fixorium-logo-350x500.png" 
+         alt="Fixorium Logo" width="175" height="250" />
+  </div>
+
+  <div class="container">
+    <h1>Solana Meme Token Swap</h1>
+
+    <div id="walletCard" class="wallet-card" style="display:none;">
+      <span id="walletTypeLabel"></span>
+      <div class="wallet-address" id="walletAddress"></div>
+      <div class="wallet-balance" id="walletBalance"></div>
+      <button id="disconnectWalletBtn" class="button secondary" style="margin-top:1rem;">Logout</button>
+    </div>
+
+    <div id="errorMsg" class="error-msg"></div>
+    <div id="successMsg" class="success-msg"></div>
+
+    <div id="swapSection" class="section" style="display:none;">
+      <div class="swap-box">
+        <div class="swap-row">
+          <span class="swap-label">From</span>
+          <img id="fromTokenImg" class="swap-token-img" src="" alt="" style="display:none;">
+          <input id="swapFromAmount" class="swap-input" type="number" min="0" step="any" placeholder="Amount" />
+          <select id="swapFromToken" class="swap-select"></select>
+        </div>
+        <div class="swap-row">
+          <span class="swap-label">To</span>
+          <img id="toTokenImg" class="swap-token-img" src="" alt="" style="display:none;">
+          <input id="swapToAmount" class="swap-input" type="number" min="0" step="any" placeholder="Amount" readonly />
+          <select id="swapToToken" class="swap-select"></select>
+        </div>
+        <div class="slippage-row">
+          <span class="slippage-label">Slippage</span>
+          <input id="slippageInput" class="slippage-input" type="number" min="0.1" max="20" step="0.1" value="1" />%
+        </div>
+        <div id="feeInfo" style="margin-top:0.8rem; color:#6c757d; font-size:0.97rem;">
+          DEX Fee: <b>0.03%</b> will be included in each swap.
+        </div>
+        <button id="swapBtn" class="button" style="margin-top:1.5rem;">Swap</button>
+      </div>
+    </div>
+
+    <div id="txHistory" class="tx-history" style="display:none;">
+      <div class="tx-title">Transaction History</div>
+      <ul class="tx-list" id="txList"></ul>
+    </div>
+    <div style="margin-top:2.5rem; text-align:center">
+      <span style="font-weight:700; font-size:1.2rem; color:#8257e6;">FIXERCOIN</span>
+    </div>
+  </div>
+  <div id="walletModal" class="wallet-modal">
+    <div class="wallet-modal-content">
+      <div style="font-size:1.05rem; font-weight:600; margin-bottom:1.3rem;">Connect Wallet</div>
+      <button id="phantomConnect" class="button" style="margin-bottom:0.7rem;">Phantom (Solana)</button>
+      <button id="metamaskConnect" class="button secondary">MetaMask (Ethereum)</button>
+      <button id="closeWalletModal" class="button" style="margin-top:1.1rem; background:#eee; color:#333;">Cancel</button>
+    </div>
+  </div>
+  <script type="module">
+    // --- TOKEN DATA ---
+    const SOLANA_MEME_TOKENS = [
+      { symbol: "SOL", name: "Solana", mint: "So11111111111111111111111111111111111111112", decimals: 9, image: "https://cryptologos.cc/logos/solana-sol-logo.png" },
+      { symbol: "WIF", name: "dogwifhat", mint: "2oRZj1K8q6g7QpmS5jQSRtD1h41Tfq5gQJbA3g6vJwVn", decimals: 8, image: "https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/2oRZj1K8q6g7QpmS5jQSRtD1h41Tfq5gQJbA3g6vJwVn/logo.png" },
+      { symbol: "BONK", name: "Bonk", mint: "DezX1xQ6ZhhXPb9D5e8C2J9pYc3i8c1a6h8VfmYbZ3Qh", decimals: 5, image: "https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/DezX1xQ6ZhhXPb9D5e8C2J9pYc3i8c1a6h8VfmYbZ3Qh/logo.png" },
+      { symbol: "MEW", name: "cat in a dogs world", mint: "6cA7QVY6L9Dn7dEyEfrXzQK6pQ6TjA2R8fLJwNr1cCzN", decimals: 6, image: "https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/6cA7QVY6L9Dn7dEyEfrXzQK6pQ6TjA2R8fLJwNr1cCzN/logo.png" },
+      { symbol: "SAMO", name: "Samoyedcoin", mint: "7xKX2W5ZfVbknk8V2yZ6pR6A2K1v8R4F7k4G7U7vS8g", decimals: 9, image: "https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/7xKX2W5ZfVbknk8V2yZ6pR6A2K1v8R4F7k4G7U7vS8g/logo.png" },
+      { symbol: "POPCAT", name: "Popcat", mint: "8XQ8h4pT3X8A8sQp8t8o9R2w8S1H3rT9Z1kJ8h2B6R9r", decimals: 6, image: "https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/8XQ8h4pT3X8A8sQp8t8o9R2w8S1H3rT9Z1kJ8h2B6R9r/logo.png" },
+      { symbol: "MYRO", name: "Myro", mint: "MYrVt4B8W5vX3gX8K9y2pJ3pB8d7G6zQ6q4r9v2xM2w", decimals: 6, image: "https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/MYrVt4B8W5vX3gX8K9y2pJ3pB8d7G6zQ6q4r9v2xM2w/logo.png" },
+      { symbol: "FIXER", name: "Fixercoin", mint: "4w3kGzZ2ki2r6CwM5ZjiF9zv3B5r1xCw7f7dF9vF6x4x", decimals: 6, image: "https://raw.githubusercontent.com/fixercoin/static-assets/main/fixercoin-logo.png" }
+    ];
+
+    const JUPITER_API = "https://quote-api.jup.ag/v6";
+    let walletType = null, solanaWallet = null, ethProvider = null, publicKey = null, ethAddress = null;
+    let connection = new solanaWeb3.Connection(solanaWeb3.clusterApiUrl("mainnet-beta"));
+    let txs = [];
+
+    // --- UI Elements ---
+    const connectWalletBtn = document.getElementById('connectWalletBtn');
+    const walletModal = document.getElementById('walletModal');
+    const phantomConnect = document.getElementById('phantomConnect');
+    const metamaskConnect = document.getElementById('metamaskConnect');
+    const closeWalletModal = document.getElementById('closeWalletModal');
+    const walletCard = document.getElementById('walletCard');
+    const walletTypeLabel = document.getElementById('walletTypeLabel');
+    const walletAddress = document.getElementById('walletAddress');
+    const walletBalance = document.getElementById('walletBalance');
+    const disconnectWalletBtn = document.getElementById('disconnectWalletBtn');
+    const swapSection = document.getElementById('swapSection');
+    const swapFromAmount = document.getElementById('swapFromAmount');
+    const swapToAmount = document.getElementById('swapToAmount');
+    const swapFromToken = document.getElementById('swapFromToken');
+    const swapToToken = document.getElementById('swapToToken');
+    const swapBtn = document.getElementById('swapBtn');
+    const txHistory = document.getElementById('txHistory');
+    const txList = document.getElementById('txList');
+    const slippageInput = document.getElementById('slippageInput');
+    const errorMsg = document.getElementById('errorMsg');
+    const successMsg = document.getElementById('successMsg');
+    const fromTokenImg = document.getElementById('fromTokenImg');
+    const toTokenImg = document.getElementById('toTokenImg');
+    const fixoriumLogo = document.getElementById('fixoriumLogo');
+
+    // --- MODAL LOGIC ---
+    connectWalletBtn.onclick = () => walletModal.classList.add('open');
+    closeWalletModal.onclick = () => walletModal.classList.remove('open');
+    walletModal.addEventListener('mousedown', e => {
+      if (!e.target.closest('.wallet-modal-content')) walletModal.classList.remove('open');
+    });
+    window.addEventListener('keydown', e => {
+      if (e.key === "Escape") walletModal.classList.remove('open');
+    });
+
+    // --- PHANTOM ---
+    phantomConnect.onclick = async () => {
+      walletModal.classList.remove('open');
+      const solana = window.solana;
+      if (!solana || !solana.isPhantom) {
+        showError("Phantom Wallet extension not found! Install Phantom extension.");
+        return;
+      }
+      try {
+        const resp = await solana.connect();
+        walletType = "phantom";
+        solanaWallet = solana;
+        publicKey = resp.publicKey;
+        ethProvider = null;
+        ethAddress = null;
+        await updateWalletUI();
+        await updateSwapEstimate();
+        if (fixoriumLogo) fixoriumLogo.style.display = "none";
+      } catch (e) {
+        showError("Wallet connection error: " + (e.message || e));
+      }
+    };
+
+    // --- METAMASK ---
+    metamaskConnect.onclick = async () => {
+      walletModal.classList.remove('open');
+      if (!window.ethereum || !window.ethereum.isMetaMask) {
+        showError("MetaMask extension not found! Install MetaMask extension.");
+        return;
+      }
+      try {
+        ethProvider = new ethers.providers.Web3Provider(window.ethereum, "any");
+        await ethProvider.send("eth_requestAccounts", []);
+        const signer = ethProvider.getSigner();
+        ethAddress = await signer.getAddress();
+        walletType = "metamask";
+        solanaWallet = null;
+        publicKey = null;
+        await updateWalletUI();
+        showSuccess("MetaMask connected! (Only Solana swaps supported in this DApp)");
+        if (fixoriumLogo) fixoriumLogo.style.display = "none";
+      } catch (e) {
+        showError("MetaMask connection error: " + (e.message || e));
+      }
+    };
+
+    disconnectWalletBtn.onclick = () => {
+      if (walletType === "phantom" && window.solana && window.solana.isPhantom && window.solana.disconnect) {
+        window.solana.disconnect();
+      }
+      walletType = null;
+      solanaWallet = null;
+      ethProvider = null;
+      publicKey = null;
+      ethAddress = null;
+      if (fixoriumLogo) fixoriumLogo.style.display = "";
+      updateWalletUI();
+    };
+
+    // --- UI LOGIC ---
+    function showError(msg) {
+      errorMsg.textContent = msg;
+      errorMsg.style.display = 'block';
+      setTimeout(() => errorMsg.style.display = 'none', 8000);
+    }
+    function showSuccess(msg) {
+      successMsg.textContent = msg;
+      successMsg.style.display = 'block';
+      setTimeout(() => successMsg.style.display = 'none', 6000);
+    }
+    function hideMsgs() {
+      errorMsg.style.display = 'none';
+      successMsg.style.display = 'none';
+    }
+    function populateTokenSelect(select, tokens) {
+      select.innerHTML = '';
+      tokens.forEach((token, idx) => {
+        const opt = document.createElement('option');
+        opt.value = idx;
+        opt.textContent = token.symbol;
+        select.appendChild(opt);
+      });
+    }
+    function updateDisplayedTokenImages() {
+      const fromToken = SOLANA_MEME_TOKENS[swapFromToken.value];
+      const toToken = SOLANA_MEME_TOKENS[swapToToken.value];
+      if (fromToken && fromToken.image) {
+        fromTokenImg.src = fromToken.image;
+        fromTokenImg.alt = fromToken.symbol;
+        fromTokenImg.style.display = '';
+      } else {
+        fromTokenImg.style.display = 'none';
+      }
+      if (toToken && toToken.image) {
+        toTokenImg.src = toToken.image;
+        toTokenImg.alt = toToken.symbol;
+        toTokenImg.style.display = '';
+      } else {
+        toTokenImg.style.display = 'none';
+      }
+    }
+    async function updateWalletUI() {
+      try {
+        if (walletType === 'phantom' && publicKey) {
+          walletCard.style.display = '';
+          walletTypeLabel.textContent = 'Connected (Phantom):';
+          walletAddress.textContent = publicKey.toBase58();
+          let balances = [];
+          const solBal = await connection.getBalance(publicKey);
+          balances.push((solBal / 1e9).toFixed(4) + " SOL");
+          const tokenAccounts = await connection.getParsedTokenAccountsByOwner(
+            publicKey,
+            { programId: solanaWeb3.TokenInstructions.TOKEN_PROGRAM_ID }
+          );
+          for (const token of SOLANA_MEME_TOKENS) {
+            if (token.symbol === "SOL") continue;
+            const found = tokenAccounts.value.find(
+              acc => acc.account.data.parsed.info.mint === token.mint
+            );
+            if (found) {
+              const uiAmount = found.account.data.parsed.info.tokenAmount.uiAmount;
+              balances.push(`${uiAmount} ${token.symbol}`);
+            }
+          }
+          walletBalance.textContent = balances.join(" / ");
+          swapSection.style.display = '';
+          disconnectWalletBtn.style.display = '';
+          txHistory.style.display = '';
+        } else if (walletType === 'metamask' && ethAddress) {
+          walletCard.style.display = '';
+          walletTypeLabel.textContent = 'Connected (MetaMask):';
+          walletAddress.textContent = ethAddress;
+          walletBalance.textContent = '';
+          swapSection.style.display = 'none';
+          disconnectWalletBtn.style.display = '';
+          txHistory.style.display = 'none';
+        } else {
+          walletCard.style.display = 'none';
+          swapSection.style.display = 'none';
+          disconnectWalletBtn.style.display = 'none';
+          txHistory.style.display = 'none';
+        }
+      } catch (e) {
+        showError("Failed to update wallet: " + (e.message || e));
+      }
+    }
+    function renderTxHistory() {
+      txList.innerHTML = '';
+      if (txs.length === 0) {
+        txList.innerHTML = `<li class="tx-item">No transactions yet.</li>`;
+        return;
+      }
+      txs.forEach(tx => {
+        const li = document.createElement('li');
+        li.className = 'tx-item';
+        li.innerHTML = `
+          <span class="tx-type">${tx.type}</span>
+          <span class="tx-value"><a href="https://solscan.io/tx/${tx.hash}" target="_blank">${tx.value}</a></span>
+        `;
+        txList.appendChild(li);
+      });
+    }
+    async function getSwapQuote(fromIdx, toIdx, amountUi) {
+      const fromToken = SOLANA_MEME_TOKENS[fromIdx];
+      const toToken = SOLANA_MEME_TOKENS[toIdx];
+      if (!fromToken || !toToken || fromToken.mint === toToken.mint) return null;
+      const amount = Math.floor(amountUi * (10 ** fromToken.decimals));
+      const url = `${JUPITER_API}/quote?inputMint=${fromToken.mint}&outputMint=${toToken.mint}&amount=${amount}&slippageBps=${Math.floor(Number(slippageInput.value)*100)}&onlyDirectRoutes=false`;
+      try {
+        const resp = await fetch(url);
+        if (!resp.ok) return null;
+        const data = await resp.json();
+        if (!data || !data.data || !data.data[0]) return null;
+        return data.data[0];
+      } catch (e) {
+        showError('Jupiter quote error: ' + (e.message || e));
+        return null;
+      }
+    }
+    async function updateSwapEstimate() {
+      hideMsgs();
+      if (walletType !== 'phantom') {
+        swapToAmount.value = '';
+        swapBtn.disabled = true;
+        return;
+      }
+      const fromIdx = swapFromToken.value;
+      const toIdx = swapToToken.value;
+      const amountUi = Number(swapFromAmount.value);
+      if (fromIdx === toIdx || !amountUi || isNaN(amountUi) || amountUi <= 0) {
+        swapToAmount.value = '';
+        swapBtn.disabled = true;
+        return;
+      }
+      swapBtn.disabled = false;
+      swapToAmount.value = '...';
+      const route = await getSwapQuote(fromIdx, toIdx, amountUi);
+      if (!route) {
+        swapToAmount.value = '';
+        swapBtn.disabled = true;
+        showError("No route found or insufficient liquidity.");
+        return;
+      }
+      const toToken = SOLANA_MEME_TOKENS[toIdx];
+      swapToAmount.value = (route.outAmount / (10 ** toToken.decimals)).toPrecision(8);
+    }
+    function populateTokenSelects() {
+      populateTokenSelect(swapFromToken, SOLANA_MEME_TOKENS);
+      populateTokenSelect(swapToToken, SOLANA_MEME_TOKENS);
+      swapToToken.selectedIndex = 1;
+      updateDisplayedTokenImages();
+    }
+
+    swapFromToken.addEventListener('change', () => {
+      if (swapFromToken.value === swapToToken.value) {
+        swapToToken.selectedIndex = (Number(swapFromToken.value)+1)%SOLANA_MEME_TOKENS.length;
+      }
+      updateDisplayedTokenImages();
+      updateSwapEstimate();
+    });
+    swapToToken.addEventListener('change', () => {
+      if (swapToToken.value === swapFromToken.value) {
+        swapFromToken.selectedIndex = (Number(swapToToken.value)+1)%SOLANA_MEME_TOKENS.length;
+      }
+      updateDisplayedTokenImages();
+      updateSwapEstimate();
+    });
+    swapFromAmount.addEventListener('input', updateSwapEstimate);
+    slippageInput.addEventListener('input', () => {
+      if (Number(slippageInput.value) < 0.1) slippageInput.value = 0.1;
+      if (Number(slippageInput.value) > 20) slippageInput.value = 20;
+      updateSwapEstimate();
+    });
+
+    swapBtn.onclick = async () => {
+      hideMsgs();
+      if (walletType !== 'phantom' || !solanaWallet || !publicKey) {
+        showError("Please connect your Phantom wallet.");
+        return;
+      }
+      const fromIdx = swapFromToken.value;
+      const toIdx = swapToToken.value;
+      const fromToken = SOLANA_MEME_TOKENS[fromIdx];
+      const toToken = SOLANA_MEME_TOKENS[toIdx];
+      const amountUi = Number(swapFromAmount.value);
+      if (!fromToken || !toToken || fromToken.mint === toToken.mint || !amountUi || isNaN(amountUi) || amountUi <= 0) {
+        showError("Invalid swap request.");
+        return;
+      }
+      swapBtn.disabled = true;
+      swapBtn.textContent = "Swapping...";
+      try {
+        const route = await getSwapQuote(fromIdx, toIdx, amountUi);
+        if (!route) {
+          showError("No swap route found.");
+          swapBtn.disabled = false;
+          swapBtn.textContent = "Swap";
+          return;
+        }
+        const swapApiUrl = `${JUPITER_API}/swap`;
+        const payload = {
+          route: route,
+          userPublicKey: publicKey.toBase58(),
+          wrapUnwrapSOL: true
+        };
+        const swapResp = await fetch(swapApiUrl, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload)
+        });
+        const swapData = await swapResp.json();
+        if (!swapData?.swapTransaction) {
+          showError("Failed to get swap transaction from Jupiter.");
+          swapBtn.disabled = false;
+          swapBtn.textContent = "Swap";
+          return;
+        }
+        const txn = swapData.swapTransaction;
+        const recovered = new Uint8Array(atob(txn).split('').map(c => c.charCodeAt(0)));
+        const { signature } = await solanaWallet.signAndSendTransaction(recovered);
+        txs.push({ type: 'Swap', value: `${amountUi} ${fromToken.symbol} -> ${toToken.symbol}`, hash: signature });
+        renderTxHistory();
+        showSuccess(`Swap successful! Transaction: ${signature}`);
+        swapFromAmount.value = '';
+        swapToAmount.value = '';
+        await updateSwapEstimate();
+      } catch (e) {
+        showError("Swap transaction error: " + (e.message || e));
+      } finally {
+        swapBtn.disabled = false;
+        swapBtn.textContent = "Swap";
+      }
+    };
+
+    window.addEventListener('DOMContentLoaded', () => {
+      populateTokenSelects();
+      updateWalletUI();
+      renderTxHistory();
+      updateSwapEstimate();
+    });
+  </script>
+</body>
+</html>
