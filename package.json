@@ -1,12 +1,1 @@
-{
-  "name": "Fixorium-Wallet",
-  "version": "0.1.0",
-  "dependencies": {
-    "react": "^18.2.0",
-  }
-  "scripts": {
-    "build": "react-scripts build",
-    "start": "react-scripts start",
-    "test": "react-scripts test"
-  }
-}
+ {\n  "name": "fixorium-app",\n  "version": "1.0.0",\n  "scripts": {\n    "start": "node server.js",\n    "build": "echo 'No build step required'",\n    "dev": "vercel dev"\n  },\n  "dependencies": {\n    "@solana/web3.js": "^1.95.2",\n    "@solana/spl-token": "^0.4.0",\n    "ethers": "^5.7.2"\n  }\n}
