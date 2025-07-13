@@ -1,1 +1,15 @@
- {\n  "name": "fixorium-app",\n  "version": "1.0.0",\n  "scripts": {\n    "start": "node server.js",\n    "build": "echo 'No build step required'",\n    "dev": "vercel dev"\n  },\n  "dependencies": {\n    "@solana/web3.js": "^1.95.2",\n    "@solana/spl-token": "^0.4.0",\n    "ethers": "^5.7.2"\n  }\n}
+ {
+  "name": "fixorium-app",
+  "version": "1.0.0",
+  "description": "Fixorium Solana Meme Token Swap App",
+  "scripts": {
+    "start": "echo 'No start script defined yet'",
+    "build": "echo 'No build script defined yet'"
+  },
+  "dependencies": {
+    "@solana/web3.js": "^1.95.2",
+    "@solana/spl-token": "^0.4.0",
+    "ethers": "^5.7.2"
+  },
+  "devDependencies": {}
+ }
