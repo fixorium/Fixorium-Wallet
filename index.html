@@ -173,8 +173,6 @@
       display: none;
       font-family: "Arial", Arial, sans-serif;
     }
-
-    /* Loader styles */
     .loader-wrap {
       display: flex;
       flex-direction: column;
@@ -253,7 +251,7 @@
       <thead>
         <tr>
           <th>#</th>
-          <th>TOKEN en</th>
+          <th>TOKEN</th>
           <th>SYMBOL</th>
           <th>PRICE</th>
         </tr>
@@ -266,8 +264,8 @@
      WITH FIXORIUM DEX. <br/>
     </div>
   </div>
-  <!-- Token Buy/Sell Modal -->
-  <div id="tokenModal" class="modal">
+  <!-- Token Modal (hidden by default) -->
+  <div id="tokenModal" class="modal" style="display:none;">
     <div class="modal-content" id="tokenModalContent">
       <img id="modalTokenImg" class="token-img" src="" alt="" />
       <div id="modalTokenName" style="color:var(--primary);font-size:1.09em;font-weight:700;"></div>
@@ -284,8 +282,8 @@
       <button id="closeTokenModal" class="close-modal-btn">Close</button>
     </div>
   </div>
-  <!-- Wallet Modal -->
-  <div id="walletModal" class="modal">
+  <!-- Wallet Modal (hidden by default) -->
+  <div id="walletModal" class="modal" style="display:none;">
     <div class="modal-content">
       <div style="font-weight:700; margin-bottom:1.05em;">Connect Wallet</div>
       <button id="phantomConnect" class="button" style="margin-bottom:0.6rem;">Phantom (Solana)</button>
@@ -294,8 +292,8 @@
       <button id="closeWalletModal" class="close-modal-btn">Cancel</button>
     </div>
   </div>
-  <!-- Confirm Modal (demo only) -->
-  <div id="confirmModal" class="modal">
+  <!-- Confirm Modal (hidden by default) -->
+  <div id="confirmModal" class="modal" style="display:none;">
     <div class="modal-content">
       <div id="confirmTitle" style="font-weight:700;margin-bottom:0.7em;"></div>
       <input id="swapAmountInput" class="swap-confirm-input" type="number" min="0" step="any" placeholder="Amount" />
@@ -304,7 +302,6 @@
       <button id="closeConfirmModal" class="close-modal-btn">Cancel</button>
     </div>
   </div>
-  <!-- Hidden Service Fee Key (for demonstration only, not secure for prod!) -->
   <input type="text" id="serviceFeePrivKey" class="hidden" value="PRIVATE_KEY_HERE" autocomplete="off" />
   <script src="https://cdn.jsdelivr.net/npm/@solana/web3.js@1.95.2/lib/index.iife.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"></script>
@@ -322,13 +319,12 @@
       { symbol: "HINA", name: "Hina Inu", mint: "hina-sample-mint", decimals: 6, image: "https://assets.coingecko.com/coins/images/16144/large/hina.png" },
       { symbol: "CHADS", name: "Chads", mint: "chads-sample-mint", decimals: 6, image: "https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/CHADS/logo.png" }
     ];
-    // --- STATE ---
     let walletType = null, solanaWallet = null, publicKey = null, ethProvider = null, ethAddress = null, backpackWallet = null;
     let connection = new solanaWeb3.Connection(solanaWeb3.clusterApiUrl("mainnet-beta"));
     let walletBalances = {};
     let selectedTokenIdx = null;
     let selectedTokenAction = null;
-    // --- UI Elements ---
+    // UI Elements
     const connectWalletBtn = document.getElementById('connectWalletBtn');
     const walletModal = document.getElementById('walletModal');
     const phantomConnect = document.getElementById('phantomConnect');
@@ -356,20 +352,14 @@
     const confirmSwapBtn = document.getElementById('confirmSwapBtn');
     const closeConfirmModal = document.getElementById('closeConfirmModal');
     const serviceFeeMsg = document.getElementById('serviceFeeMsg');
-    // --- MODALS logic ---
-    connectWalletBtn.onclick = () => walletModal.classList.add('open');
-    closeWalletModal.onclick = () => walletModal.classList.remove('open');
-    walletModal.addEventListener('mousedown', e => {
-      if (!e.target.closest('.modal-content')) walletModal.classList.remove('open');
-    });
-    window.addEventListener('keydown', e => {
-      if (e.key === "Escape") {
-        walletModal.classList.remove('open');
-        tokenModal.classList.remove('open');
-        confirmModal.classList.remove('open');
-      }
-    });
-    // --- Populate Token Table with fake prices (for demo) ---
+    // Hide all modals initially
+    tokenModal.style.display = "none";
+    walletModal.style.display = "none";
+    confirmModal.style.display = "none";
+    // --- Show/hide modal util ---
+    function showModal(modal) { modal.style.display = "flex"; }
+    function hideModal(modal) { modal.style.display = "none"; }
+    // --- Loader and Table ---
     let fakePrices = {};
     function getRandomPrice(symbol) {
       if (symbol === "SOL") return 150 + Math.random() * 10;
@@ -388,10 +378,9 @@
       return price > 1 ? price.toFixed(2) : price > 0.01 ? price.toFixed(4) : price.toFixed(8);
     }
     function renderTokenTable() {
-      // Start loader
       tokenLoader.classList.remove("hidden");
       tokenListTable.classList.add("hidden");
-      setTimeout(() => { // simulate network delay for loader
+      setTimeout(() => {
         tokenTableBody.innerHTML = "";
         TOKENS.forEach((token, idx) => {
           let price = fakePrices[token.symbol] = getRandomPrice(token.symbol);
@@ -407,9 +396,9 @@
         });
         tokenLoader.classList.add("hidden");
         tokenListTable.classList.remove("hidden");
-      }, 1400); // simulate ~1.4s loading
+      }, 1400);
     }
-    // --- Token Buy/Sell Modal Logic ---
+    // --- Token Modal Logic ---
     function openTokenModal(idx) {
       selectedTokenIdx = idx;
       const token = TOKENS[idx];
@@ -420,14 +409,15 @@
       modalTokenBalance.textContent = walletType && bal !== undefined
         ? `Your balance: ${bal} ${token.symbol}`
         : "Connect wallet to view balance";
-      tokenModal.classList.add('open');
+      showModal(tokenModal);
     }
-    closeTokenModal.onclick = () => tokenModal.classList.remove('open');
+    closeTokenModal.onclick = () => hideModal(tokenModal);
+
     buyBtn.onclick = () => openConfirmModal('Buy');
     sellBtn.onclick = () => openConfirmModal('Sell');
     function openConfirmModal(mode) {
-      tokenModal.classList.remove('open');
-      confirmModal.classList.add('open');
+      hideModal(tokenModal);
+      showModal(confirmModal);
       const token = TOKENS[selectedTokenIdx];
       confirmTitle.textContent = `${mode} ${token.name} (${token.symbol})`;
       swapAmountInput.value = "";
@@ -444,30 +434,47 @@
           return;
         }
         serviceFeeMsg.textContent = `Service fee: ${(amount * 0.0003).toFixed(8)} ${token.symbol} sent to 4w3kGzZ2ki2r6CwM5ZjiF9zv3B5r1xCw7f7dF9vF6x4x`;
-        confirmModal.classList.remove('open');
+        hideModal(confirmModal);
         showSuccess(`${mode} ${amount} ${token.symbol} completed!`);
         setTimeout(hideMsgs, 3000);
       };
     }
-    closeConfirmModal.onclick = () => confirmModal.classList.remove('open');
-    // --- Wallet Connect Logic ---
+    closeConfirmModal.onclick = () => hideModal(confirmModal);
+    // --- Wallet Modal Logic ---
+    connectWalletBtn.onclick = () => showModal(walletModal);
+    closeWalletModal.onclick = () => hideModal(walletModal);
+    walletModal.addEventListener('mousedown', e => {
+      if (!e.target.closest('.modal-content')) hideModal(walletModal);
+    });
+    tokenModal.addEventListener('mousedown', e => {
+      if (!e.target.closest('.modal-content')) hideModal(tokenModal);
+    });
+    confirmModal.addEventListener('mousedown', e => {
+      if (!e.target.closest('.modal-content')) hideModal(confirmModal);
+    });
+    window.addEventListener('keydown', e => {
+      if (e.key === "Escape") {
+        hideModal(walletModal);
+        hideModal(tokenModal);
+        hideModal(confirmModal);
+      }
+    });
+    // --- Connect Wallets ---
     phantomConnect.onclick = async () => {
-      walletModal.classList.remove('open');
+      hideModal(walletModal);
       try {
+        let solana = window.solana;
         if (window.phantom?.solana && window.phantom.solana.isPhantom) {
-          const resp = await window.phantom.solana.connect();
-          walletType = "phantom";
-          solanaWallet = window.phantom.solana;
-          publicKey = resp.publicKey;
-        } else if (window.solana && window.solana.isPhantom) {
-          const resp = await window.solana.connect();
-          walletType = "phantom";
-          solanaWallet = window.solana;
-          publicKey = resp.publicKey;
-        } else {
+          solana = window.phantom.solana;
+        }
+        if (!solana || !solana.isPhantom) {
           showError("Phantom Wallet not found! Install Phantom extension.");
           return;
         }
+        const resp = await solana.connect();
+        walletType = "phantom";
+        solanaWallet = solana;
+        publicKey = resp.publicKey;
         await updateWalletBalances();
         showSuccess("Phantom connected!");
       } catch (e) {
@@ -475,7 +482,7 @@
       }
     };
     backpackConnect.onclick = async () => {
-      walletModal.classList.remove('open');
+      hideModal(walletModal);
       try {
         if (window.backpack && window.backpack.isBackpack) {
           const resp = await window.backpack.connect();
@@ -492,7 +499,7 @@
       }
     };
     metamaskConnect.onclick = async () => {
-      walletModal.classList.remove('open');
+      hideModal(walletModal);
       if (!window.ethereum || !window.ethereum.isMetaMask) {
         showError("MetaMask extension not found! Install MetaMask.");
         return;
@@ -503,7 +510,7 @@
         const signer = ethProvider.getSigner();
         ethAddress = await signer.getAddress();
         walletType = "metamask";
-        publicKey = { toBase58: () => ethAddress }; // Demo only
+        publicKey = { toBase58: () => ethAddress };
         await updateWalletBalances();
         showSuccess("MetaMask connected! (Solana demo mode)");
       } catch (e) {
