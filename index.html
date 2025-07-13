@@ -572,6 +572,43 @@
       document.getElementById('errorMsg').style.display = 'none';
       document.getElementById('successMsg').style.display = 'none';
     }
+   // Function to open connect wallet popup
+document.getElementById('connectWalletBtn').onclick = function() {
+  const url = window.location.href + "#connect-wallet";
+  const features = "width=420,height=520,top=120,left=120,toolbar=no,location=no,status=no,menubar=no,scrollbars=no,resizable=no";
+  window.open(url, "ConnectWallet", features);
+};
+
+// Function to open token popup
+function openTokenPopup(idx) {
+  const url = window.location.href.split('#')[0] + "#token-" + idx;
+  const features = "width=480,height=620,top=120,left=120,toolbar=no,location=no,status=no,menubar=no,scrollbars=no,resizable=no";
+  window.open(url, "TokenBuySell" + idx, features);
+}
+
+// Set onclick event for token elements
+const tokens = document.querySelectorAll('tr');
+tokens.forEach((tr, idx) => {
+  tr.onclick = () => openTokenPopup(idx);
+});
+
+// Check if this is a popup window
+if (window.opener && window.location.hash.startsWith("#connect-wallet")) {
+  // Render wallet connect UI
+  console.log("Render wallet connect UI");
+
+  // Simulate wallet connection success
+  const walletType = "MetaMask";
+  const publicKey = "0x1234567890abcdef";
+  window.opener.postMessage({ walletType, publicKey }, "*");
+  // window.close();
+}
+
+if (window.opener && window.location.hash.startsWith("#token-")) {
+  // Get token index from URL hash
+  const tokenIndex = window.location.hash.split('-')[1];
+  console.log(`Render buy/sell UI for token ${tokenIndex}`);
+   }
   </script>
 </body>
 </html>
