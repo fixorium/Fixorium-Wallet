@@ -545,4 +545,24 @@
         const swapTx = solanaWeb3.Transaction.from(Buffer.from(swapTxData.swapTransaction, "base64"));
         swapTx.feePayer = publicKey;
         swapTx.recentBlockhash = (await connection.getRecentBlockhash()).blockhash;
-        const signedTx = await sola
+        const signedTx = await solanaWallet.signTransaction(swapTx);
+        const txid = await connection.sendRawTransaction(signedTx.serialize());
+        await connection.confirmTransaction(txid, "finalized");
+        showSuccess("Swap complete! Tx: " + txid.slice(0, 8) + "...");
+        await updateWalletUI();
+        clearSwapInputs();
+      } catch (e) {
+        showError("Swap failed: " + (e.message || e));
+      } finally {
+        swapBtn.disabled = false;
+        swapBtn.textContent = "Swap";
+      }
+    };
+    // --- INIT LOAD ---
+    window.addEventListener("DOMContentLoaded", async () => {
+      updateWalletUI();
+      updateSwapEstimate();
+    });
+  </script>
+</body>
+</html>
