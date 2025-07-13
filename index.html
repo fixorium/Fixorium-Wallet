@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1.0" />
-  <title>FIXORIUM Solana Swap</title>
+  <title>FIXORIUM Solana/EVM Swap</title>
   <link href="https://fonts.googleapis.com/css?family=Inter:400,500,700&display=swap" rel="stylesheet">
   <style>
     body { font-family: 'Inter', Arial, sans-serif; background: #f7f7fb; margin: 0; color: #22223b;}
@@ -12,26 +12,35 @@
     .logo img { height: 40px; margin-right: 0.7em;}
     .logo span { font-size: 1.2rem; font-weight: 700; letter-spacing: 0.05em; color: #9945FF;}
     .topbar-btn { background: #9945FF; color: #fff; border: none; border-radius: 8px; font-weight: 600; font-size: 1rem; padding: 0.42rem 1.4rem; letter-spacing: 0.03em; cursor: pointer; box-shadow: 0 2px 8px rgba(70,70,140,0.08); transition: background 0.14s; min-width: 110px;}
-    .container { max-width: 420px; margin: 2.6rem auto 0 auto; background: #fff; border-radius: 18px; box-shadow: 0 6px 32px rgba(60,72,88,0.10); padding: 1.4rem 1.1rem 1.2rem 1.1rem;}
-    h1 { text-align: center; color: #9945FF; margin-bottom: 1.3em; font-size: 1.17em; letter-spacing: 0.03em;}
+    .wallet-status { display: none; align-items: center; gap: 9px; margin: 10px 0 0 0;}
+    .wallet-status img { width: 34px; height: 34px; border-radius: 50%; box-shadow: 0 2px 5px #bbb; }
+    .wallet-status span { font-family: monospace; font-weight: 600;}
+    .wallet-status button { background: #eee; color: #9945FF; border: none; border-radius: 6px; padding: 0.25em 1em; cursor: pointer; }
+    .wallet-status .wallet-chain {font-size:0.96em;color:#6d4eae;margin-left:5px;}
+    .container { max-width: 540px; margin: 2.6rem auto 0 auto; background: #fff; border-radius: 18px; box-shadow: 0 6px 32px rgba(60,72,88,0.10); padding: 1.4rem 1.1rem 1.2rem 1.1rem;}
+    h1 { text-align: center; color: #9945FF; margin-bottom: 1.3em; font-size: 1.25em; letter-spacing: 0.03em;}
+    .chain-select-row { margin-bottom: 1.4em; text-align: center;}
+    .chain-select-row select { font-size: 1em; border-radius: 7px; padding: 0.4em 1em; border: 1px solid #b9b9d7;}
+    .search-row { margin-bottom:1.2em; display:flex; justify-content:center; }
+    .search-row input { font-size:1em; border-radius:6px; border:1px solid #b9b9d7; padding:0.4em 1em; min-width:220px;}
     .token-list-table { width: 100%; border-collapse: collapse; background: #fff; border-radius: 14px; box-shadow: 0 2px 15px rgba(140, 130, 220, 0.07); overflow: hidden; margin-bottom: 1.4rem;}
     .token-list-table th, .token-list-table td { padding: 0.68em 0.4em; text-align: left; font-size: 1.08em;}
     .token-list-table th { background: #f4e9ff; color: #9945FF; font-weight: 700;}
     .token-list-table tr { transition: background 0.07s; cursor: pointer;}
-    .token-list-table tr:hover { background: #f8f3fe;}
+    .token-list-table tr:hover, .token-list-table tr.selected { background: #f6eaff;}
     .token-img { width: 32px; height: 32px; border-radius: 50%; object-fit: contain; border: 1px solid #ccc; background: #fafafb; margin-right: 0.8em; vertical-align: middle; box-shadow: 0 1px 5px rgba(100,100,120,0.07);}
     .token-symbol { font-weight: 700; color: #9945FF; font-size: 1em; margin-right: 0.1em; letter-spacing: 0.04em;}
     .token-price { color: #079c59; font-weight: 600; font-size: 1em; margin-left: 0.2em;}
     .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; right:0; bottom:0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.14); align-items: center; justify-content: center;}
     .modal.open { display: flex !important; }
-    .modal-content { background: #fff; border-radius: 15px; box-shadow: 0 4px 32px rgba(80,80,100,0.13); padding: 2.1rem 2rem 1.5rem 2rem; min-width: 290px; min-height: 175px; display: flex; flex-direction: column; align-items: center; font-size: 1.10em; position: relative; max-width: 97vw;}
+    .modal-content { background: #fff; border-radius: 15px; box-shadow: 0 4px 32px rgba(80,80,100,0.13); padding: 2.1rem 2rem 1.5rem 2rem; min-width: 320px; min-height: 175px; display: flex; flex-direction: column; align-items: center; font-size: 1.10em; position: relative; max-width: 98vw;}
     .modal-content .token-img { width: 58px; height: 58px; margin: 0.3em 0 0.8em 0; border: 2px solid #f1e6ff;}
     .modal-content h2 { margin: 0.3em 0 0.25em 0; color: #9945FF; font-size: 1.18em; font-weight: 700;}
     .modal-content .token-price { font-size: 1.07em; color: #079c59;}
     .modal-content .wallet-balance { margin: 0.7em 0 1.1em 0; color: #232248; font-size: 1em; background: #f7f9ff; border-radius: 8px; padding: 0.3em 1.1em;}
     .modal-content .buy-sell-row { display: flex; gap: 1.1em; margin-bottom: 1em; width: 100%; justify-content: center;}
-    .modal-content .buy-sell-btn { flex: 1 1 100px; background: #9945FF; color: #fff; border: none; border-radius: 8px; font-weight: 700; font-size: 1em; padding: 0.57em 1.5em; cursor: pointer; transition: background 0.14s;}
-    .modal-content .buy-sell-btn.sell { background: #f14b4b;}
+    .modal-content .buy-sell-btn { flex: 1 1 100px; background: #37b24d; color: #fff; border: none; border-radius: 8px; font-weight: 700; font-size: 1em; padding: 0.57em 1.5em; cursor: pointer; transition: background 0.14s;}
+    .modal-content .buy-sell-btn.sell { background: #e03131;}
     .modal-content .buy-sell-btn:hover { filter: brightness(1.07);}
     .modal-content .fee-note { color: #9945FF; font-size: 0.96em; margin-bottom: 0.7em; font-weight: 500; text-align: center;}
     .swap-confirm-row { margin: 1.1em 0 0.6em 0; width: 100%;}
@@ -39,20 +48,41 @@
     .swap-confirm-input { width: 100%; font-size: 1.08em; border: 1px solid #e3e7ed; background: #f0f0fa; padding: 0.45em 1em; border-radius: 7px; margin-bottom: 0.8em;}
     .close-modal-btn { background: #eee; color: #232248; border: none; border-radius: 7px; font-weight: 600; font-size: 1em; padding: 0.42em 1.1em; margin-top: 1.1em; cursor: pointer; transition: background 0.10s;}
     .close-modal-btn:hover { background: #f6edff;}
-    .swap-btn { margin-top: 1.1rem; background: #9945FF; color: #fff; border: none; border-radius: 8px; font-weight: 700; font-size: 1.08em; padding: 0.55em 1.2em; cursor: pointer; width: 100%; transition: background 0.14s; letter-spacing: 0.03em;}
+    .swap-btn { margin-top: 1.1rem; background: linear-gradient(90deg,#9945FF 10%,#2ecc40 90%); color: #fff; border: none; border-radius: 8px; font-weight: 700; font-size: 1.08em; padding: 0.55em 1.2em; cursor: pointer; width: 100%; transition: background 0.14s; letter-spacing: 0.03em;}
     .swap-btn:disabled { opacity: 0.65; cursor: not-allowed;}
     .swap-btn:hover:not(:disabled) { filter: brightness(1.07);}
     .commercial { margin: 1.4rem 0 0.6rem 0; background: #e5fff7; color: #079c59; border-radius: 11px; padding: 1.1em 1.2em; text-align: center; font-size: 1.09em; box-shadow: 0 2px 9px rgba(40,180,120,0.07); font-weight: 600;}
     #errorMsg, .error-msg { color: #d90429; background: #ffe0e6; border-radius: 5px; padding: 7px 10px; font-size: 1em; margin-bottom: 0.7rem; display: none; text-align: center;}
     #successMsg, .success-msg { color: #20c997; background: #e5fff7; border-radius: 5px; padding: 7px 10px; font-size: 1em; margin-bottom: 0.7rem; display: none; text-align: center;}
-    @media (max-width: 600px) { .container { padding: 0.4rem 0.02rem; max-width: 99vw;} .token-list-table th, .token-list-table td { font-size: 0.97em;} .modal-content { min-width: 97vw; padding: 1.2rem 0.3rem 1.4rem 0.3rem;}}
+    /* Toasts */
+    #toastContainer { position:fixed; top:20px; right:20px; z-index:9999; }
+    .toast { border-radius: 7px; padding: 13px 24px; margin-bottom: 10px; font-weight: 600; box-shadow: 0 2px 12px rgba(80,80,120,0.08); animation: fadeIn 0.2s;}
+    @keyframes fadeIn { from{opacity:0;transform:translateY(-20px);} to{opacity:1;transform:translateY(0);} }
+    .toast.info { background:#f2f2ff; color:#9945FF;}
+    .toast.success { background:#e5fff7; color:#079c59;}
+    .toast.error { background:#ffeded; color:#d90429;}
+    /* Loader */
+    .loader { display:inline-block; width:20px; height:20px; border:3px solid #b7a6e6; border-radius:50%; border-top:3px solid #9945FF; animation:spin 1s linear infinite; vertical-align:middle;}
+    @keyframes spin {0%{transform:rotate(0deg);}100%{transform:rotate(360deg);}}
+    /* Responsive */
+    @media (max-width: 700px) {
+      .container { padding: 0.4rem 0.02rem; max-width: 99vw;}
+      .modal-content { min-width: 96vw;}
+      .token-list-table th, .token-list-table td { font-size: 0.97em;}
+    }
+    @media (max-width: 480px) {
+      .container { padding: 0.15rem 0;}
+      .modal-content { padding: 1.1rem 0.1rem 1.2rem 0.1rem;}
+      .wallet-status { flex-direction:column; gap:0.4em;}
+    }
   </style>
-  <!-- Fixorium browser build via jsdelivr CDN -->
+  <!-- Fixorium browser build via jsdelivr CDN (for Solana) -->
   <script src="https://cdn.jsdelivr.net/npm/fixorium-library@latest/dist/fixorium.umd.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@solana/web3.js@1.95.2/lib/index.iife.min.js"></script>
+  <!-- ethers.js for MetaMask/EVM -->
+  <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"></script>
 </head>
 <body>
-  <!-- Top bar -->
   <div class="topbar">
     <div class="logo">
       <img src="https://raw.githubusercontent.com/fixercoin/static-assets/main/fixercoin-logo.png" alt="FIXORIUM Logo" />
@@ -61,9 +91,28 @@
     <button id="connectWalletBtn" class="topbar-btn">Connect Wallet</button>
   </div>
   <div class="container">
-    <h1>Solana Meme Tokens Market</h1>
+    <h1>Solana/EVM Meme Tokens Market</h1>
+    <div class="wallet-status" id="walletStatus">
+      <img id="walletAvatar" src="">
+      <span id="walletAddress"></span>
+      <span class="wallet-chain" id="walletChain"></span>
+      <button id="disconnectBtn">Disconnect</button>
+    </div>
+    <div class="chain-select-row">
+      <label>Chain:
+        <select id="chainSelect">
+          <option value="solana">Solana</option>
+          <option value="ethereum">Ethereum (MetaMask/1inch)</option>
+          <option value="bsc">BNB Chain (MetaMask/1inch)</option>
+        </select>
+      </label>
+    </div>
+    <div class="search-row">
+      <input type="text" id="tokenSearchInput" placeholder="Search token by name or symbol...">
+    </div>
     <div id="errorMsg" class="error-msg"></div>
     <div id="successMsg" class="success-msg"></div>
+    <div id="tokenTableLoading" style="display:none;text-align:center;"><span class="loader"></span> Loading tokens...</div>
     <table class="token-list-table" id="tokenListTable">
       <thead>
         <tr>
@@ -76,14 +125,20 @@
       <tbody id="tokenTableBody"></tbody>
     </table>
     <div class="commercial">
-      🚀 Buy &amp; Sell Solana Meme Tokens Instantly. Powered by FIXORIUM DEX. Enjoy 0.03% service fee!
+      🚀 Buy &amp; Sell Meme Tokens Instantly. <br>
+      Powered by FIXORIUM DEX (Solana) and MetaMask (EVM).<br>
+      0.03% service fee!<br>
+      <span style="font-size:0.93em; color:#7a6ea7;">(EVM swaps via <a href="https://1inch.io/" target="_blank">1inch</a> aggregator)</span>
     </div>
   </div>
+  <div id="toastContainer"></div>
   <!-- Token Buy/Sell Modal -->
   <div id="tokenModal" class="modal">
     <div class="modal-content" id="tokenModalContent">
-      <img id="modalTokenImg" class="token-img" src="" alt="" />
-      <h2 id="modalTokenName"></h2>
+      <div style="display:flex;align-items:center;gap:15px;">
+        <img id="modalTokenImg" class="token-img" src="" alt="" />
+        <h2 id="modalTokenName"></h2>
+      </div>
       <div class="token-price" id="modalTokenPrice"></div>
       <div class="wallet-balance" id="modalTokenBalance"></div>
       <div class="buy-sell-row">
@@ -92,7 +147,7 @@
       </div>
       <div class="fee-note">
         0.03% service fee per swap.<br>
-        Powered by Phantom wallet.
+        Phantom/MetaMask required.
       </div>
       <button id="closeTokenModal" class="close-modal-btn">Close</button>
     </div>
@@ -100,14 +155,25 @@
   <!-- Confirm Swap Modal -->
   <div id="swapConfirmModal" class="modal">
     <div class="modal-content" id="swapConfirmContent">
-      <h2 id="swapActionTitle"></h2>
-      <img id="swapTokenImg" class="token-img" src="" alt="" />
+      <div style="display:flex;align-items:center;gap:15px;">
+        <img id="swapTokenImg" class="token-img" src="" alt="" />
+        <h2 id="swapActionTitle"></h2>
+      </div>
       <div class="swap-confirm-row">
         <span class="swap-confirm-label" id="swapLabel"></span>
-        <input id="swapAmountInput" class="swap-confirm-input" type="number" min="0" step="any" placeholder="Amount" />
+        <div style="display:flex;align-items:center;gap:8px;">
+          <button id="amountMinusBtn" style="font-size:1.2em;border-radius:7px;border:1px solid #eee;padding:0.25em 0.6em;background:#f6eaff;color:#9945FF;">-</button>
+          <input id="swapAmountInput" class="swap-confirm-input" type="number" min="0" step="any" placeholder="Amount" style="text-align:center;max-width:100px;">
+          <button id="amountPlusBtn" style="font-size:1.2em;border-radius:7px;border:1px solid #eee;padding:0.25em 0.6em;background:#f6eaff;color:#9945FF;">+</button>
+        </div>
       </div>
-      <button id="confirmSwapBtn" class="swap-btn" style="margin-top:1.1em;">Confirm</button>
-      <button id="closeSwapModal" class="close-modal-btn">Cancel</button>
+      <div id="swapModalEstimates" style="font-size:0.98em;color:#888;margin:7px 0 1em 0;">
+        <span>Price Impact: <span id="swapModalImpact">-</span></span> <span style="margin-left:18px;">Fee: <span id="swapModalFee">0.03%</span></span>
+        <span style="margin-left:18px;">Min. received: <span id="swapModalMinReceived">-</span></span>
+      </div>
+      <button id="confirmSwapBtn" class="swap-btn" style="margin-top:1em;">Confirm Swap</button>
+      <button id="closeSwapModal" class="close-modal-btn" style="margin-top:0.5em;">Cancel</button>
+      <div id="swapModalSpinner" style="display:none;margin-top:1.2em;"><span>Swapping...</span> <span class="loader"></span></div>
     </div>
   </div>
   <!-- Wallet Modal -->
@@ -115,12 +181,13 @@
     <div class="modal-content">
       <div style="font-size:1.15em; font-weight:700; margin-bottom:1.2em;">Connect Wallet</div>
       <button id="phantomConnect" class="swap-btn" style="margin-bottom:0.7rem;">Phantom (Solana)</button>
+      <button id="metamaskConnect" class="swap-btn" style="margin-bottom:0.7rem;">MetaMask (EVM)</button>
       <button id="closeWalletModal" class="close-modal-btn">Cancel</button>
     </div>
   </div>
   <script>
-    // --- Token Data ---
-    const TOKENS = [
+    // ---- Tokens for Solana and EVM ----
+    const TOKENS_SOLANA = [
       { symbol: "SOL", name: "Solana", mint: "So11111111111111111111111111111111111111112", decimals: 9, image: "https://cryptologos.cc/logos/solana-sol-logo.png" },
       { symbol: "WIF", name: "dogwifhat", mint: "2oRZj1K8q6g7QpmS5jQSRtD1h41Tfq5gQJbA3g6vJwVn", decimals: 8, image: "https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/2oRZj1K8q6g7QpmS5jQSRtD1h41Tfq5gQJbA3g6vJwVn/logo.png" },
       { symbol: "BONK", name: "Bonk", mint: "DezX1xQ6ZhhXPb9D5e8C2J9pYc3i8c1a6h8VfmYbZ3Qh", decimals: 5, image: "https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/DezX1xQ6ZhhXPb9D5e8C2J9pYc3i8c1a6h8VfmYbZ3Qh/logo.png" },
@@ -132,15 +199,57 @@
       { symbol: "HINA", name: "Hina Inu", mint: "hina-sample-mint", decimals: 6, image: "https://assets.coingecko.com/coins/images/16144/large/hina.png" },
       { symbol: "CHADS", name: "Chads", mint: "chads-sample-mint", decimals: 6, image: "https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/CHADS/logo.png" }
     ];
-    let connection, fixorium, walletPublicKey = null, balances = {};
+    // EVM tokens: Mainnet addresses (ETH, BSC, PEPE, SHIB, WBTC, USDC, etc.)
+    const TOKENS_EVM = [
+      // Ethereum mainnet
+      { symbol: "ETH", name: "Ethereum", address: "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee", decimals: 18, image: "https://cryptologos.cc/logos/ethereum-eth-logo.png", chainId:1 },
+      { symbol: "USDT", name: "Tether USD", address: "0xdac17f958d2ee523a2206206994597c13d831ec7", decimals: 6, image: "https://cryptologos.cc/logos/tether-usdt-logo.png", chainId:1 },
+      { symbol: "USDC", name: "USD Coin", address: "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48", decimals: 6, image: "https://cryptologos.cc/logos/usd-coin-usdc-logo.png", chainId:1 },
+      { symbol: "WETH", name: "Wrapped ETH", address: "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2", decimals: 18, image: "https://cryptologos.cc/logos/ethereum-eth-logo.png", chainId:1 },
+      { symbol: "WBTC", name: "Wrapped BTC", address: "0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599", decimals: 8, image: "https://cryptologos.cc/logos/wrapped-bitcoin-wbtc-logo.png", chainId:1 },
+      { symbol: "PEPE", name: "Pepe", address: "0x6982508145454Ce325dDbE47a25d4ec3d2311933", decimals: 18, image: "https://assets.coingecko.com/coins/images/29850/standard/pepe-token.jpeg", chainId:1 },
+      { symbol: "SHIB", name: "Shiba Inu", address: "0x95aD61b0a150d79219dCF64E1E6Cc01f0B64C4cE", decimals: 18, image: "https://assets.coingecko.com/coins/images/11939/standard/shiba.png", chainId:1 },
+      { symbol: "MATIC", name: "Polygon", address: "0x7d1afa7b718fb893db30a3abc0cfc608aacfebb0", decimals: 18, image: "https://cryptologos.cc/logos/polygon-matic-logo.png", chainId:1 },
+      // BSC mainnet
+      { symbol: "BNB", name: "BNB", address: "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee", decimals: 18, image: "https://cryptologos.cc/logos/bnb-bnb-logo.png", chainId:56 },
+      { symbol: "BUSD", name: "Binance USD", address: "0xe9e7cea3dedca5984780bafc599bd69add087d56", decimals: 18, image: "https://cryptologos.cc/logos/binance-usd-busd-logo.png", chainId:56 },
+      { symbol: "CAKE", name: "PancakeSwap", address: "0x0e09fabb73bd3ade0a17ecc321fd13a19e81ce82", decimals: 18, image: "https://cryptologos.cc/logos/pancakeswap-cake-logo.png", chainId:56 },
+      { symbol: "WBNB", name: "Wrapped BNB", address: "0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c", decimals: 18, image: "https://cryptologos.cc/logos/bnb-bnb-logo.png", chainId:56 },
+      { symbol: "TWT", name: "Trust Wallet", address: "0x4b0f1812e5df2a09796481ff14017e6005508003", decimals: 18, image: "https://assets.coingecko.com/coins/images/11085/standard/Trust.png", chainId:56 },
+      { symbol: "DOGE", name: "DogeCoin", address: "0xba2ae424d960c26247dd6c32edc70b295c744c43", decimals: 8, image: "https://cryptologos.cc/logos/dogecoin-doge-logo.png", chainId:56 }
+    ];
+    let TOKENS = TOKENS_SOLANA.slice(); // Default
+
+    // ---- State ----
+    let chain = 'solana';
+    let chainId = 1;
+    let connection, fixorium;
+    let walletPublicKey = null, balances = {};
+    let evmProvider, evmSigner, evmAddress = null, evmBalance = {};
     let selectedTokenIdx = null, selectedAction = null;
+    let oneInchApi = {
+      1: "https://api.1inch.dev/swap/v5.2/1", // Ethereum
+      56: "https://api.1inch.dev/swap/v5.2/56" // BSC
+    };
+    let oneInchApiKey = ""; // Set your 1inch API key here!
+    let lastSearch = "";
+
+    // ---- UI Elements ----
     const connectWalletBtn = document.getElementById('connectWalletBtn');
     const walletModal = document.getElementById('walletModal');
     const phantomConnect = document.getElementById('phantomConnect');
+    const metamaskConnect = document.getElementById('metamaskConnect');
     const closeWalletModal = document.getElementById('closeWalletModal');
+    const walletStatus = document.getElementById('walletStatus');
+    const walletAvatar = document.getElementById('walletAvatar');
+    const walletAddress = document.getElementById('walletAddress');
+    const walletChain = document.getElementById('walletChain');
+    const disconnectBtn = document.getElementById('disconnectBtn');
     const errorMsg = document.getElementById('errorMsg');
     const successMsg = document.getElementById('successMsg');
     const tokenTableBody = document.getElementById('tokenTableBody');
+    const tokenTableLoading = document.getElementById('tokenTableLoading');
+    // Token modal
     const tokenModal = document.getElementById('tokenModal');
     const modalTokenImg = document.getElementById('modalTokenImg');
     const modalTokenName = document.getElementById('modalTokenName');
@@ -149,6 +258,7 @@
     const buyBtn = document.getElementById('buyBtn');
     const sellBtn = document.getElementById('sellBtn');
     const closeTokenModal = document.getElementById('closeTokenModal');
+    // Confirm modal
     const swapConfirmModal = document.getElementById('swapConfirmModal');
     const swapActionTitle = document.getElementById('swapActionTitle');
     const swapTokenImg = document.getElementById('swapTokenImg');
@@ -156,6 +266,29 @@
     const swapAmountInput = document.getElementById('swapAmountInput');
     const confirmSwapBtn = document.getElementById('confirmSwapBtn');
     const closeSwapModal = document.getElementById('closeSwapModal');
+    const swapModalEstimates = document.getElementById('swapModalEstimates');
+    const swapModalImpact = document.getElementById('swapModalImpact');
+    const swapModalFee = document.getElementById('swapModalFee');
+    const swapModalMinReceived = document.getElementById('swapModalMinReceived');
+    const swapModalSpinner = document.getElementById('swapModalSpinner');
+    const amountMinusBtn = document.getElementById('amountMinusBtn');
+    const amountPlusBtn = document.getElementById('amountPlusBtn');
+    // Chain select
+    const chainSelect = document.getElementById('chainSelect');
+    // Search
+    const tokenSearchInput = document.getElementById('tokenSearchInput');
+
+    // Toasts
+    function showToast(msg, type="info") {
+      const container = document.getElementById('toastContainer');
+      const toast = document.createElement('div');
+      toast.className = `toast ${type}`;
+      toast.innerHTML = msg;
+      container.appendChild(toast);
+      setTimeout(()=>{ toast.remove(); }, 6000);
+    }
+
+    // ---- Modal logic ----
     connectWalletBtn.onclick = () => walletModal.classList.add('open');
     closeWalletModal.onclick = () => walletModal.classList.remove('open');
     walletModal.addEventListener('mousedown', e => {
@@ -168,29 +301,78 @@
         swapConfirmModal.classList.remove('open');
       }
     });
+
+    // ---- Wallet Status ----
+    function updateWalletStatus(addr, chainName) {
+      if (addr) {
+        walletAddress.textContent = addr.slice(0,6)+"..."+addr.slice(-4);
+        walletAvatar.src = `https://api.dicebear.com/7.x/identicon/svg?seed=${addr}`;
+        walletStatus.style.display = "flex";
+        walletChain.textContent = chainName ? chainName : "";
+      } else {
+        walletStatus.style.display = "none";
+      }
+    }
+    disconnectBtn.onclick = () => {
+      walletPublicKey = null;
+      evmSigner = null;
+      evmAddress = null;
+      evmProvider = null;
+      connectWalletBtn.textContent = "Connect Wallet";
+      updateWalletStatus(null);
+      balances = {};
+      evmBalance = {};
+      renderTokenTable();
+      showToast("Wallet disconnected", "info");
+    };
+
+    // ---- Chain Switch ----
+    chainSelect.onchange = async function() {
+      chain = chainSelect.value;
+      chainId = chain === "bsc" ? 56 : 1;
+      if (chain === 'solana') {
+        TOKENS = TOKENS_SOLANA.slice();
+        connectWalletBtn.textContent = walletPublicKey ? walletPublicKey.toString().slice(0, 6) + "..." + walletPublicKey.toString().slice(-4) : "Connect Wallet";
+        updateWalletStatus(walletPublicKey ? walletPublicKey.toString() : null, "Solana");
+      } else {
+        // Filter tokens by chain
+        TOKENS = TOKENS_EVM.filter(t => t.chainId === chainId);
+        connectWalletBtn.textContent = evmAddress ? evmAddress.slice(0, 6) + "..." + evmAddress.slice(-4) : "Connect Wallet";
+        updateWalletStatus(evmAddress, chainId === 56 ? "BNB Chain" : "Ethereum");
+      }
+      renderTokenTable();
+      if (chain === 'solana') await updateBalances();
+      else await updateEvmBalances();
+    }
+
+    // ---- Token List ----
     function fakePrice(symbol) {
-      if (symbol === "SOL") return 150 + Math.random() * 10;
-      if (symbol === "WIF") return 2.5 + Math.random();
+      if (symbol === "SOL" || symbol === "ETH" || symbol === "BNB") return 1500 + Math.random() * 100;
+      if (symbol === "WIF" || symbol === "PEPE" || symbol === "SHIB" || symbol === "DOGE") return 0.000001 + Math.random() * 0.00001;
       if (symbol === "BONK") return 0.000022 + Math.random()*0.000002;
       if (symbol === "MEW") return 0.0025 + Math.random()*0.001;
-      if (symbol === "SAMO") return 0.012 + Math.random()*0.005;
-      if (symbol === "POPCAT") return 0.36 + Math.random()*0.04;
-      if (symbol === "MYRO") return 0.16 + Math.random()*0.01;
-      if (symbol === "HADES") return 0.00093 + Math.random()*0.00004;
-      if (symbol === "HINA") return 0.000003 + Math.random()*0.0000002;
-      if (symbol === "CHADS") return 0.13 + Math.random()*0.01;
+      if (symbol === "USDT" || symbol === "USDC" || symbol === "BUSD") return 1.0;
+      if (symbol === "WETH" || symbol === "MATIC" || symbol === "CAKE" || symbol === "TWT") return 1 + Math.random()*10;
+      if (symbol === "WBTC") return 30000 + Math.random()*6000;
       return Math.random()*0.01 + 0.001;
     }
     let fakePrices = {};
     function formatPrice(p) {
       return p > 1 ? p.toFixed(2) : p > 0.01 ? p.toFixed(4) : p.toFixed(8);
     }
+    let filteredTokens = [];
     function renderTokenTable() {
       tokenTableBody.innerHTML = "";
-      TOKENS.forEach((token, idx) => {
+      tokenTableLoading.style.display = "none";
+      filteredTokens = (lastSearch === "") ? TOKENS : TOKENS.filter(t => t.name.toLowerCase().includes(lastSearch) || t.symbol.toLowerCase().includes(lastSearch));
+      if (!filteredTokens.length) {
+        tokenTableBody.innerHTML = `<tr><td colspan="4" style="text-align:center;color:#aaa;">No tokens found</td></tr>`;
+        return;
+      }
+      filteredTokens.forEach((token, idx) => {
         let price = fakePrices[token.symbol] = fakePrice(token.symbol);
         const tr = document.createElement("tr");
-        tr.onclick = () => openTokenModal(idx);
+        tr.onclick = () => openTokenModal(TOKENS.indexOf(token));
         tr.innerHTML = `
           <td>${idx+1}</td>
           <td><img class="token-img" src="${token.image}" alt="${token.symbol}" /> ${token.name}</td>
@@ -200,14 +382,24 @@
         tokenTableBody.appendChild(tr);
       });
     }
+
+    // ---- Token Search ----
+    tokenSearchInput.addEventListener('input', function(){
+      lastSearch = tokenSearchInput.value.trim().toLowerCase();
+      renderTokenTable();
+    });
+
+    // ---- Token modal ----
     function openTokenModal(idx) {
       selectedTokenIdx = idx;
       const token = TOKENS[idx];
       modalTokenImg.src = token.image;
       modalTokenName.textContent = token.name + " (" + token.symbol + ")";
       modalTokenPrice.textContent = "Price: $" + formatPrice(fakePrices[token.symbol]);
-      let bal = balances[token.symbol];
-      modalTokenBalance.textContent = walletPublicKey && bal !== undefined
+      let bal = chain === 'solana'
+        ? balances[token.symbol]
+        : evmBalance[token.symbol];
+      modalTokenBalance.textContent = bal !== undefined && bal !== null
         ? `Your balance: ${bal} ${token.symbol}`
         : "Connect wallet to view balance";
       tokenModal.classList.add('open');
@@ -225,92 +417,226 @@
         ? `Buy Amount (${token.symbol})`
         : `Sell Amount (${token.symbol})`;
       swapAmountInput.value = "";
+      swapModalImpact.textContent = "-";
+      swapModalFee.textContent = "0.03%";
+      swapModalMinReceived.textContent = "-";
       swapConfirmModal.classList.add('open');
       swapAmountInput.focus();
     }
     closeSwapModal.onclick = () => swapConfirmModal.classList.remove('open');
+
+    // Numeric stepper for amount input
+    amountMinusBtn.onclick = () => {
+      let v = parseFloat(swapAmountInput.value) || 0;
+      if (v > 0) swapAmountInput.value = Math.max(0, v - 1);
+    };
+    amountPlusBtn.onclick = () => {
+      let v = parseFloat(swapAmountInput.value) || 0;
+      swapAmountInput.value = v + 1;
+    };
+
+    // ---- Phantom/MetaMask Connect ----
     phantomConnect.onclick = async () => {
       walletModal.classList.remove('open');
       if (!window.solana || !window.solana.isPhantom) {
-        showError("Phantom Wallet extension not found! Install Phantom extension.");
+        showToast("Phantom Wallet extension not found! Install Phantom extension.","error");
         return;
       }
       try {
-        const resp = await window.solana.connect();
+        // Mobile: Use window.open for Phantom deep link
+        if (/Mobi|Android/i.test(navigator.userAgent)) {
+          window.open("https://phantom.app/ul/browse/" + encodeURIComponent(window.location.href), "_blank");
+          showToast("On mobile, please open this site in the Phantom browser.","info");
+          return;
+        }
+        const resp = await window.solana.connect({ onlyIfTrusted: false });
         walletPublicKey = resp.publicKey;
+        connectWalletBtn.textContent = walletPublicKey.toString().slice(0, 6) + "..." + walletPublicKey.toString().slice(-4);
+        updateWalletStatus(walletPublicKey.toString(),"Solana");
         await updateBalances();
-        showSuccess("Phantom connected!");
+        showToast("Phantom connected!","success");
       } catch (e) {
-        showError("Wallet connection error: " + (e.message || e));
+        showToast("Wallet connection error: " + (e.message || e),"error");
       }
     };
+    metamaskConnect.onclick = async () => {
+      walletModal.classList.remove('open');
+      if (!window.ethereum || !window.ethereum.isMetaMask) {
+        showToast("MetaMask extension not found!","error");
+        return;
+      }
+      try {
+        await window.ethereum.request({ method: 'eth_requestAccounts' });
+        evmProvider = new ethers.providers.Web3Provider(window.ethereum);
+        evmSigner = evmProvider.getSigner();
+        evmAddress = await evmSigner.getAddress();
+        connectWalletBtn.textContent = evmAddress.slice(0, 6) + "..." + evmAddress.slice(-4);
+        updateWalletStatus(evmAddress, chainId === 56 ? "BNB Chain" : "Ethereum");
+        await updateEvmBalances();
+        showToast("MetaMask connected!","success");
+      } catch (e) {
+        showToast("MetaMask error: " + (e.message || e),"error");
+      }
+    };
+
+    // ---- Balances ----
     async function updateBalances() {
       balances = {};
       if (!walletPublicKey) return;
       try {
+        tokenTableLoading.style.display = "block";
         const bal = await fixorium.connectWallet(walletPublicKey.toBase58());
         balances = bal;
         renderTokenTable();
       } catch (e) {
-        showError("Failed to load balances: " + (e.message || e));
+        showToast("Failed to load balances: " + (e.message || e),"error");
+      } finally {
+        tokenTableLoading.style.display = "none";
       }
     }
-    confirmSwapBtn.onclick = async () => {
-      if (!walletPublicKey || !window.solana) {
-        showError("Connect Phantom wallet to swap.");
-        return;
+    async function updateEvmBalances() {
+      evmBalance = {};
+      if (!evmAddress || !evmProvider) return;
+      tokenTableLoading.style.display = "block";
+      for (const token of TOKENS_EVM.filter(t => t.chainId === chainId)) {
+        if (token.symbol === "ETH" || token.symbol === "BNB") {
+          const bal = await evmProvider.getBalance(evmAddress);
+          evmBalance[token.symbol] = ethers.utils.formatEther(bal);
+        } else {
+          // ERC20
+          const erc20Abi = ["function balanceOf(address) view returns (uint256)", "function decimals() view returns (uint8)"];
+          try {
+            const contract = new ethers.Contract(token.address, erc20Abi, evmProvider);
+            const bal = await contract.balanceOf(evmAddress);
+            const decimals = token.decimals;
+            evmBalance[token.symbol] = ethers.utils.formatUnits(bal, decimals);
+          } catch (e) { evmBalance[token.symbol] = "0"; }
+        }
       }
+      renderTokenTable();
+      tokenTableLoading.style.display = "none";
+    }
+
+    // ---- Swap ----
+    confirmSwapBtn.onclick = async () => {
       const amount = parseFloat(swapAmountInput.value);
       if (!amount || amount <= 0) {
-        showError("Enter a valid amount.");
+        showToast("Enter a valid amount.","error");
         return;
       }
       const token = TOKENS[selectedTokenIdx];
-      const inputToken = selectedAction === "buy" ? TOKENS[0] : token;
-      const outputToken = selectedAction === "buy" ? token : TOKENS[0];
-      try {
-        showSuccess("Preparing swap...");
-        if (!connection) {
-          connection = new solanaWeb3.Connection('https://api.mainnet-beta.solana.com');
-          fixorium = new window.Fixorium(connection);
+      swapModalSpinner.style.display = "block";
+      confirmSwapBtn.disabled = true;
+      if (chain === 'solana') {
+        // Solana swap
+        if (!walletPublicKey || !window.solana) {
+          showToast("Connect Phantom wallet to swap.","error");
+          swapModalSpinner.style.display = "none";
+          confirmSwapBtn.disabled = false;
+          return;
         }
-        const swapTransaction = await fixorium.swapTokens(
-          inputToken.mint,
-          outputToken.mint,
-          amount
-        );
-        swapTransaction.feePayer = walletPublicKey;
-        swapTransaction.recentBlockhash = (await connection.getRecentBlockhash()).blockhash;
-        const signedTx = await window.solana.signTransaction(swapTransaction);
-        const txid = await connection.sendRawTransaction(signedTx.serialize());
-        await connection.confirmTransaction(txid, "finalized");
-        showSuccess(`Swap complete! <a href="https://solscan.io/tx/${txid}" target="_blank">${txid.slice(0,10)}...</a>`);
-        swapConfirmModal.classList.remove('open');
-        await updateBalances();
-      } catch (e) {
-        showError("Swap failed: " + (e.message || e));
+        const inputToken = selectedAction === "buy" ? TOKENS[0] : token;
+        const outputToken = selectedAction === "buy" ? token : TOKENS[0];
+        try {
+          showToast("Preparing Solana swap...","info");
+          if (!connection) {
+            connection = new solanaWeb3.Connection('https://api.mainnet-beta.solana.com');
+            fixorium = new window.Fixorium(connection);
+          }
+          const swapTransaction = await fixorium.swapTokens(
+            inputToken.mint,
+            outputToken.mint,
+            amount
+          );
+          swapTransaction.feePayer = walletPublicKey;
+          swapTransaction.recentBlockhash = (await connection.getRecentBlockhash()).blockhash;
+          const signedTx = await window.solana.signTransaction(swapTransaction);
+          const txid = await connection.sendRawTransaction(signedTx.serialize());
+          await connection.confirmTransaction(txid, "finalized");
+          showToast(`Swap complete! <a href="https://solscan.io/tx/${txid}" target="_blank">${txid.slice(0,10)}...</a>`,"success");
+          swapConfirmModal.classList.remove('open');
+          await updateBalances();
+        } catch (e) {
+          showToast("Swap failed: " + (e.message || e),"error");
+        } finally {
+          swapModalSpinner.style.display = "none";
+          confirmSwapBtn.disabled = false;
+        }
+      } else {
+        // EVM swap (MetaMask + 1inch)
+        if (!evmSigner || !evmAddress || !oneInchApiKey) {
+          showToast("Connect MetaMask and set your 1inch API key in code for live EVM swap.","error");
+          swapModalSpinner.style.display = "none";
+          confirmSwapBtn.disabled = false;
+          return;
+        }
+        const tokens = TOKENS_EVM.filter(t => t.chainId === chainId);
+        const inputToken = selectedAction === "buy" ? tokens[0] : token;
+        const outputToken = selectedAction === "buy" ? token : tokens[0];
+        try {
+          showToast("Fetching swap quote...","info");
+          // 1. Get quote
+          const url = `${oneInchApi[chainId]}/quote?fromTokenAddress=${inputToken.address}&toTokenAddress=${outputToken.address}&amount=${ethers.utils.parseUnits(amount.toString(), inputToken.decimals).toString()}`;
+          const quoteResp = await fetch(url, { headers: { "Authorization": `Bearer ${oneInchApiKey}` } });
+          if (!quoteResp.ok) throw new Error("1inch quote error");
+          const quote = await quoteResp.json();
+          // Update UI estimates
+          swapModalImpact.textContent = quote.estimatedGas ? "~" + (quote.estimatedGas / 1e5).toFixed(2) + "%" : "-";
+          swapModalFee.textContent = "0.03%";
+          swapModalMinReceived.textContent = ethers.utils.formatUnits(quote.toTokenAmount, outputToken.decimals) + " " + outputToken.symbol;
+          // 2. Prepare swap tx
+          const swapUrl = `${oneInchApi[chainId]}/swap?fromTokenAddress=${inputToken.address}&toTokenAddress=${outputToken.address}&amount=${ethers.utils.parseUnits(amount.toString(), inputToken.decimals).toString()}&fromAddress=${evmAddress}&slippage=1&referrerAddress=0x000000000000000000000000000000000000dead&fee=3`;
+          const swapResp = await fetch(swapUrl, { headers: { "Authorization": `Bearer ${oneInchApiKey}` } });
+          if (!swapResp.ok) throw new Error("1inch swap error");
+          const swap = await swapResp.json();
+          // Approve ERC20 if needed
+          if (inputToken.symbol !== "ETH" && inputToken.symbol !== "BNB" && swap.tx && swap.tx.data && swap.tx.to) {
+            // Check allowance
+            const erc20Abi = ["function allowance(address owner,address spender) view returns (uint256)", "function approve(address spender,uint256 value) returns (bool)"];
+            const contract = new ethers.Contract(inputToken.address, erc20Abi, evmSigner);
+            const allowance = await contract.allowance(evmAddress, swap.tx.to);
+            if (ethers.BigNumber.from(allowance).lt(ethers.utils.parseUnits(amount.toString(), inputToken.decimals))) {
+              showToast("Approving token...","info");
+              const tx = await contract.approve(swap.tx.to, ethers.utils.parseUnits(amount.toString(), inputToken.decimals));
+              await tx.wait();
+            }
+          }
+          showToast("Sending swap...","info");
+          // Send swap tx
+          const txParams = {
+            to: swap.tx.to,
+            data: swap.tx.data,
+            value: swap.tx.value ? ethers.BigNumber.from(swap.tx.value) : 0,
+            gasLimit: swap.tx.gas || undefined,
+            gasPrice: swap.tx.gasPrice ? ethers.BigNumber.from(swap.tx.gasPrice) : undefined,
+            nonce: undefined
+          };
+          const tx = await evmSigner.sendTransaction(txParams);
+          await tx.wait();
+          showToast(`Swap complete! <a href="https://${chainId === 56 ? "bscscan.com" : "etherscan.io"}/tx/${tx.hash}" target="_blank">${tx.hash.slice(0,10)}...</a>`,"success");
+          swapConfirmModal.classList.remove('open');
+          await updateEvmBalances();
+        } catch (e) {
+          showToast("Swap failed: " + (e.message || e),"error");
+        } finally {
+          swapModalSpinner.style.display = "none";
+          confirmSwapBtn.disabled = false;
+        }
       }
     };
-    function showError(msg) {
-      errorMsg.innerHTML = msg;
-      errorMsg.style.display = 'block';
-      setTimeout(() => errorMsg.style.display = 'none', 7000);
-    }
-    function showSuccess(msg) {
-      successMsg.innerHTML = msg;
-      successMsg.style.display = 'block';
-      setTimeout(() => successMsg.style.display = 'none', 6000);
-    }
-    function hideMsgs() {
-      errorMsg.style.display = 'none';
-      successMsg.style.display = 'none';
-    }
+
+    // ---- INIT ----
     function init() {
+      chain = 'solana';
+      chainId = 1;
       connection = new solanaWeb3.Connection('https://api.mainnet-beta.solana.com');
       fixorium = new window.Fixorium(connection);
+      TOKENS = TOKENS_SOLANA.slice();
       renderTokenTable();
+      updateWalletStatus(null);
     }
     window.addEventListener("DOMContentLoaded", init);
+
   </script>
 </body>
-  </html>
+</html>
