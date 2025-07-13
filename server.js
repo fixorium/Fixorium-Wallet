@@ -1,1 +1,0 @@
- {\n  "name": "fixorium-app",\n  "version": "1.0.0",\n  "scripts": {\n    "start": "serve .",\n    "build": "echo 'No build step required'"\n  },\n  "dependencies": {\n    "serve": "^14.0.1"\n  },\n  "engines": {\n    "node": ">=14.x"\n  }\n}
