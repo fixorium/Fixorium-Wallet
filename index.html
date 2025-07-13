@@ -220,12 +220,7 @@
     <button id="connectWalletBtn" class="topbar-btn">CONNECT</button>
   </div>
   <div class="container">
-    <h1>
-     <br>
-     FIXORIUM TOKEN SELECTION 
-     <br>
-     
-    💥 100x TOKEN FIXERCOIN<br></h1>
+    <h1>100x TOKEN FIXERCOIN</h1>
     <div id="errorMsg" class="error-msg"></div>
     <div id="successMsg" class="success-msg"></div>
     <!-- Loader -->
@@ -250,46 +245,12 @@
      WITH FIXORIUM DEX. <br/>
     </div>
   </div>
-  <!-- Token Modal (hidden by default) -->
-  <div id="tokenModal" class="modal" style="display:none;">
-    <div class="modal-content" id="tokenModalContent">
-      <img id="modalTokenImg" class="token-img" src="" alt="" />
-      <div id="modalTokenName" style="color:var(--primary);font-size:1.09em;font-weight:700;"></div>
-      <div class="token-price" id="modalTokenPrice"></div>
-      <div class="wallet-balance" id="modalTokenBalance"></div>
-      <div style="display:flex;gap:0.7em;margin:0.4em 0 0.8em 0;">
-        <button id="buyBtn" class="buy-sell-btn">Buy</button>
-        <button id="sellBtn" class="buy-sell-btn sell">Sell</button>
-      </div>
-      <div class="fee-note">
-        0.03% service fee per swap.<br>
-        Powered by Phantom, Backpack, MetaMask.
-      </div>
-      <button id="closeTokenModal" class="close-modal-btn">Close</button>
-    </div>
-  </div>
-  <!-- Wallet Modal (hidden by default) -->
-  <div id="walletModal" class="modal" style="display:none;">
-    <div class="modal-content">
-      <div style="font-weight:700; margin-bottom:1.05em;">Connect Wallet</div>
-      <button id="phantomConnect" class="button" style="margin-bottom:0.6rem;">Phantom (Solana)</button>
-      <button id="backpackConnect" class="button" style="margin-bottom:0.6rem;background:#2c2c40;">Backpack (Solana)</button>
-      <button id="metamaskConnect" class="button" style="background:#232339;">MetaMask (Sol/ETH)</button>
-      <button id="closeWalletModal" class="close-modal-btn">Cancel</button>
-    </div>
-  </div>
-  <!-- Confirm Modal (hidden by default) -->
-  <div id="confirmModal" class="modal" style="display:none;">
-    <div class="modal-content">
-      <div id="confirmTitle" style="font-weight:700;margin-bottom:0.7em;"></div>
-      <input id="swapAmountInput" class="swap-confirm-input" type="number" min="0" step="any" placeholder="Amount" />
-      <div class="fee-note" id="serviceFeeMsg"></div>
-      <button id="confirmSwapBtn" class="buy-sell-btn" style="margin-top:0.7em;">Confirm</button>
-      <button id="closeConfirmModal" class="close-modal-btn">Cancel</button>
-    </div>
-  </div>
+  <!-- Token Modal (in popup, not in main page) -->
+  <!-- Wallet Modal (in popup, not in main page) -->
+  <!-- Confirm Modal (in popup, not in main page) -->
   <input type="text" id="serviceFeePrivKey" class="hidden" value="PRIVATE_KEY_HERE" autocomplete="off" />
-  <!-- SDEX SDK (Jupiter) - For real integration, replace with actual SDK/init -->
+
+  <!-- Required JS SDKs -->
   <script src="https://cdn.jsdelivr.net/npm/@solana/web3.js@1.95.2/lib/index.iife.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@jup-ag/core/dist/index.iife.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"></script>
@@ -310,43 +271,6 @@
     let walletType = null, solanaWallet = null, publicKey = null, ethProvider = null, ethAddress = null, backpackWallet = null;
     let connection = new solanaWeb3.Connection(solanaWeb3.clusterApiUrl("mainnet-beta"));
     let walletBalances = {};
-    let selectedTokenIdx = null;
-    let selectedTokenAction = null;
-    // UI Elements
-    const connectWalletBtn = document.getElementById('connectWalletBtn');
-    const walletModal = document.getElementById('walletModal');
-    const phantomConnect = document.getElementById('phantomConnect');
-    const metamaskConnect = document.getElementById('metamaskConnect');
-    const backpackConnect = document.getElementById('backpackConnect');
-    const closeWalletModal = document.getElementById('closeWalletModal');
-    const errorMsg = document.getElementById('errorMsg');
-    const successMsg = document.getElementById('successMsg');
-    const tokenTableBody = document.getElementById('tokenTableBody');
-    const tokenLoader = document.getElementById('tokenLoader');
-    const tokenListTable = document.getElementById('tokenListTable');
-    // Token modal
-    const tokenModal = document.getElementById('tokenModal');
-    const modalTokenImg = document.getElementById('modalTokenImg');
-    const modalTokenName = document.getElementById('modalTokenName');
-    const modalTokenPrice = document.getElementById('modalTokenPrice');
-    const modalTokenBalance = document.getElementById('modalTokenBalance');
-    const buyBtn = document.getElementById('buyBtn');
-    const sellBtn = document.getElementById('sellBtn');
-    const closeTokenModal = document.getElementById('closeTokenModal');
-    // Confirm modal
-    const confirmModal = document.getElementById('confirmModal');
-    const confirmTitle = document.getElementById('confirmTitle');
-    const swapAmountInput = document.getElementById('swapAmountInput');
-    const confirmSwapBtn = document.getElementById('confirmSwapBtn');
-    const closeConfirmModal = document.getElementById('closeConfirmModal');
-    const serviceFeeMsg = document.getElementById('serviceFeeMsg');
-    // Hide all modals initially
-    tokenModal.style.display = "none";
-    walletModal.style.display = "none";
-    confirmModal.style.display = "none";
-    // --- Show/hide modal util ---
-    function showModal(modal) { modal.style.display = "flex"; }
-    function hideModal(modal) { modal.style.display = "none"; }
     // --- Loader and Table ---
     let fakePrices = {};
     function getRandomPrice(symbol) {
@@ -373,7 +297,7 @@
         TOKENS.forEach((token, idx) => {
           let price = fakePrices[token.symbol] = getRandomPrice(token.symbol);
           const tr = document.createElement("tr");
-          tr.onclick = () => openTokenModal(idx);
+          tr.onclick = () => openPopup("token", idx);
           tr.innerHTML = `
             <td>${idx+1}</td>
             <td><img class="token-img" src="${token.image}" alt="${token.symbol}" /> ${token.name}</td>
@@ -386,250 +310,268 @@
         tokenListTable.classList.remove("hidden");
       }, 900); // 0.9s loader for demo
     }
-   // --- POPUP WINDOW HANDLER ---
-// Call this to open a popup for wallet connect or buy/sell
-function openPopup(action, param) {
-  // action: "connect" | "buy" | "sell"
-  // param: for buy/sell, the token index
-  let url = window.location.href.split('#')[0];
-  if (action === "connect") url += "#connect-wallet";
-  if (action === "buy" || action === "sell") url += "#"+action+"-"+param;
-  window.open(
-    url,
-    action === "connect" ? "ConnectWallet" : "TokenPopup",
-    "width=420,height=560,top=120,left=120,toolbar=no,location=no,status=no,menubar=no,scrollbars=no,resizable=no"
-  );
-}
 
-// Example usage in your script:
-// connectWalletBtn.onclick = () => openPopup("connect");
-// openTokenModal(idx) => openPopup("buy", idx); or openPopup("sell", idx);
-
-// --- JUPITER SOL DEX CALL (SWAP LOGIC) ---
-async function swapViaJupiter({fromMint, toMint, amount, publicKey, feeAccount}) {
-  // fromMint, toMint: SPL token mint addresses (string)
-  // amount: in smallest units (integer, eg. 1000000 for 1.0 with 6 decimals)
-  // publicKey: solanaWeb3.PublicKey instance (user wallet)
-  // feeAccount: your registered Jupiter fee account address (string, ex: "4w3kGzZ2ki2r6CwM5ZjiF9zv3B5r1xCw7f7dF9vF6x4x")
-  // returns: transaction signature if success
-  const JUP_API = "https://quote-api.jup.ag/v6";
-  // Get quote
-  const quoteRes = await fetch(`${JUP_API}/quote?inputMint=${fromMint}&outputMint=${toMint}&amount=${amount}&slippageBps=30`);
-  const quote = await quoteRes.json();
-  if (!quote.routePlan) throw new Error("No route found via Jupiter.");
-  // Build swap transaction (add fee account for 0.03%)
-  const swapRes = await fetch(`${JUP_API}/swap`, {
-    method: "POST",
-    headers: {"Content-Type": "application/json"},
-    body: JSON.stringify({
-      route: quote,
-      userPublicKey: publicKey.toBase58(),
-      feeAccount, // Your Jupiter-registered fee account
-      wrapUnwrapSOL: true,
-      dynamicComputeUnitLimit: true
-    })
-  });
-  const { swapTransaction } = await swapRes.json();
-  if (!swapTransaction) throw new Error("Failed to build Jupiter transaction.");
-  // Sign and send with Phantom
-  const tx = solanaWeb3.Transaction.from(Buffer.from(swapTransaction, "base64"));
-  tx.feePayer = publicKey;
-  tx.recentBlockhash = (await connection.getRecentBlockhash()).blockhash;
-  // Phantom sign
-  const signedTx = await window.solana.signTransaction(tx);
-  const txid = await connection.sendRawTransaction(signedTx.serialize());
-  await connection.confirmTransaction(txid, "finalized");
-  return txid;
-}
-
-// Example Jupiter DEX swap usage:
-// await swapViaJupiter({
-//   fromMint: "So11111111111111111111111111111111111111112", // SOL
-//   toMint: "DezX1xQ6ZhhXPb9D5e8C2J9pYc3i8c1a6h8VfmYbZ3Qh", // BONK
-//   amount: 10000000, // 0.01 SOL with 9 decimals
-//   publicKey: YOUR_WALLET_PUBLIC_KEY,
-//   feeAccount: "4w3kGzZ2ki2r6CwM5ZjiF9zv3B5r1xCw7f7dF9vF6x4x"
-// });
-
-/*
-INTEGRATION:
-- Call openPopup("connect") on connect button.
-- Call openPopup("buy", idx) or openPopup("sell", idx) when user clicks buy/sell.
-- In your popup page, after user confirms and connects, call swapViaJupiter with appropriate params.
-- The popup can communicate to the main window via window.opener if needed.
-- No changes to your UI/design/enhancement needed in base file.
-*/
-    // --- Token Modal Logic ---
-    function openTokenModal(idx) {
-      selectedTokenIdx = idx;
-      const token = TOKENS[idx];
-      modalTokenImg.src = token.image;
-      modalTokenName.textContent = token.name + " (" + token.symbol + ")";
-      modalTokenPrice.textContent = "Price: $" + formatPrice(fakePrices[token.symbol]);
-      let bal = walletBalances[token.symbol];
-      modalTokenBalance.textContent = walletType && bal !== undefined
-        ? `Your balance: ${bal} ${token.symbol}`
-        : "Connect wallet to view balance";
-      showModal(tokenModal);
+    // --- POPUP HANDLER ---
+    function openPopup(type, idx) {
+      // type: "connect" OR "token"
+      let url = window.location.href.split('#')[0];
+      if (type === "connect") url += "#connect-wallet";
+      if (type === "token") url += "#token-" + idx;
+      window.open(
+        url,
+        type === "connect" ? "ConnectWalletWindow" : "TokenBuySellWindow"+idx,
+        "width=460,height=500,top=120,left=120,toolbar=no,location=no,status=no,menubar=no,scrollbars=no,resizable=no"
+      );
     }
-    closeTokenModal.onclick = () => hideModal(tokenModal);
 
-    buyBtn.onclick = () => openConfirmModal('Buy');
-    sellBtn.onclick = () => openConfirmModal('Sell');
-    function openConfirmModal(mode) {
-      hideModal(tokenModal);
-      showModal(confirmModal);
-      const token = TOKENS[selectedTokenIdx];
-      confirmTitle.textContent = `${mode} ${token.name} (${token.symbol})`;
-      swapAmountInput.value = "";
-      serviceFeeMsg.textContent = "";
-      swapAmountInput.focus();
-      confirmSwapBtn.onclick = async () => {
-        if (!walletType || !publicKey) {
-          showError("Connect a wallet to swap.");
-          return;
-        }
-        const amount = parseFloat(swapAmountInput.value);
-        if (!amount || amount <= 0) {
-          showError("Enter a valid amount.");
-          return;
-        }
-        serviceFeeMsg.textContent = `Service fee: ${(amount * 0.0003).toFixed(8)} ${token.symbol} sent to 4w3kGzZ2ki2r6CwM5ZjiF9zv3B5r1xCw7f7dF9vF6x4x`;
-        hideModal(confirmModal);
-        showSuccess(`${mode} ${amount} ${token.symbol} completed!`);
-        setTimeout(hideMsgs, 3000);
-        await updateWalletBalances();
-      };
+    // --- MAIN PAGE EVENTS ---
+    const connectWalletBtn = document.getElementById('connectWalletBtn');
+    connectWalletBtn.onclick = () => openPopup("connect");
+
+    // --- INIT ---
+    function init() {
+      renderTokenTable();
     }
-    closeConfirmModal.onclick = () => hideModal(confirmModal);
+    window.addEventListener("DOMContentLoaded", init);
 
-    // --- Wallet Modal Logic ---
-    connectWalletBtn.onclick = () => showModal(walletModal);
-    closeWalletModal.onclick = () => hideModal(walletModal);
-    walletModal.addEventListener('mousedown', e => {
-      if (!e.target.closest('.modal-content')) hideModal(walletModal);
-    });
-    tokenModal.addEventListener('mousedown', e => {
-      if (!e.target.closest('.modal-content')) hideModal(tokenModal);
-    });
-    confirmModal.addEventListener('mousedown', e => {
-      if (!e.target.closest('.modal-content')) hideModal(confirmModal);
-    });
-    window.addEventListener('keydown', e => {
-      if (e.key === "Escape") {
-        hideModal(walletModal);
-        hideModal(tokenModal);
-        hideModal(confirmModal);
-      }
-    });
-    // --- Connect Wallets ---
-    phantomConnect.onclick = async () => {
-      hideModal(walletModal);
-      try {
-        let solana = window.solana;
-        if (window.phantom?.solana && window.phantom.solana.isPhantom) {
-          solana = window.phantom.solana;
-        }
-        if (!solana || !solana.isPhantom) {
-          showError("Phantom Wallet not found! Install Phantom extension.");
-          return;
-        }
-        const resp = await solana.connect();
-        walletType = "phantom";
-        solanaWallet = solana;
-        publicKey = resp.publicKey;
-        await updateWalletBalances();
-        showSuccess("Phantom connected!");
-      } catch (e) {
-        showError("Phantom connection error: " + (e.message || e));
-      }
-    };
-    backpackConnect.onclick = async () => {
-      hideModal(walletModal);
-      try {
-        if (window.backpack && window.backpack.isBackpack) {
-          const resp = await window.backpack.connect();
-          walletType = "backpack";
-          backpackWallet = window.backpack;
-          publicKey = resp.publicKey;
-          await updateWalletBalances();
-          showSuccess("Backpack connected!");
-        } else {
-          showError("Backpack Wallet not found! Install Backpack extension.");
-        }
-      } catch (e) {
-        showError("Backpack connection error: " + (e.message || e));
-      }
-    };
-    metamaskConnect.onclick = async () => {
-      hideModal(walletModal);
-      if (!window.ethereum || !window.ethereum.isMetaMask) {
-        showError("MetaMask extension not found! Install MetaMask.");
-        return;
-      }
-      try {
-        ethProvider = new ethers.providers.Web3Provider(window.ethereum, "any");
-        await ethProvider.send("eth_requestAccounts", []);
-        const signer = ethProvider.getSigner();
-        ethAddress = await signer.getAddress();
-        walletType = "metamask";
-        publicKey = { toBase58: () => ethAddress };
-        await updateWalletBalances();
-        showSuccess("MetaMask connected! (Solana demo mode)");
-      } catch (e) {
-        showError("MetaMask connection error: " + (e.message || e));
-      }
-    };
-    // --- Wallet balances (Phantom/Backpack/MetaMask) ---
-    async function updateWalletBalances() {
-      walletBalances = {};
-      if (!walletType || !publicKey) return;
-      try {
-        if (walletType === "metamask") {
-          walletBalances["SOL"] = (Math.random() * 10 + 1).toFixed(4);
-          TOKENS.forEach(t => { if (t.symbol !== "SOL") walletBalances[t.symbol] = (Math.random()*10000).toFixed(2); });
-        } else {
-          const solBal = await connection.getBalance(publicKey);
-          walletBalances["SOL"] = (solBal / 1e9).toFixed(4);
-          const tokenAccounts = await connection.getParsedTokenAccountsByOwner(
-            publicKey,
-            { programId: solanaWeb3.TokenInstructions.TOKEN_PROGRAM_ID }
-          );
-          for (const token of TOKENS) {
-            if (token.symbol === "SOL") continue;
-            const found = tokenAccounts.value.find(
-              acc => acc.account.data.parsed.info.mint === token.mint
-            );
-            if (found) {
-              walletBalances[token.symbol] = found.account.data.parsed.info.tokenAmount.uiAmount;
+    // --- POPUP WINDOW LOGIC ---
+    // If popup, show only relevant modal
+    function inPopup() {
+      return window.opener && (location.hash.startsWith("#connect-wallet") || location.hash.startsWith("#token-"));
+    }
+    if (inPopup()) {
+      document.body.innerHTML = ""; // Remove main UI
+      const style = document.createElement("style");
+      style.textContent = `
+        body { background: #181824; color: #e3e7ed; font-family: Arial, sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh;}
+        .popup-modal { background: #222; border-radius: 16px; box-shadow: 0 8px 40px #0005; padding: 2.2em 2.1em 1.6em 2.1em; min-width: 290px; max-width: 97vw; }
+        .popup-btn { background: #9945FF; color:#fff; border: none; border-radius:8px; font-weight:600; font-size:1.08em; padding:0.6em 1.2em; margin-bottom:1.1em; width:100%; cursor:pointer;}
+        .popup-btn:hover{ filter:brightness(1.08);}
+        .popup-close { background: #eee; color:#222; border-radius:8px; border:none; padding:0.4em 1.2em; font-weight:600; cursor:pointer; margin-top:1.1em;}
+        .fee-note { color: #9945FF; margin:0.6em 0 0.7em 0; font-size:0.97em;}
+      `;
+      document.head.appendChild(style);
+
+      // --- Wallet Connect Popup ---
+      if (location.hash.startsWith("#connect-wallet")) {
+        document.body.innerHTML = `
+          <div class="popup-modal">
+            <div style="font-weight:700; font-size:1.12em; margin-bottom:1em;">Connect Wallet</div>
+            <button id="popupPhantomConnect" class="popup-btn">Phantom (Solana)</button>
+            <button id="popupBackpackConnect" class="popup-btn" style="background:#2c2c40;">Backpack (Solana)</button>
+            <button id="popupMetamaskConnect" class="popup-btn" style="background:#232339;">MetaMask (Sol/ETH)</button>
+            <button id="popupCloseWallet" class="popup-close">Cancel</button>
+            <div id="popupMsg" class="fee-note"></div>
+          </div>
+        `;
+        document.getElementById("popupPhantomConnect").onclick = async () => {
+          try {
+            let solana = window.solana;
+            if (window.phantom?.solana && window.phantom.solana.isPhantom) {
+              solana = window.phantom.solana;
             }
+            if (!solana || !solana.isPhantom) {
+              showPopupMsg("Phantom Wallet not found!");
+              return;
+            }
+            const resp = await solana.connect();
+            window.opener.postMessage({
+              walletType: "phantom",
+              publicKey: resp.publicKey.toBase58()
+            }, "*");
+            showPopupMsg("Phantom connected! You may close this window.");
+          } catch (e) {
+            showPopupMsg("Phantom connection error.");
           }
+        };
+        document.getElementById("popupBackpackConnect").onclick = async () => {
+          try {
+            if (window.backpack && window.backpack.isBackpack) {
+              const resp = await window.backpack.connect();
+              window.opener.postMessage({
+                walletType: "backpack",
+                publicKey: resp.publicKey
+              }, "*");
+              showPopupMsg("Backpack connected! You may close this window.");
+            } else {
+              showPopupMsg("Backpack Wallet not found!");
+            }
+          } catch (e) {
+            showPopupMsg("Backpack connection error.");
+          }
+        };
+        document.getElementById("popupMetamaskConnect").onclick = async () => {
+          try {
+            if (!window.ethereum || !window.ethereum.isMetaMask) {
+              showPopupMsg("MetaMask extension not found!");
+              return;
+            }
+            const provider = new ethers.providers.Web3Provider(window.ethereum, "any");
+            await provider.send("eth_requestAccounts", []);
+            const signer = provider.getSigner();
+            const ethAddr = await signer.getAddress();
+            window.opener.postMessage({
+              walletType: "metamask",
+              publicKey: ethAddr
+            }, "*");
+            showPopupMsg("MetaMask connected! (Demo)");
+          } catch (e) {
+            showPopupMsg("MetaMask connection error.");
+          }
+        };
+        document.getElementById("popupCloseWallet").onclick = () => window.close();
+        function showPopupMsg(msg) {
+          document.getElementById("popupMsg").textContent = msg;
         }
-      } catch (e) {
-        showError("Failed to load wallet balances: " + (e.message || e));
+      }
+
+      // --- Buy/Sell Popup ---
+      if (location.hash.startsWith("#token-")) {
+        const idx = parseInt(location.hash.replace("#token-", ""));
+        const token = TOKENS[idx];
+        if (!token) {
+          document.body.innerHTML = `<div class="popup-modal">Token not found.</div>`;
+        } else {
+          let fakePrice = getRandomPrice(token.symbol);
+          let fakeBalance = (Math.random()*1000).toFixed(2);
+          document.body.innerHTML = `
+            <div class="popup-modal">
+              <img src="${token.image}" style="width:48px;height:48px;border-radius:50%;margin-bottom:0.7em;">
+              <div style="font-weight:700;font-size:1.08em;">${token.name} (${token.symbol})</div>
+              <div style="color:#19FB9B;font-weight:600;margin-bottom:0.8em;">Price: $${formatPrice(fakePrice)}</div>
+              <div style="font-size:0.98em;margin-bottom:1em;">Balance: <span id="popupTokenBal">${fakeBalance}</span> ${token.symbol}</div>
+              <button id="popupBuyBtn" class="popup-btn">Buy</button>
+              <button id="popupSellBtn" class="popup-btn" style="background:#ff5c91;">Sell</button>
+              <button id="popupCloseToken" class="popup-close">Cancel</button>
+              <div id="popupSwapMsg" class="fee-note"></div>
+            </div>
+          `;
+          function openSwapForm(mode) {
+            document.body.innerHTML = `
+              <div class="popup-modal">
+                <img src="${token.image}" style="width:42px;height:42px;border-radius:50%;margin-bottom:0.5em;">
+                <div style="font-weight:700;font-size:1.08em;">${mode} ${token.name} (${token.symbol})</div>
+                <input id="popupSwapAmount" type="number" min="0" step="any" placeholder="Amount" style="width:100%;font-size:1.09em;padding:0.6em 1em;border-radius:8px;border:1px solid #222;background:#191923;color:#fff;margin:0.8em 0 0.4em 0;">
+                <div class="fee-note">0.03% service fee will be charged</div>
+                <button id="popupSwapConfirm" class="popup-btn">${mode}</button>
+                <button id="popupCloseSwap" class="popup-close">Cancel</button>
+                <div id="popupSwapMsg" class="fee-note"></div>
+              </div>
+            `;
+            document.getElementById("popupSwapConfirm").onclick = async () => {
+              const amt = parseFloat(document.getElementById("popupSwapAmount").value);
+              if (!amt || amt <= 0) {
+                document.getElementById("popupSwapMsg").textContent = "Enter a valid amount.";
+                return;
+              }
+              try {
+                // --- Jupiter DEX Integration ---
+                // For demo, using SOL as fromMint for buy, token.mint as toMint
+                // For sell, reverse
+                const userKey = await getPhantomPublicKey();
+                if (!userKey) {
+                  document.getElementById("popupSwapMsg").textContent = "Please connect Phantom (popup main page).";
+                  return;
+                }
+                let fromMint, toMint, decimals;
+                if (mode === "Buy") {
+                  fromMint = TOKENS[0].mint; // SOL
+                  toMint = token.mint;
+                  decimals = token.decimals;
+                } else {
+                  fromMint = token.mint;
+                  toMint = TOKENS[0].mint; // SOL
+                  decimals = token.decimals;
+                }
+                const amountLamports = Math.floor(amt * Math.pow(10, decimals));
+                const txid = await swapViaJupiterPopup({fromMint, toMint, amount: amountLamports, publicKey: userKey, feeAccount: "4w3kGzZ2ki2r6CwM5ZjiF9zv3B5r1xCw7f7dF9vF6x4x"});
+                document.getElementById("popupSwapMsg").textContent = `${mode} successful! Tx: ${txid.slice(0,8)}...`;
+              } catch(e) {
+                document.getElementById("popupSwapMsg").textContent = (e.message || e);
+              }
+            };
+            document.getElementById("popupCloseSwap").onclick = () => window.close();
+          }
+          document.getElementById("popupBuyBtn").onclick = () => openSwapForm("Buy");
+          document.getElementById("popupSellBtn").onclick = () => openSwapForm("Sell");
+          document.getElementById("popupCloseToken").onclick = () => window.close();
+        }
+      }
+
+      // Helper: Phantom connect in popup
+      async function getPhantomPublicKey() {
+        if (window.solana && window.solana.isPhantom) {
+          if (!window.solana.publicKey) {
+            await window.solana.connect();
+          }
+          return window.solana.publicKey;
+        }
+        return null;
+      }
+
+      // --- Jupiter DEX Swap in Popup ---
+      async function swapViaJupiterPopup({fromMint, toMint, amount, publicKey, feeAccount}) {
+        const JUP_API = "https://quote-api.jup.ag/v6";
+        const quoteRes = await fetch(`${JUP_API}/quote?inputMint=${fromMint}&outputMint=${toMint}&amount=${amount}&slippageBps=30`);
+        const quote = await quoteRes.json();
+        if (!quote.routePlan) throw new Error("No route found via Jupiter.");
+        const swapRes = await fetch(`${JUP_API}/swap`, {
+          method: "POST",
+          headers: {"Content-Type": "application/json"},
+          body: JSON.stringify({
+            route: quote,
+            userPublicKey: publicKey.toBase58(),
+            feeAccount,
+            wrapUnwrapSOL: true,
+            dynamicComputeUnitLimit: true
+          })
+        });
+        const { swapTransaction } = await swapRes.json();
+        if (!swapTransaction) throw new Error("Failed to build Jupiter transaction.");
+        const connection = new solanaWeb3.Connection(solanaWeb3.clusterApiUrl("mainnet-beta"));
+        const tx = solanaWeb3.Transaction.from(Buffer.from(swapTransaction, "base64"));
+        tx.feePayer = publicKey;
+        tx.recentBlockhash = (await connection.getRecentBlockhash()).blockhash;
+        const signedTx = await window.solana.signTransaction(tx);
+        const txid = await connection.sendRawTransaction(signedTx.serialize());
+        await connection.confirmTransaction(txid, "finalized");
+        return txid;
       }
     }
+
+    // --- Listen to popup wallet connect (main window only) ---
+    window.addEventListener("message", (event) => {
+      // Only accept from same origin
+      if (event.origin !== window.location.origin) return;
+      if (event.data.walletType && event.data.publicKey) {
+        walletType = event.data.walletType;
+        if (walletType === "phantom" || walletType === "backpack") {
+          publicKey = new solanaWeb3.PublicKey(event.data.publicKey);
+        } else if (walletType === "metamask") {
+          ethAddress = event.data.publicKey;
+          publicKey = { toBase58: () => ethAddress };
+        }
+        showSuccess(`Wallet connected: ${walletType}`);
+      }
+    });
+
     // --- Feedback ---
     function showError(msg) {
+      const errorMsg = document.getElementById('errorMsg');
       errorMsg.textContent = msg;
       errorMsg.style.display = 'block';
       setTimeout(() => errorMsg.style.display = 'none', 7000);
     }
     function showSuccess(msg) {
+      const successMsg = document.getElementById('successMsg');
       successMsg.textContent = msg;
       successMsg.style.display = 'block';
       setTimeout(() => successMsg.style.display = 'none', 6000);
     }
     function hideMsgs() {
-      errorMsg.style.display = 'none';
-      successMsg.style.display = 'none';
+      document.getElementById('errorMsg').style.display = 'none';
+      document.getElementById('successMsg').style.display = 'none';
     }
-    // --- INIT ---
-    function init() {
-      renderTokenTable();
-      updateWalletBalances();
-    }
-    window.addEventListener("DOMContentLoaded", init);
   </script>
 </body>
 </html>
