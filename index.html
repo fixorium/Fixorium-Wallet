@@ -220,7 +220,12 @@
     <button id="connectWalletBtn" class="topbar-btn">CONNECT</button>
   </div>
   <div class="container">
-    <h1>100x TOKEN FIXERCOIN</h1>
+    <h1>
+     <br>
+     FIXORIUM TOKEN SELECTION 
+     <br>
+     
+    💥 100x TOKEN FIXERCOIN<br></h1>
     <div id="errorMsg" class="error-msg"></div>
     <div id="successMsg" class="success-msg"></div>
     <!-- Loader -->
@@ -381,6 +386,79 @@
         tokenListTable.classList.remove("hidden");
       }, 900); // 0.9s loader for demo
     }
+   // --- POPUP WINDOW HANDLER ---
+// Call this to open a popup for wallet connect or buy/sell
+function openPopup(action, param) {
+  // action: "connect" | "buy" | "sell"
+  // param: for buy/sell, the token index
+  let url = window.location.href.split('#')[0];
+  if (action === "connect") url += "#connect-wallet";
+  if (action === "buy" || action === "sell") url += "#"+action+"-"+param;
+  window.open(
+    url,
+    action === "connect" ? "ConnectWallet" : "TokenPopup",
+    "width=420,height=560,top=120,left=120,toolbar=no,location=no,status=no,menubar=no,scrollbars=no,resizable=no"
+  );
+}
+
+// Example usage in your script:
+// connectWalletBtn.onclick = () => openPopup("connect");
+// openTokenModal(idx) => openPopup("buy", idx); or openPopup("sell", idx);
+
+// --- JUPITER SOL DEX CALL (SWAP LOGIC) ---
+async function swapViaJupiter({fromMint, toMint, amount, publicKey, feeAccount}) {
+  // fromMint, toMint: SPL token mint addresses (string)
+  // amount: in smallest units (integer, eg. 1000000 for 1.0 with 6 decimals)
+  // publicKey: solanaWeb3.PublicKey instance (user wallet)
+  // feeAccount: your registered Jupiter fee account address (string, ex: "4w3kGzZ2ki2r6CwM5ZjiF9zv3B5r1xCw7f7dF9vF6x4x")
+  // returns: transaction signature if success
+  const JUP_API = "https://quote-api.jup.ag/v6";
+  // Get quote
+  const quoteRes = await fetch(`${JUP_API}/quote?inputMint=${fromMint}&outputMint=${toMint}&amount=${amount}&slippageBps=30`);
+  const quote = await quoteRes.json();
+  if (!quote.routePlan) throw new Error("No route found via Jupiter.");
+  // Build swap transaction (add fee account for 0.03%)
+  const swapRes = await fetch(`${JUP_API}/swap`, {
+    method: "POST",
+    headers: {"Content-Type": "application/json"},
+    body: JSON.stringify({
+      route: quote,
+      userPublicKey: publicKey.toBase58(),
+      feeAccount, // Your Jupiter-registered fee account
+      wrapUnwrapSOL: true,
+      dynamicComputeUnitLimit: true
+    })
+  });
+  const { swapTransaction } = await swapRes.json();
+  if (!swapTransaction) throw new Error("Failed to build Jupiter transaction.");
+  // Sign and send with Phantom
+  const tx = solanaWeb3.Transaction.from(Buffer.from(swapTransaction, "base64"));
+  tx.feePayer = publicKey;
+  tx.recentBlockhash = (await connection.getRecentBlockhash()).blockhash;
+  // Phantom sign
+  const signedTx = await window.solana.signTransaction(tx);
+  const txid = await connection.sendRawTransaction(signedTx.serialize());
+  await connection.confirmTransaction(txid, "finalized");
+  return txid;
+}
+
+// Example Jupiter DEX swap usage:
+// await swapViaJupiter({
+//   fromMint: "So11111111111111111111111111111111111111112", // SOL
+//   toMint: "DezX1xQ6ZhhXPb9D5e8C2J9pYc3i8c1a6h8VfmYbZ3Qh", // BONK
+//   amount: 10000000, // 0.01 SOL with 9 decimals
+//   publicKey: YOUR_WALLET_PUBLIC_KEY,
+//   feeAccount: "4w3kGzZ2ki2r6CwM5ZjiF9zv3B5r1xCw7f7dF9vF6x4x"
+// });
+
+/*
+INTEGRATION:
+- Call openPopup("connect") on connect button.
+- Call openPopup("buy", idx) or openPopup("sell", idx) when user clicks buy/sell.
+- In your popup page, after user confirms and connects, call swapViaJupiter with appropriate params.
+- The popup can communicate to the main window via window.opener if needed.
+- No changes to your UI/design/enhancement needed in base file.
+*/
     // --- Token Modal Logic ---
     function openTokenModal(idx) {
       selectedTokenIdx = idx;
