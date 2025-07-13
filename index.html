@@ -1,75 +1,316 @@
-<!DOCTYPE html>
+ <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Fixorium Token Swap</title>
-  <link rel="stylesheet" href="styles.css">
-  <script src="https://cdn.jsdelivr.net/npm/@solana/web3.js@latest/lib/index.iife.min.js"></script>
-  
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1.0" />
+  <title>FIXORIUM Solana Swap</title>
+  <link href="https://fonts.googleapis.com/css?family=Inter:400,500,700&display=swap" rel="stylesheet">
+  <style>
+    body { font-family: 'Inter', Arial, sans-serif; background: #f7f7fb; margin: 0; color: #22223b;}
+    .topbar { display: flex; justify-content: space-between; align-items: center; background: #fff; padding: 0.55rem 1.3rem; box-shadow: 0 3px 20px rgba(60,72,88,0.09);}
+    .logo { display: flex; align-items: center;}
+    .logo img { height: 40px; margin-right: 0.7em;}
+    .logo span { font-size: 1.2rem; font-weight: 700; letter-spacing: 0.05em; color: #9945FF;}
+    .topbar-btn { background: #9945FF; color: #fff; border: none; border-radius: 8px; font-weight: 600; font-size: 1rem; padding: 0.42rem 1.4rem; letter-spacing: 0.03em; cursor: pointer; box-shadow: 0 2px 8px rgba(70,70,140,0.08); transition: background 0.14s; min-width: 110px;}
+    .container { max-width: 420px; margin: 2.6rem auto 0 auto; background: #fff; border-radius: 18px; box-shadow: 0 6px 32px rgba(60,72,88,0.10); padding: 1.4rem 1.1rem 1.2rem 1.1rem;}
+    h1 { text-align: center; color: #9945FF; margin-bottom: 1.3em; font-size: 1.17em; letter-spacing: 0.03em;}
+    .token-list-table { width: 100%; border-collapse: collapse; background: #fff; border-radius: 14px; box-shadow: 0 2px 15px rgba(140, 130, 220, 0.07); overflow: hidden; margin-bottom: 1.4rem;}
+    .token-list-table th, .token-list-table td { padding: 0.68em 0.4em; text-align: left; font-size: 1.08em;}
+    .token-list-table th { background: #f4e9ff; color: #9945FF; font-weight: 700;}
+    .token-list-table tr { transition: background 0.07s; cursor: pointer;}
+    .token-list-table tr:hover { background: #f8f3fe;}
+    .token-img { width: 32px; height: 32px; border-radius: 50%; object-fit: contain; border: 1px solid #ccc; background: #fafafb; margin-right: 0.8em; vertical-align: middle; box-shadow: 0 1px 5px rgba(100,100,120,0.07);}
+    .token-symbol { font-weight: 700; color: #9945FF; font-size: 1em; margin-right: 0.1em; letter-spacing: 0.04em;}
+    .token-price { color: #079c59; font-weight: 600; font-size: 1em; margin-left: 0.2em;}
+    .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; right:0; bottom:0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.14); align-items: center; justify-content: center;}
+    .modal.open { display: flex !important; }
+    .modal-content { background: #fff; border-radius: 15px; box-shadow: 0 4px 32px rgba(80,80,100,0.13); padding: 2.1rem 2rem 1.5rem 2rem; min-width: 290px; min-height: 175px; display: flex; flex-direction: column; align-items: center; font-size: 1.10em; position: relative; max-width: 97vw;}
+    .modal-content .token-img { width: 58px; height: 58px; margin: 0.3em 0 0.8em 0; border: 2px solid #f1e6ff;}
+    .modal-content h2 { margin: 0.3em 0 0.25em 0; color: #9945FF; font-size: 1.18em; font-weight: 700;}
+    .modal-content .token-price { font-size: 1.07em; color: #079c59;}
+    .modal-content .wallet-balance { margin: 0.7em 0 1.1em 0; color: #232248; font-size: 1em; background: #f7f9ff; border-radius: 8px; padding: 0.3em 1.1em;}
+    .modal-content .buy-sell-row { display: flex; gap: 1.1em; margin-bottom: 1em; width: 100%; justify-content: center;}
+    .modal-content .buy-sell-btn { flex: 1 1 100px; background: #9945FF; color: #fff; border: none; border-radius: 8px; font-weight: 700; font-size: 1em; padding: 0.57em 1.5em; cursor: pointer; transition: background 0.14s;}
+    .modal-content .buy-sell-btn.sell { background: #f14b4b;}
+    .modal-content .buy-sell-btn:hover { filter: brightness(1.07);}
+    .modal-content .fee-note { color: #9945FF; font-size: 0.96em; margin-bottom: 0.7em; font-weight: 500; text-align: center;}
+    .swap-confirm-row { margin: 1.1em 0 0.6em 0; width: 100%;}
+    .swap-confirm-label { color: #7a6ea7; font-size: 1em; font-weight: 500; margin-bottom: 0.45em; text-align: left; display: block;}
+    .swap-confirm-input { width: 100%; font-size: 1.08em; border: 1px solid #e3e7ed; background: #f0f0fa; padding: 0.45em 1em; border-radius: 7px; margin-bottom: 0.8em;}
+    .close-modal-btn { background: #eee; color: #232248; border: none; border-radius: 7px; font-weight: 600; font-size: 1em; padding: 0.42em 1.1em; margin-top: 1.1em; cursor: pointer; transition: background 0.10s;}
+    .close-modal-btn:hover { background: #f6edff;}
+    .swap-btn { margin-top: 1.1rem; background: #9945FF; color: #fff; border: none; border-radius: 8px; font-weight: 700; font-size: 1.08em; padding: 0.55em 1.2em; cursor: pointer; width: 100%; transition: background 0.14s; letter-spacing: 0.03em;}
+    .swap-btn:disabled { opacity: 0.65; cursor: not-allowed;}
+    .swap-btn:hover:not(:disabled) { filter: brightness(1.07);}
+    .commercial { margin: 1.4rem 0 0.6rem 0; background: #e5fff7; color: #079c59; border-radius: 11px; padding: 1.1em 1.2em; text-align: center; font-size: 1.09em; box-shadow: 0 2px 9px rgba(40,180,120,0.07); font-weight: 600;}
+    #errorMsg, .error-msg { color: #d90429; background: #ffe0e6; border-radius: 5px; padding: 7px 10px; font-size: 1em; margin-bottom: 0.7rem; display: none; text-align: center;}
+    #successMsg, .success-msg { color: #20c997; background: #e5fff7; border-radius: 5px; padding: 7px 10px; font-size: 1em; margin-bottom: 0.7rem; display: none; text-align: center;}
+    @media (max-width: 600px) { .container { padding: 0.4rem 0.02rem; max-width: 99vw;} .token-list-table th, .token-list-table td { font-size: 0.97em;} .modal-content { min-width: 97vw; padding: 1.2rem 0.3rem 1.4rem 0.3rem;}}
+  </style>
+  <!-- Fixorium browser build via jsdelivr CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/fixorium-library@latest/dist/fixorium.umd.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@solana/web3.js@1.95.2/lib/index.iife.min.js"></script>
 </head>
 <body>
-  <div class="wallet-interface">
-    <h1>Fixorium Token Swap</h1>
-    <div class="token-select">
-      <label for="token1-select">Token 1:</label>
-      <select id="token1-select">
-        <option value="DOGE">DOGE</option>
-        <option value="SHIB">SHIB</option>
-        <option value="PEPE">PEPE</option>
-        <option value="FLOKI">FLOKI</option>
-        <option value="BONK">BONK</option>
-        <option value="WIF">WIF</option>
-        <option value="BOBA">BOBA</option>
-        <option value="SAMO">SAMO</option>
-        <option value="C98">C98</option>
-        <option value="SLP">SLP</option>
-        <option value="KISHU">KISHU</option>
-        <option value="SAFEMOON">SAFEMOON</option>
-        <option value="HOGE">HOGE</option>
-        <option value="WOOF">WOOF</option>
-        <option value="BABYDOGE">BABYDOGE</option>
-        <option value="ELON">ELON</option>
-        <option value="MOON">MOON</option>
-        <option value="STARL">STARL</option>
-        <option value="FIDA">FIDA</option>
-        <option value="STEPN">STEPN</option>
-      </select>
+  <!-- Top bar -->
+  <div class="topbar">
+    <div class="logo">
+      <img src="https://raw.githubusercontent.com/fixercoin/static-assets/main/fixercoin-logo.png" alt="FIXORIUM Logo" />
+      <span>FIXORIUM</span>
     </div>
-    <div class="token-select">
-      <label for="token2-select">Token 2:</label>
-      <select id="token2-select">
-        <option value="DOGE">DOGE</option>
-        <option value="SHIB">SHIB</option>
-        <option value="PEPE">PEPE</option>
-        <option value="FLOKI">FLOKI</option>
-        <option value="BONK">BONK</option>
-        <option value="WIF">WIF</option>
-        <option value="BOBA">BOBA</option>
-        <option value="SAMO">SAMO</option>
-        <option value="C98">C98</option>
-        <option value="SLP">SLP</option>
-        <option value="KISHU">KISHU</option>
-        <option value="SAFEMOON">SAFEMOON</option>
-        <option value="HOGE">HOGE</option>
-        <option value="WOOF">WOOF</option>
-        <option value="BABYDOGE">BABYDOGE</option>
-        <option value="ELON">ELON</option>
-        <option value="MOON">MOON</option>
-        <option value="STARL">STARL</option>
-        <option value="FIDA">FIDA</option>
-        <option value="STEPN">STEPN</option>
-      </select>
-    </div>
-    <div class="amount-input">
-      <label for="amount-input">Amount:</label>
-      <input type="number" id="amount-input">
-    </div>
-    <button id="swap-button">Swap</button>
+    <button id="connectWalletBtn" class="topbar-btn">Connect Wallet</button>
   </div>
-
-  <script src="https:                                                                              
-  <script src="fixorium-library.js"></script>
-  <script src="script.js"></script>
+  <div class="container">
+    <h1>Solana Meme Tokens Market</h1>
+    <div id="errorMsg" class="error-msg"></div>
+    <div id="successMsg" class="success-msg"></div>
+    <table class="token-list-table" id="tokenListTable">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Token</th>
+          <th>Symbol</th>
+          <th>Price</th>
+        </tr>
+      </thead>
+      <tbody id="tokenTableBody"></tbody>
+    </table>
+    <div class="commercial">
+      🚀 Buy &amp; Sell Solana Meme Tokens Instantly. Powered by FIXORIUM DEX. Enjoy 0.03% service fee!
+    </div>
+  </div>
+  <!-- Token Buy/Sell Modal -->
+  <div id="tokenModal" class="modal">
+    <div class="modal-content" id="tokenModalContent">
+      <img id="modalTokenImg" class="token-img" src="" alt="" />
+      <h2 id="modalTokenName"></h2>
+      <div class="token-price" id="modalTokenPrice"></div>
+      <div class="wallet-balance" id="modalTokenBalance"></div>
+      <div class="buy-sell-row">
+        <button id="buyBtn" class="buy-sell-btn">Buy</button>
+        <button id="sellBtn" class="buy-sell-btn sell">Sell</button>
+      </div>
+      <div class="fee-note">
+        0.03% service fee per swap.<br>
+        Powered by Phantom wallet.
+      </div>
+      <button id="closeTokenModal" class="close-modal-btn">Close</button>
+    </div>
+  </div>
+  <!-- Confirm Swap Modal -->
+  <div id="swapConfirmModal" class="modal">
+    <div class="modal-content" id="swapConfirmContent">
+      <h2 id="swapActionTitle"></h2>
+      <img id="swapTokenImg" class="token-img" src="" alt="" />
+      <div class="swap-confirm-row">
+        <span class="swap-confirm-label" id="swapLabel"></span>
+        <input id="swapAmountInput" class="swap-confirm-input" type="number" min="0" step="any" placeholder="Amount" />
+      </div>
+      <button id="confirmSwapBtn" class="swap-btn" style="margin-top:1.1em;">Confirm</button>
+      <button id="closeSwapModal" class="close-modal-btn">Cancel</button>
+    </div>
+  </div>
+  <!-- Wallet Modal -->
+  <div id="walletModal" class="modal">
+    <div class="modal-content">
+      <div style="font-size:1.15em; font-weight:700; margin-bottom:1.2em;">Connect Wallet</div>
+      <button id="phantomConnect" class="swap-btn" style="margin-bottom:0.7rem;">Phantom (Solana)</button>
+      <button id="closeWalletModal" class="close-modal-btn">Cancel</button>
+    </div>
+  </div>
+  <script>
+    // --- Token Data ---
+    const TOKENS = [
+      { symbol: "SOL", name: "Solana", mint: "So11111111111111111111111111111111111111112", decimals: 9, image: "https://cryptologos.cc/logos/solana-sol-logo.png" },
+      { symbol: "WIF", name: "dogwifhat", mint: "2oRZj1K8q6g7QpmS5jQSRtD1h41Tfq5gQJbA3g6vJwVn", decimals: 8, image: "https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/2oRZj1K8q6g7QpmS5jQSRtD1h41Tfq5gQJbA3g6vJwVn/logo.png" },
+      { symbol: "BONK", name: "Bonk", mint: "DezX1xQ6ZhhXPb9D5e8C2J9pYc3i8c1a6h8VfmYbZ3Qh", decimals: 5, image: "https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/DezX1xQ6ZhhXPb9D5e8C2J9pYc3i8c1a6h8VfmYbZ3Qh/logo.png" },
+      { symbol: "MEW", name: "cat in a dogs world", mint: "6cA7QVY6L9Dn7dEyEfrXzQK6pQ6TjA2R8fLJwNr1cCzN", decimals: 6, image: "https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/6cA7QVY6L9Dn7dEyEfrXzQK6pQ6TjA2R8fLJwNr1cCzN/logo.png" },
+      { symbol: "SAMO", name: "Samoyedcoin", mint: "7xKX2W5ZfVbknk8V2yZ6pR6A2K1v8R4F7k4G7U7vS8g", decimals: 9, image: "https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/7xKX2W5ZfVbknk8V2yZ6pR6A2K1v8R4F7k4G7U7vS8g/logo.png" },
+      { symbol: "POPCAT", name: "Popcat", mint: "8XQ8h4pT3X8A8sQp8t8o9R2w8S1H3rT9Z1kJ8h2B6R9r", decimals: 6, image: "https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/8XQ8h4pT3X8A8sQp8t8o9R2w8S1H3rT9Z1kJ8h2B6R9r/logo.png" },
+      { symbol: "MYRO", name: "Myro", mint: "MYrVt4B8W5vX3gX8K9y2pJ3pB8d7G6zQ6q4r9v2xM2w", decimals: 6, image: "https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/MYrVt4B8W5vX3gX8K9y2pJ3pB8d7G6zQ6q4r9v2xM2w/logo.png" },
+      { symbol: "HADES", name: "Hades", mint: "hades-sample-mint", decimals: 6, image: "https://static.wixstatic.com/media/c7e70f_6f5e5e8cc9a14ee4864c6f50a7e7d7f4~mv2.png" },
+      { symbol: "HINA", name: "Hina Inu", mint: "hina-sample-mint", decimals: 6, image: "https://assets.coingecko.com/coins/images/16144/large/hina.png" },
+      { symbol: "CHADS", name: "Chads", mint: "chads-sample-mint", decimals: 6, image: "https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/CHADS/logo.png" }
+    ];
+    let connection, fixorium, walletPublicKey = null, balances = {};
+    let selectedTokenIdx = null, selectedAction = null;
+    const connectWalletBtn = document.getElementById('connectWalletBtn');
+    const walletModal = document.getElementById('walletModal');
+    const phantomConnect = document.getElementById('phantomConnect');
+    const closeWalletModal = document.getElementById('closeWalletModal');
+    const errorMsg = document.getElementById('errorMsg');
+    const successMsg = document.getElementById('successMsg');
+    const tokenTableBody = document.getElementById('tokenTableBody');
+    const tokenModal = document.getElementById('tokenModal');
+    const modalTokenImg = document.getElementById('modalTokenImg');
+    const modalTokenName = document.getElementById('modalTokenName');
+    const modalTokenPrice = document.getElementById('modalTokenPrice');
+    const modalTokenBalance = document.getElementById('modalTokenBalance');
+    const buyBtn = document.getElementById('buyBtn');
+    const sellBtn = document.getElementById('sellBtn');
+    const closeTokenModal = document.getElementById('closeTokenModal');
+    const swapConfirmModal = document.getElementById('swapConfirmModal');
+    const swapActionTitle = document.getElementById('swapActionTitle');
+    const swapTokenImg = document.getElementById('swapTokenImg');
+    const swapLabel = document.getElementById('swapLabel');
+    const swapAmountInput = document.getElementById('swapAmountInput');
+    const confirmSwapBtn = document.getElementById('confirmSwapBtn');
+    const closeSwapModal = document.getElementById('closeSwapModal');
+    connectWalletBtn.onclick = () => walletModal.classList.add('open');
+    closeWalletModal.onclick = () => walletModal.classList.remove('open');
+    walletModal.addEventListener('mousedown', e => {
+      if (!e.target.closest('.modal-content')) walletModal.classList.remove('open');
+    });
+    window.addEventListener('keydown', e => {
+      if (e.key === "Escape") {
+        walletModal.classList.remove('open');
+        tokenModal.classList.remove('open');
+        swapConfirmModal.classList.remove('open');
+      }
+    });
+    function fakePrice(symbol) {
+      if (symbol === "SOL") return 150 + Math.random() * 10;
+      if (symbol === "WIF") return 2.5 + Math.random();
+      if (symbol === "BONK") return 0.000022 + Math.random()*0.000002;
+      if (symbol === "MEW") return 0.0025 + Math.random()*0.001;
+      if (symbol === "SAMO") return 0.012 + Math.random()*0.005;
+      if (symbol === "POPCAT") return 0.36 + Math.random()*0.04;
+      if (symbol === "MYRO") return 0.16 + Math.random()*0.01;
+      if (symbol === "HADES") return 0.00093 + Math.random()*0.00004;
+      if (symbol === "HINA") return 0.000003 + Math.random()*0.0000002;
+      if (symbol === "CHADS") return 0.13 + Math.random()*0.01;
+      return Math.random()*0.01 + 0.001;
+    }
+    let fakePrices = {};
+    function formatPrice(p) {
+      return p > 1 ? p.toFixed(2) : p > 0.01 ? p.toFixed(4) : p.toFixed(8);
+    }
+    function renderTokenTable() {
+      tokenTableBody.innerHTML = "";
+      TOKENS.forEach((token, idx) => {
+        let price = fakePrices[token.symbol] = fakePrice(token.symbol);
+        const tr = document.createElement("tr");
+        tr.onclick = () => openTokenModal(idx);
+        tr.innerHTML = `
+          <td>${idx+1}</td>
+          <td><img class="token-img" src="${token.image}" alt="${token.symbol}" /> ${token.name}</td>
+          <td class="token-symbol">${token.symbol}</td>
+          <td class="token-price">$${formatPrice(price)}</td>
+        `;
+        tokenTableBody.appendChild(tr);
+      });
+    }
+    function openTokenModal(idx) {
+      selectedTokenIdx = idx;
+      const token = TOKENS[idx];
+      modalTokenImg.src = token.image;
+      modalTokenName.textContent = token.name + " (" + token.symbol + ")";
+      modalTokenPrice.textContent = "Price: $" + formatPrice(fakePrices[token.symbol]);
+      let bal = balances[token.symbol];
+      modalTokenBalance.textContent = walletPublicKey && bal !== undefined
+        ? `Your balance: ${bal} ${token.symbol}`
+        : "Connect wallet to view balance";
+      tokenModal.classList.add('open');
+    }
+    closeTokenModal.onclick = () => tokenModal.classList.remove('open');
+    buyBtn.onclick = () => openSwapConfirm('buy');
+    sellBtn.onclick = () => openSwapConfirm('sell');
+    function openSwapConfirm(action) {
+      selectedAction = action;
+      tokenModal.classList.remove('open');
+      const token = TOKENS[selectedTokenIdx];
+      swapTokenImg.src = token.image;
+      swapActionTitle.textContent = (action === "buy" ? "Buy " : "Sell ") + token.name;
+      swapLabel.textContent = action === "buy"
+        ? `Buy Amount (${token.symbol})`
+        : `Sell Amount (${token.symbol})`;
+      swapAmountInput.value = "";
+      swapConfirmModal.classList.add('open');
+      swapAmountInput.focus();
+    }
+    closeSwapModal.onclick = () => swapConfirmModal.classList.remove('open');
+    phantomConnect.onclick = async () => {
+      walletModal.classList.remove('open');
+      if (!window.solana || !window.solana.isPhantom) {
+        showError("Phantom Wallet extension not found! Install Phantom extension.");
+        return;
+      }
+      try {
+        const resp = await window.solana.connect();
+        walletPublicKey = resp.publicKey;
+        await updateBalances();
+        showSuccess("Phantom connected!");
+      } catch (e) {
+        showError("Wallet connection error: " + (e.message || e));
+      }
+    };
+    async function updateBalances() {
+      balances = {};
+      if (!walletPublicKey) return;
+      try {
+        const bal = await fixorium.connectWallet(walletPublicKey.toBase58());
+        balances = bal;
+        renderTokenTable();
+      } catch (e) {
+        showError("Failed to load balances: " + (e.message || e));
+      }
+    }
+    confirmSwapBtn.onclick = async () => {
+      if (!walletPublicKey || !window.solana) {
+        showError("Connect Phantom wallet to swap.");
+        return;
+      }
+      const amount = parseFloat(swapAmountInput.value);
+      if (!amount || amount <= 0) {
+        showError("Enter a valid amount.");
+        return;
+      }
+      const token = TOKENS[selectedTokenIdx];
+      const inputToken = selectedAction === "buy" ? TOKENS[0] : token;
+      const outputToken = selectedAction === "buy" ? token : TOKENS[0];
+      try {
+        showSuccess("Preparing swap...");
+        if (!connection) {
+          connection = new solanaWeb3.Connection('https://api.mainnet-beta.solana.com');
+          fixorium = new window.Fixorium(connection);
+        }
+        const swapTransaction = await fixorium.swapTokens(
+          inputToken.mint,
+          outputToken.mint,
+          amount
+        );
+        swapTransaction.feePayer = walletPublicKey;
+        swapTransaction.recentBlockhash = (await connection.getRecentBlockhash()).blockhash;
+        const signedTx = await window.solana.signTransaction(swapTransaction);
+        const txid = await connection.sendRawTransaction(signedTx.serialize());
+        await connection.confirmTransaction(txid, "finalized");
+        showSuccess(`Swap complete! <a href="https://solscan.io/tx/${txid}" target="_blank">${txid.slice(0,10)}...</a>`);
+        swapConfirmModal.classList.remove('open');
+        await updateBalances();
+      } catch (e) {
+        showError("Swap failed: " + (e.message || e));
+      }
+    };
+    function showError(msg) {
+      errorMsg.innerHTML = msg;
+      errorMsg.style.display = 'block';
+      setTimeout(() => errorMsg.style.display = 'none', 7000);
+    }
+    function showSuccess(msg) {
+      successMsg.innerHTML = msg;
+      successMsg.style.display = 'block';
+      setTimeout(() => successMsg.style.display = 'none', 6000);
+    }
+    function hideMsgs() {
+      errorMsg.style.display = 'none';
+      successMsg.style.display = 'none';
+    }
+    function init() {
+      connection = new solanaWeb3.Connection('https://api.mainnet-beta.solana.com');
+      fixorium = new window.Fixorium(connection);
+      renderTokenTable();
+    }
+    window.addEventListener("DOMContentLoaded", init);
+  </script>
 </body>
-</html>
+  </html>
