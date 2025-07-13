@@ -42,19 +42,33 @@
     .topbar-title {
       font-weight: 700;
       color: var(--primary);
-      font-size: 1.15rem;
+      font-size: 1.06rem;
       letter-spacing: 0.03em;
       text-transform: uppercase;
       flex: 1;
-      text-align: center;
+      text-align: left;
       min-width: 0;
+      margin-left: 0.1rem;
+    }
+    .topbar-brand {
+      font-weight: 700;
+      color: var(--primary);
+      font-size: 1.22rem;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      margin-left: auto;
+      margin-right: 0.3rem;
+      text-align: right;
+      min-width: 0;
+      flex: 0 1 auto;
     }
     .topbar-btn {
       width: auto;
-      min-width: 98px;
+      min-width: 90px;
+      max-width: 140px;
       font-size: 0.95rem;
-      margin-top: 0;
-      padding: 0.45rem 1rem;
+      margin: 0 0.5rem;
+      padding: 0.32rem 0.9rem;
       background: var(--primary);
       color: #fff;
       border: none;
@@ -63,13 +77,16 @@
       letter-spacing: 0.04em;
       cursor: pointer;
       transition: background 0.14s;
-      margin-left: auto;
+      height: 34px;
+      box-sizing: border-box;
+      display: inline-block;
+      vertical-align: middle;
     }
     .topbar-btn:hover {
       filter: brightness(1.07);
     }
     .container {
-      max-width: 430px;
+      max-width: 410px;
       margin: 2.2rem auto 0 auto;
       background: var(--box);
       border-radius: var(--radius);
@@ -78,10 +95,10 @@
       font-size: 13px;
     }
     h1 {
-      margin: 0 0 0.8rem 0;
+      margin: 0 0 1.1rem 0;
       font-weight: 700;
       color: var(--primary);
-      font-size: 1.15rem;
+      font-size: 1.13rem;
       letter-spacing:0.01em;
       text-align:center;
     }
@@ -143,13 +160,13 @@
       font-size: 12px;
     }
     .wallet-address {
-      font-size: 0.92rem;
+      font-size: 0.95rem;
       letter-spacing: 1px;
       word-break: break-all;
       opacity: 0.97;
     }
     .wallet-balance {
-      font-size: 0.97rem;
+      font-size: 1.02rem;
       font-weight: bold;
       margin-top: 0.32rem;
       color: #fff;
@@ -182,7 +199,7 @@
       flex: 1;
     }
     .swap-token-btn {
-      flex: 0 0 110px;
+      flex: 0 0 105px;
       margin-left: 8px;
       background: #f1f3f7;
       color: var(--primary);
@@ -193,9 +210,21 @@
       font-weight: 700;
       padding: 0.42rem 0.5rem;
       transition: background 0.12s;
+      min-width: 70px;
+      max-width: 120px;
     }
     .swap-token-btn:hover {
       background: #e5d6fa;
+    }
+    .swap-token-symbol {
+      margin-left: 7px;
+      font-weight: 700;
+      font-size: 1.08em;
+      color: var(--primary);
+      letter-spacing: 0.03em;
+      min-width: 42px;
+      text-align: center;
+      display: inline-block;
     }
     .slippage-row {
       display: flex;
@@ -290,8 +319,12 @@
         padding: 0.75rem 0.2rem;
       }
       .swap-token-btn {
-        flex: 0 0 85px;
-        font-size: 0.91rem;
+        flex: 0 0 75px;
+        font-size: 0.92rem;
+        min-width: 56px;
+      }
+      .topbar-title, .topbar-brand {
+        font-size: 1rem;
       }
     }
   </style>
@@ -301,11 +334,12 @@
 </head>
 <body>
   <div class="topbar">
-    <span class="topbar-title">FIXORIUM</span>
-    <button id="connectWalletBtn" class="button topbar-btn">Connect Wallet</button>
+    <span class="topbar-title">DEX Swap</span>
+    <span class="topbar-brand">FIXORIUM</span>
+    <button id="connectWalletBtn" class="topbar-btn">Connect Wallet</button>
   </div>
   <div class="container">
-    <h1>DEX Token Swap</h1>
+    <h1>Swap Solana Meme Tokens</h1>
     <div id="walletCard" class="wallet-card" style="display:none;">
       <span id="walletTypeLabel"></span>
       <div class="wallet-address" id="walletAddress"></div>
@@ -319,23 +353,21 @@
         <div class="swap-row">
           <span class="swap-label">From</span>
           <input id="swapFromAmount" class="swap-input" type="number" min="0" step="any" placeholder="Amount" />
-          <button id="fromTokenBtn" class="swap-token-btn">Select Token</button>
-          <span id="fromTokenSymbol" style="margin-left:6px;font-weight:700;"></span>
+          <button id="fromTokenBtn" class="swap-token-btn" type="button">Select</button>
+          <span class="swap-token-symbol" id="fromTokenSymbol"></span>
         </div>
         <div class="swap-row">
           <span class="swap-label">To</span>
           <input id="swapToAmount" class="swap-input" type="number" min="0" step="any" placeholder="Amount" readonly />
-          <button id="toTokenBtn" class="swap-token-btn">Select Token</button>
-          <span id="toTokenSymbol" style="margin-left:6px;font-weight:700;"></span>
+          <button id="toTokenBtn" class="swap-token-btn" type="button">Select</button>
+          <span class="swap-token-symbol" id="toTokenSymbol"></span>
         </div>
         <div class="slippage-row">
           <span class="slippage-label">Slippage</span>
           <input id="slippageInput" class="slippage-input" type="number" min="0.1" max="20" step="0.1" value="1" />%
         </div>
         <div id="feeInfo" style="margin-top:0.8rem; color:#6c757d; font-size:0.97rem;">
-          DEX Fee: <b>0.03%</b> will be included in each swap.
-        </div>
-        <div id="feeAddr" style="margin-top:0.25rem;color:#6c757d;font-size:0.97rem;">
+          DEX Fee: <b>0.03%</b> will be included in each swap.<br>
           Fee Address: <b>4w3kGzZ2ki2r6CwM5ZjiF9zv3B5r1xCw7f7dF9vF6x4x</b>
         </div>
         <button id="swapBtn" class="button" style="margin-top:1.5rem;">Swap</button>
@@ -387,7 +419,6 @@
     const walletAddress = document.getElementById('walletAddress');
     const walletBalance = document.getElementById('walletBalance');
     const disconnectWalletBtn = document.getElementById('disconnectWalletBtn');
-    const swapSection = document.getElementById('swapSection');
     const swapFromAmount = document.getElementById('swapFromAmount');
     const swapToAmount = document.getElementById('swapToAmount');
     const swapBtn = document.getElementById('swapBtn');
