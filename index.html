@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1.0" />
-  <title>FIXORIUM</title>
+  <title>FIXORIUM Wallet</title>
   <link href="https://fonts.googleapis.com/css?family=Arial:400,500,700&display=swap" rel="stylesheet">
   <style>
     :root {
@@ -188,6 +188,17 @@
       font-family: "Arial", Arial, sans-serif;
     }
     .hidden { display: none !important; }
+    .user-wallet {
+      background: #22222b;
+      padding: 0.6em 0.8em;
+      border-radius: 8px;
+      margin-bottom: 1em;
+      color: var(--accent);
+      font-size: 0.98em;
+      font-family: "Arial", Arial, sans-serif;
+      word-break: break-all;
+      text-align: center;
+    }
     @media (max-width: 600px) {
       .container {
         padding: 0.4rem 0.02rem;
@@ -223,11 +234,8 @@
     <h1>100x TOKEN FIXERCOIN</h1>
     <div id="errorMsg" class="error-msg"></div>
     <div id="successMsg" class="success-msg"></div>
-    <!-- Loader -->
-    <div id="tokenLoader" class="loader-wrap">
-      LOADING !!!
-    </div>
-    <!-- Table -->
+    <div id="userWalletInfo" class="user-wallet hidden"></div>
+    <div id="tokenLoader" class="loader-wrap">LOADING !!!</div>
     <table class="token-list-table hidden" id="tokenListTable">
       <thead>
         <tr>
@@ -241,49 +249,27 @@
     </table>
     <div class="commercial">
       🚀 BUY & SELL <br>
-     SOLANA MEME TOKENS INSTANTLY<br>
-     WITH FIXORIUM DEX. <br/>
+      SOLANA MEME TOKENS INSTANTLY<br>
+      WITH FIXORIUM DEX. <br/>
     </div>
   </div>
-  <!-- Token Modal (in popup, not in main page) -->
-  <!-- Wallet Modal (in popup, not in main page) -->
-  <!-- Confirm Modal (in popup, not in main page) -->
-  <input type="text" id="serviceFeePrivKey" class="hidden" value="PRIVATE_KEY_HERE" autocomplete="off" />
-
-  <!-- Required JS SDKs -->
   <script src="https://cdn.jsdelivr.net/npm/@solana/web3.js@1.95.2/lib/index.iife.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@jup-ag/core/dist/index.iife.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"></script>
   <script type="module">
     // --- TOKENS ---
     const TOKENS = [
       { symbol: "SOL", name: "Solana", mint: "So11111111111111111111111111111111111111112", decimals: 9, image: "https://cryptologos.cc/logos/solana-sol-logo.png" },
-      { symbol: "WIF", name: "dogwifhat", mint: "2oRZj1K8q6g7QpmS5jQSRtD1h41Tfq5gQJbA3g6vJwVn", decimals: 8, image: "https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/2oRZj1K8q6g7QpmS5jQSRtD1h41Tfq5gQJbA3g6vJwVn/logo.png" },
       { symbol: "BONK", name: "Bonk", mint: "DezX1xQ6ZhhXPb9D5e8C2J9pYc3i8c1a6h8VfmYbZ3Qh", decimals: 5, image: "https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/DezX1xQ6ZhhXPb9D5e8C2J9pYc3i8c1a6h8VfmYbZ3Qh/logo.png" },
       { symbol: "MEW", name: "cat in a dogs world", mint: "6cA7QVY6L9Dn7dEyEfrXzQK6pQ6TjA2R8fLJwNr1cCzN", decimals: 6, image: "https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/6cA7QVY6L9Dn7dEyEfrXzQK6pQ6TjA2R8fLJwNr1cCzN/logo.png" },
-      { symbol: "SAMO", name: "Samoyedcoin", mint: "7xKX2W5ZfVbknk8V2yZ6pR6A2K1v8R4F7k4G7U7vS8g", decimals: 9, image: "https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/7xKX2W5ZfVbknk8V2yZ6pR6A2K1v8R4F7k4G7U7vS8g/logo.png" },
-      { symbol: "POPCAT", name: "Popcat", mint: "8XQ8h4pT3X8A8sQp8t8o9R2w8S1H3rT9Z1kJ8h2B6R9r", decimals: 6, image: "https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/8XQ8h4pT3X8A8sQp8t8o9R2w8S1H3rT9Z1kJ8h2B6R9r/logo.png" },
-      { symbol: "MYRO", name: "Myro", mint: "MYrVt4B8W5vX3gX8K9y2pJ3pB8d7G6zQ6q4r9v2xM2w", decimals: 6, image: "https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/MYrVt4B8W5vX3gX8K9y2pJ3pB8d7G6zQ6q4r9v2xM2w/logo.png" },
-      { symbol: "HADES", name: "Hades", mint: "hades-sample-mint", decimals: 6, image: "https://static.wixstatic.com/media/c7e70f_6f5e5e8cc9a14ee4864c6f50a7e7d7f4~mv2.png" },
-      { symbol: "HINA", name: "Hina Inu", mint: "hina-sample-mint", decimals: 6, image: "https://assets.coingecko.com/coins/images/16144/large/hina.png" },
-      { symbol: "CHADS", name: "Chads", mint: "chads-sample-mint", decimals: 6, image: "https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/CHADS/logo.png" }
+      { symbol: "SAMO", name: "Samoyedcoin", mint: "7xKX2W5ZfVbknk8V2yZ6pR6A2K1v8R4F7k4G7U7vS8g", decimals: 9, image: "https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/7xKX2W5ZfVbknk8V2yZ6pR6A2K1v8R4F7k4G7U7vS8g/logo.png" }
     ];
-    let walletType = null, solanaWallet = null, publicKey = null, ethProvider = null, ethAddress = null, backpackWallet = null;
-    let connection = new solanaWeb3.Connection(solanaWeb3.clusterApiUrl("mainnet-beta"));
-    let walletBalances = {};
-    // --- Loader and Table ---
-    let fakePrices = {};
+    let walletAddress = null;
+    let walletBalance = null;
+
     function getRandomPrice(symbol) {
       if (symbol === "SOL") return 150 + Math.random() * 10;
-      if (symbol === "WIF") return 2.5 + Math.random();
       if (symbol === "BONK") return 0.000022 + Math.random()*0.000002;
       if (symbol === "MEW") return 0.0025 + Math.random()*0.001;
       if (symbol === "SAMO") return 0.012 + Math.random()*0.005;
-      if (symbol === "POPCAT") return 0.36 + Math.random()*0.04;
-      if (symbol === "MYRO") return 0.16 + Math.random()*0.01;
-      if (symbol === "HADES") return 0.00093 + Math.random()*0.00004;
-      if (symbol === "HINA") return 0.000003 + Math.random()*0.0000002;
-      if (symbol === "CHADS") return 0.13 + Math.random()*0.01;
       return Math.random()*0.01 + 0.001;
     }
     function formatPrice(price) {
@@ -295,9 +281,9 @@
       setTimeout(() => {
         tokenTableBody.innerHTML = "";
         TOKENS.forEach((token, idx) => {
-          let price = fakePrices[token.symbol] = getRandomPrice(token.symbol);
+          let price = getRandomPrice(token.symbol);
           const tr = document.createElement("tr");
-          tr.onclick = () => openTokenPopup(idx);
+          tr.onclick = () => openTokenTradePopup(idx);
           tr.innerHTML = `
             <td>${idx+1}</td>
             <td><img class="token-img" src="${token.image}" alt="${token.symbol}" /> ${token.name}</td>
@@ -308,93 +294,38 @@
         });
         tokenLoader.classList.add("hidden");
         tokenListTable.classList.remove("hidden");
-      }, 900); // 0.9s loader for demo
+      }, 900);
     }
-
 
     // --- MAIN PAGE EVENTS ---
     const connectWalletBtn = document.getElementById('connectWalletBtn');
-    connectWalletBtn.onclick = () => openConnectPopup();
+    connectWalletBtn.onclick = () => openWalletPopup();
 
-    // --- INIT ---
-    function init() {
-      renderTokenTable();
-    }
-    window.addEventListener("DOMContentLoaded", init);
-
-    // --- POPUP WINDOW LOGIC ---
-    function openConnectPopup() {
-      const url = window.location.href + "#connect-wallet";
+    function openWalletPopup() {
+      const url = "connect.html";
       const features = "width=420,height=520,top=120,left=120,toolbar=no,location=no,status=no,menubar=no,scrollbars=no,resizable=no";
       window.open(url, "ConnectWallet", features);
     }
 
-    function openTokenPopup(idx) {
-      const url = window.location.href.split('#')[0] + "#token-" + idx;
+    function openTokenTradePopup(idx) {
+      if (!walletAddress) {
+        showError("Please connect a wallet first.");
+        return;
+      }
+      const url = `trade.html?token=${idx}&wallet=${walletAddress}`;
       const features = "width=480,height=620,top=120,left=120,toolbar=no,location=no,status=no,menubar=no,scrollbars=no,resizable=no";
-      window.open(url, "TokenBuySell" + idx, features);
+      window.open(url, "TokenTrade" + idx, features);
     }
 
-    // Check if this is a popup window
-    if (window.opener && window.location.hash.startsWith("#connect-wallet")) {
-      // Render wallet connect UI
-      console.log("Render wallet connect UI");
-
-      // Simulate wallet connection success
-      const walletType = "MetaMask";
-      const publicKey = "0x1234567890abcdef";
-      window.opener.postMessage({ walletType, publicKey }, "*");
-      // window.close();
-    }
-
-    if (window.opener && window.location.hash.startsWith("#token-")) {
-      // Get token index from URL hash
-      const tokenIndex = window.location.hash.split('-')[1];
-      console.log(`Render buy/sell UI for token ${tokenIndex}`);
-    }
-
-    // --- DEX SWAP INTEGRATION ---
-    async function swapViaJupiterPopup({fromMint, toMint, amount, publicKey, feeAccount}) {
-      const JUP_API = "https://quote-api.jup.ag/v6";
-      const quoteRes = await fetch(`${JUP_API}/quote?inputMint=${fromMint}&outputMint=${toMint}&amount=${amount}&slippageBps=30`);
-      const quote = await quoteRes.json();
-      if (!quote.routePlan) throw new Error("No route found via Jupiter.");
-      const swapRes = await fetch(`${JUP_API}/swap`, {
-        method: "POST",
-        headers: {"Content-Type": "application/json"},
-        body: JSON.stringify({
-          route: quote,
-          userPublicKey: publicKey.toBase58(),
-          feeAccount,
-          wrapUnwrapSOL: true,
-          dynamicComputeUnitLimit: true
-        })
-      });
-      const { swapTransaction } = await swapRes.json();
-      if (!swapTransaction) throw new Error("Failed to build Jupiter transaction.");
-      const connection = new solanaWeb3.Connection(solanaWeb3.clusterApiUrl("mainnet-beta"));
-      const tx = solanaWeb3.Transaction.from(Buffer.from(swapTransaction, "base64"));
-      tx.feePayer = publicKey;
-      tx.recentBlockhash = (await connection.getRecentBlockhash()).blockhash;
-      const signedTx = await window.solana.signTransaction(tx);
-      const txid = await connection.sendRawTransaction(signedTx.serialize());
-      await connection.confirmTransaction(txid, "finalized");
-      return txid;
-    }
-
-    // --- Listen to popup wallet connect (main window only) ---
+    // --- Handle wallet connect from popup ---
     window.addEventListener("message", (event) => {
-      // Only accept from same origin
-      if (event.origin !== window.location.origin) return;
-      if (event.data.walletType && event.data.publicKey) {
-        walletType = event.data.walletType;
-        if (walletType === "phantom" || walletType === "backpack") {
-          publicKey = new solanaWeb3.PublicKey(event.data.publicKey);
-        } else if (walletType === "metamask") {
-          ethAddress = event.data.publicKey;
-          publicKey = { toBase58: () => ethAddress };
-        }
-        showSuccess(`Wallet connected: ${walletType}`);
+      if (event.data.type === "wallet-connected") {
+        walletAddress = event.data.address;
+        walletBalance = event.data.balance;
+        document.getElementById("userWalletInfo").innerHTML =
+          `Connected: <b>${walletAddress}</b><br/>Balance: <b>${walletBalance} SOL</b>`;
+        document.getElementById("userWalletInfo").classList.remove("hidden");
+        showSuccess("Wallet connected!");
       }
     });
 
@@ -411,10 +342,12 @@
       successMsg.style.display = 'block';
       setTimeout(() => successMsg.style.display = 'none', 6000);
     }
-    function hideMsgs() {
-      document.getElementById('errorMsg').style.display = 'none';
-      document.getElementById('successMsg').style.display = 'none';
+
+    // --- INIT ---
+    function init() {
+      renderTokenTable();
     }
+    window.addEventListener("DOMContentLoaded", init);
   </script>
 </body>
 </html>
