@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Fixorium Solana SPL Token Swap dApp</title>
+  <title>FIXORIUM - Solana SPL Token Swap dApp</title>
 
   <!-- React and ReactDOM -->
   <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
@@ -22,14 +22,24 @@
     body {
       font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
       max-width: 480px;
-      margin: 30px auto;
+      margin: 30px auto 70px auto;
       font-size: 14px;
       background: #f9f9f9;
       color: #222;
-      padding: 0 15px 50px 15px;
+      padding: 0 15px 0 15px;
       -webkit-font-smoothing: antialiased;
       -moz-osx-font-smoothing: grayscale;
       user-select: none;
+      position: relative;
+      min-height: 100vh;
+    }
+    h1 {
+      font-weight: 900;
+      text-align: center;
+      margin-bottom: 10px;
+      font-size: 2rem;
+      color: #007aff;
+      user-select: text;
     }
     h2 {
       font-weight: 600;
@@ -153,10 +163,62 @@
       object-fit: contain;
       user-select:none;
     }
+
+    /* Commercial Ad box */
+    #commercial-ad {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      width: 100%;
+      background: #007aff;
+      color: white;
+      font-weight: 700;
+      font-size: 14px;
+      padding: 12px 20px;
+      box-shadow: 0 -2px 6px rgba(0,0,0,0.2);
+      user-select: none;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+    }
+    #commercial-ad:hover {
+      background-color: #005ecb;
+    }
+    #commercial-ad img {
+      height: 24px;
+      margin-right: 12px;
+      border-radius: 50%;
+      user-select:none;
+    }
+    #ad-close-btn {
+      margin-left: 20px;
+      font-size: 20px;
+      font-weight: normal;
+      color: white;
+      background: transparent;
+      border: none;
+      cursor: pointer;
+      user-select:none;
+      transition: color 0.3s ease;
+    }
+    #ad-close-btn:hover {
+      color: #ff9999;
+    }
   </style>
 </head>
 <body>
+  <h1>FIXORIUM</h1>
   <div id="root"></div>
+
+  <!-- Commercial Ad -->
+  <div id="commercial-ad" role="banner" aria-label="FixerCoin Advertisement" tabindex="0" title="Click to visit FixerCoin website">
+    <img src="https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/solana/assets/D2mGkp5D43jirFeapx8UZmpiH7FaWeX1eUWy94q1F2hD/logo.png" alt="FixerCoin Logo" />
+    The future of blockchain is <strong>FixerCoin (FIXR)</strong>! <a href="https://fixercoin.io" target="_blank" rel="noopener noreferrer" style="color:#ffd700; text-decoration: underline;">Learn More</a>
+    <button id="ad-close-btn" aria-label="Close advertisement" title="Close Advertisement" tabindex="0">&times;</button>
+  </div>
 
   <script type="text/babel">
 
@@ -241,8 +303,7 @@
       }
     ];
 
-    const network = clusterApiUrl('mainnet-beta');
-    const connection = new Connection(network, 'confirmed');
+    const connection = new Connection(clusterApiUrl('mainnet-beta'), 'confirmed');
 
     function App() {
       const [walletConnected, setWalletConnected] = useState(false);
@@ -299,13 +360,13 @@
         }
       }, []);
 
-      // Fetch SOL and SPL token balances when publicKey changes
+      // Fetch balances when publicKey changes
       useEffect(() => {
         async function fetchBalances() {
           if (!publicKey) return;
 
           try {
-            setSolBalance(null); // Loading indicator
+            setSolBalance(null);
             const balance = await connection.getBalance(publicKey);
             setSolBalance(balance / 1e9);
 
@@ -339,8 +400,8 @@
       // Listen Phantom wallet connect/disconnect events
       useEffect(() => {
         if (!(window.solana && window.solana.isPhantom)) return;
-        const onConnect = (publicKey) => {
-          setPublicKey(new PublicKey(publicKey.toString()));
+        const onConnect = (pk) => {
+          setPublicKey(new PublicKey(pk.toString()));
           setWalletConnected(true);
           setTxStatus(null);
         };
@@ -370,14 +431,14 @@
         };
       }, []);
 
-      // Convert human amount to base units (lamports or decimals)
+      // Convert amount string to base units
       const toBaseUnits = (amountStr, decimals) => {
         const floatVal = parseFloat(amountStr);
         if (isNaN(floatVal) || floatVal <= 0) return 0;
         return Math.round(floatVal * 10 ** decimals);
       };
 
-      // Get quotes from Jupiter API
+      // Get swap quotes from Jupiter
       const getSwapQuotes = async () => {
         if (!publicKey) {
           alert('Please connect your wallet first');
@@ -406,7 +467,7 @@
               inputMint,
               outputMint,
               amount: inputAmount,
-              slippageBps: 50, // 0.5% slippage
+              slippageBps: 50,
               swapMode: 'ExactIn',
             }
           });
@@ -438,7 +499,6 @@
         setSwapping(true);
         setTxStatus(null);
         try {
-          // Get swap transactions from Jupiter
           const response = await axios.post(`${JUPITER_API_BASE}/swap`, {
             route: selectedRoute,
             userPublicKey: publicKey.toBase58(),
@@ -449,8 +509,6 @@
             setSwapping(false);
             return;
           }
-
-          // Setup transaction if exists
           if (data.swapTransactions.setupTransaction) {
             let setupTx = Transaction.from(Buffer.from(data.swapTransactions.setupTransaction, 'base64'));
             setupTx.feePayer = publicKey;
@@ -458,28 +516,23 @@
             setupTx.recentBlockhash = blockhash;
             const signedSetupTx = await window.solana.signTransaction(setupTx);
             const setupTxid = await connection.sendRawTransaction(signedSetupTx.serialize());
-            setTxStatus(`Setup tx sent: ${setupTxid}`);
+            setTxStatus(`Setup transaction sent: ${setupTxid}`);
             await connection.confirmTransaction(setupTxid, 'confirmed');
           }
-
-          // Main swap transaction
           let swapTx = Transaction.from(Buffer.from(data.swapTransactions.swapTransaction, 'base64'));
           swapTx.feePayer = publicKey;
           const { blockhash } = await connection.getLatestBlockhash();
           swapTx.recentBlockhash = blockhash;
-
           const signedSwapTx = await window.solana.signTransaction(swapTx);
           const swapTxid = await connection.sendRawTransaction(signedSwapTx.serialize());
-          setTxStatus(`Swap tx submitted: ${swapTxid}`);
+          setTxStatus(`Swap transaction submitted: ${swapTxid}`);
           await connection.confirmTransaction(swapTxid, 'confirmed');
-          setTxStatus(`Swap confirmed: ${swapTxid}`);
+          setTxStatus(`Swap transaction confirmed: ${swapTxid}`);
 
-          // Refresh balances
           const newSolBalance = await connection.getBalance(publicKey);
           setSolBalance(newSolBalance / 1e9);
 
           let balances = {};
-          // Refresh token balances
           for (const token of tokensList) {
             try {
               const mintPubkey = new PublicKey(token.address);
@@ -496,10 +549,10 @@
             }
           }
           setTokenBalances(balances);
+
           setAmount('0');
           setRoutes([]);
           setSelectedRoute(null);
-
         } catch (error) {
           console.error('Swap failed', error);
           alert(`Swap failed: ${error?.message ?? error}`);
@@ -507,7 +560,7 @@
         setSwapping(false);
       };
 
-      // Show balances with 4 decimals or loading indicator
+      // Display balance helper
       const displayBalance = (token) => {
         if (token.symbol === 'SOL') {
           if (solBalance === null) return 'Loading...';
@@ -518,7 +571,7 @@
         return bal.toFixed(4);
       };
 
-      // Swap from and to token pair
+      // Swap from and to tokens
       const swapFromTo = () => {
         const oldFrom = fromToken;
         setFromToken(toToken);
@@ -529,17 +582,8 @@
         setTxStatus(null);
       };
 
-      // Render Token option with logo
-      const TokenOption = ({token}) => (
-        <>
-          {token.logoURI && <img alt={token.symbol} src={token.logoURI} className="logo-inline" />} {token.symbol}
-        </>
-      );
-
       return (
         <div>
-          <h2>Fixorium Solana SPL Token Swap dApp</h2>
-
           {!walletConnected ? (
             <button onClick={connectWallet} style={{ minWidth: '100%' }} type="button" aria-label="Connect Phantom Wallet">
               Connect Phantom Wallet
@@ -652,7 +696,6 @@
             </button>
           </fieldset>
 
-          {/* Swap routes and selection */}
           {routes.length > 0 && !loadingQuotes && (
             <fieldset>
               <legend>Quotes</legend>
@@ -701,9 +744,52 @@
       );
     }
 
+    // Controls the commercial ad's close behavior
+    function setupAdClose() {
+      const ad = document.getElementById('commercial-ad');
+      const closeBtn = document.getElementById('ad-close-btn');
+      const adLink = ad.querySelector('a');
+
+      // Close on button click
+      closeBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        ad.style.display = 'none';
+      });
+
+      // Close on Escape key when focus is on close button or ad div
+      closeBtn.addEventListener('keydown', (e) => {
+        if(e.key === 'Escape') {
+          ad.style.display = 'none';
+        }
+      });
+
+      ad.addEventListener('keydown', (e) => {
+        if(e.key === 'Escape') {
+          ad.style.display = 'none';
+          ad.blur();
+        }
+      });
+
+      // Click on ad opens FixerCoin website in a new tab, except on close button clicks
+      ad.addEventListener('click', () => {
+        window.open('https://fixercoin.io', '_blank', 'noopener');
+      });
+
+      // Prevent click on link from bubbling so not counted as ad click
+      adLink.addEventListener('click', (e) => {
+        e.stopPropagation();
+      });
+    }
+
     const rootElem = document.getElementById('root');
     const root = ReactDOM.createRoot(rootElem);
     root.render(<StrictMode><App /></StrictMode>);
+
+    // Setup commercial ad close after DOM content loaded
+    window.addEventListener('DOMContentLoaded', () => {
+      setupAdClose();
+    });
+
   </script>
 </body>
 </html>
