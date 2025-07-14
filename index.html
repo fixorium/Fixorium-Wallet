@@ -1,418 +1,513 @@
  <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <title>FIXORIUM Wallet (Solana - Phantom Only)</title>
-  <meta name="viewport" content="width=device-width,initial-scale=1.0" />
-  <link href="https://fonts.googleapis.com/css?family=Arial:400,500,700&display=swap" rel="stylesheet">
-  <style>
-    body {
-      background: linear-gradient(135deg, #181824 0%, #232339 100%);
-      color: #e3e7ed;
-      font-family: Arial, sans-serif;
-      margin: 0;
-      min-height: 100vh;
-      font-size: 0.9em;
-    }
-    .header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 1em;
-    }
-    .logo {
-      width: 70px;
-      height: 70px;
-      border-radius: 50%;
-      box-shadow: 0 6px 24px #9945ff46;
-      background: #fff;
-      object-fit: cover;
-    }
-    .connect-btn {
-      background: linear-gradient(90deg, #9945FF, #19FB9B);
-      color: #181824;
-      border: none;
-      border-radius: 10px;
-      font-weight: 600;
-      font-size: 1em;
-      padding: 0.5em 1em;
-      cursor: pointer;
-      box-shadow: 0 2px 12px #9945ff2b;
-      transition: background 0.15s;
-      margin-left: auto;
-    }
-    .connect-btn:hover { filter: brightness(1.09); }
-    .banner {
-      text-align: center;
-      margin: 2em 0;
-    }
-    .commercial-ad {
-      margin: 1em 0;
-      font-size: 1.2em;
-      color: #19FB9B;
-    }
-    .token-list {
-      width: 96%;
-      max-width: 700px;
-      margin: 0 auto;
-      background: #232339;
-      border-radius: 18px;
-      box-shadow: 0 4px 20px rgba(60,72,88,0.14);
-      padding: 1.2em 1em;
-    }
-    .token-row {
-      display: flex;
-      align-items: center;
-      border-bottom: 1px solid #29294a;
-      padding: 1em 0.2em;
-      cursor: pointer;
-      transition: background 0.13s;
-    }
-    .token-row:last-child { border-bottom: none; }
-    .token-row:hover { background: #191923; }
-    .token-symbol {
-      font-weight: 700;
-      color: #19FB9B;
-      margin-right: 0.8em;
-      font-size: 1.1em;
-    }
-    .token-name {
-      color: #b6b8c1;
-      font-size: 1.08em;
-      margin-right: auto;
-    }
-    .token-price {
-      color: #ffdc5c;
-      font-size: 1.08em;
-      margin-right: 1em;
-      font-weight: bold;
-      min-width: 80px;
-      text-align: right;
-    }
-    .token-action {
-      background: linear-gradient(90deg, #9945FF, #19FB9B);
-      color: #fff;
-      border: none;
-      border-radius: 8px;
-      font-weight: 600;
-      font-size: 1em;
-      padding: 0.4em 1em;
-      cursor: pointer;
-      transition: background 0.15s;
-      box-shadow: 0 2px 12px #9945ff2b;
-    }
-    .token-action:hover { filter: brightness(1.09); }
-    .popup-bg {
-      position: fixed;
-      top:0;left:0;right:0;bottom:0;
-      background: rgba(20,20,32,0.85);
-      z-index: 9999;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-    .popup-box {
-      background: #232339;
-      border-radius: 16px;
-      box-shadow: 0 6px 32px rgba(80,100,120,0.16);
-      padding: 2em 1.5em;
-      max-width: 340px;
-      width: 94vw;
-      text-align: center;
-      color: #e3e7ed;
-    }
-    .popup-title {
-      font-size: 1.15em;
-      font-weight: bold;
-      color: #9945FF;
-      margin-bottom: 1em;
-    }
-    .popup-btn {
-      background: linear-gradient(90deg, #9945FF, #19FB9B);
-      color: #181824;
-      border: none;
-      border-radius: 8px;
-      font-weight: 600;
-      font-size: 1em;
-      padding: 0.5em 1em;
-      margin: 0.5em 0;
-      cursor: pointer;
-      width: 100%;
-      transition: background 0.15s;
-      box-shadow: 0 2px 12px #9945ff2b;
-    }
-    .popup-btn:hover { filter: brightness(1.08); }
-    .popup-close {
-      margin-top: 1.2em;
-      color: #b6b8c1;
-      text-decoration: underline;
-      cursor: pointer;
-      font-size: 0.98em;
-    }
-    .popup-row {
-      margin: 1em 0;
-      text-align: left;
-    }
-    .popup-label {
-      font-weight: 600;
-      margin-bottom: 0.3em;
-      display: block;
-    }
-    .popup-input, .popup-select {
-      width: 100%;
-      padding: 0.55em 0.9em;
-      border-radius: 8px;
-      border: 1px solid #29294a;
-      font-size: 1em;
-      background: #181824;
-      color: #e3e7ed;
-      font-family: Arial, sans-serif;
-      margin-bottom: 0.6em;
-    }
-    .popup-status {
-      margin-top: 1em;
-      color: #19FB9B;
-      font-size: 1.01em;
-      min-height: 1.3em;
-    }
-    .popup-error {
-      color: #ff5c91;
-      font-size: 1.01em;
-      min-height: 1.3em;
-      margin-top: 1em;
-    }
-    .powered {
-      text-align: center;
-      color: #b6b8c1;
-      margin: 2em 0 0.5em 0;
-      font-size: 0.93em;
-      letter-spacing: 0.02em;
-    }
-    @media (max-width: 600px) {
-      .header { flex-direction: column; align-items: flex-start; }
-      .logo { width: 54px; height: 54px; }
-    }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FIXORIUM Wallet (Solana)</title>
+    <link href="https://fonts.googleapis.com/css?family=Arial:400,500,700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            background: linear-gradient(135deg, #181824 0%, #232339 100%);
+            color: #e3e7ed;
+            font-family: Arial, sans-serif;
+            margin: 0;
+            min-height: 100vh;
+        }
+        .header {
+            text-align: center;
+            font-size: 2em;
+            font-weight: 700;
+            margin: 2em 0 1em 0;
+            color: #9945FF;
+            letter-spacing: 0.03em;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .logo {
+            width: 70px;
+            height: 70px;
+            border-radius: 50%;
+            box-shadow: 0 6px 24px #9945ff46;
+            margin-bottom: 0.5em;
+            background: #fff;
+            object-fit: cover;
+        }
+        .connect-btn {
+            display: block;
+            margin: 0 auto 1.5em auto;
+            background: linear-gradient(90deg, #9945FF, #19FB9B);
+            color: #181824;
+            border: none;
+            border-radius: 10px;
+            font-weight: 600;
+            font-size: 1.2em;
+            padding: 0.7em 2em;
+            cursor: pointer;
+            box-shadow: 0 2px 12px #9945ff2b;
+            transition: background 0.15s;
+        }
+        .connect-btn:hover { filter: brightness(1.09); }
+        .wallet-info {
+            text-align: center;
+            margin-bottom: 2em;
+            font-size: 1.1em;
+            background: #232339;
+            border-radius: 10px;
+            display: inline-block;
+            min-width: 270px;
+            padding: 1em 1.5em;
+            box-shadow: 0 2px 18px #2323392b;
+        }
+        .token-list {
+            width: 96%;
+            max-width: 700px;
+            margin: 0 auto;
+            background: #232339;
+            border-radius: 18px;
+            box-shadow: 0 4px 20px rgba(60,72,88,0.14);
+            padding: 1.2em 1em;
+        }
+        .token-row {
+            display: flex;
+            align-items: center;
+            border-bottom: 1px solid #29294a;
+            padding: 1em 0.2em;
+            cursor: pointer;
+            transition: background 0.13s;
+        }
+        .token-row:last-child { border-bottom: none; }
+        .token-row:hover { background: #191923; }
+        .token-img {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            margin-right: 1em;
+            background: #fff;
+            border: 2px solid #9945FF;
+            box-shadow: 0 2px 10px #9945ff33;
+            object-fit: cover;
+        }
+        .token-symbol {
+            font-weight: 700;
+            color: #19FB9B;
+            margin-right: 0.8em;
+            font-size: 1.1em;
+        }
+        .token-name {
+            color: #b6b8c1;
+            font-size: 1.08em;
+            margin-right: auto;
+        }
+        .token-price {
+            color: #ffdc5c;
+            font-size: 1.08em;
+            margin-right: 1em;
+            font-weight: bold;
+            min-width: 80px;
+            text-align: right;
+        }
+        .token-action {
+            background: linear-gradient(90deg, #9945FF, #19FB9B);
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 1em;
+            padding: 0.4em 1em;
+            cursor: pointer;
+            transition: background 0.15s;
+            box-shadow: 0 2px 12px #9945ff2b;
+        }
+        .token-action:hover { filter: brightness(1.09); }
+        .popup-bg {
+            position: fixed;
+            top:0;left:0;right:0;bottom:0;
+            background: rgba(20,20,32,0.85);
+            z-index: 9999;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .popup-box {
+            background: #232339;
+            border-radius: 16px;
+            box-shadow: 0 6px 32px rgba(80,100,120,0.16);
+            padding: 2em 1.5em;
+            max-width: 340px;
+            width: 94vw;
+            text-align: center;
+            color: #e3e7ed;
+        }
+        .popup-title {
+            font-size: 1.15em;
+            font-weight: bold;
+            color: #9945FF;
+            margin-bottom: 1em;
+        }
+        .popup-btn {
+            background: linear-gradient(90deg, #9945FF, #19FB9B);
+            color: #181824;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 1em;
+            padding: 0.5em 1em;
+            margin: 0.5em 0;
+            cursor: pointer;
+            width: 100%;
+            transition: background 0.15s;
+            box-shadow: 0 2px 12px #9945ff2b;
+        }
+        .popup-btn:hover { filter: brightness(1.08); }
+        .popup-close {
+            margin-top: 1.2em;
+            color: #b6b8c1;
+            text-decoration: underline;
+            cursor: pointer;
+            font-size: 0.98em;
+        }
+        .popup-row {
+            margin: 1em 0;
+            text-align: left;
+        }
+        .popup-label {
+            font-weight: 600;
+            margin-bottom: 0.3em;
+            display: block;
+        }
+        .popup-input, .popup-select {
+            width: 100%;
+            padding: 0.55em 0.9em;
+            border-radius: 8px;
+            border: 1px solid #29294a;
+            font-size: 1em;
+            background: #181824;
+            color: #e3e7ed;
+            font-family: Arial, sans-serif;
+            margin-bottom: 0.6em;
+        }
+        .popup-status {
+            margin-top: 1em;
+            color: #19FB9B;
+            font-size: 1.01em;
+            min-height: 1.3em;
+        }
+        .popup-error {
+            color: #ff5c91;
+            font-size: 1.01em;
+            min-height: 1.3em;
+            margin-top: 1em;
+        }
+        .qr-box {
+            margin: 1em auto 0 auto;
+            text-align: center;
+        }
+        .powered {
+            text-align: center;
+            color: #b6b8c1;
+            margin: 2em 0 0.5em 0;
+            font-size: 0.93em;
+            letter-spacing: 0.02em;
+        }
+        @media (max-width: 600px) {
+            .header { font-size: 1.4em; }
+            .logo { width: 54px; height: 54px; }
+            .wallet-info { min-width: 180px; padding: 0.7em 0.9em; }
+        }
+        .wallets-row {display:flex;flex-wrap:wrap;gap:6px;}
+        .wallets-row img {width:28px;height:28px;border-radius:50%;margin-right:4px;vertical-align:middle;border:1px solid #232339;background:#fff;}
+        .deep-link-btn {margin:0.5em 0;background:linear-gradient(90deg,#9945FF,#19FB9B);color:#181824;border:none;border-radius:8px;font-weight:600;font-size:1em;padding:0.5em 1em;cursor:pointer;box-shadow:0 2px 12px #9945ff2b;transition:background 0.15s;width:100%;display:block;}
+        .deep-link-btn:hover {filter:brightness(1.09);}
+    </style>
 </head>
 <body>
-  <div class="header">
-    <div class="logo">
-      <img src="https://cryptologos.cc/logos/solana-sol-logo.png?v=024" alt="Fixorium Logo"/>
-    </div>
-    <button class="connect-btn" id="connectBtn">Connect Wallet</button>
-  </div>
-  <div class="banner">
-    <h1>FIXERCOIN</h1>
-  </div>
-  <div class="commercial-ad">Get the best deals on FIXERCOIN!</div>
-  <div class="token-list" id="tokenList"></div>
-  <div class="powered">
-    Powered by <a href="https://jup.ag/" target="_blank" style="color:#9945FF;">Jupiter</a> & <a href="https://www.coingecko.com/" target="_blank" style="color:#19FB9B;">CoinGecko</a>
-  </div>
-  <div id="popupRoot"></div>
-  <script src="https://cdn.jsdelivr.net/npm/@solana/web3.js@1.95.2/lib/index.iife.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js"></script>
-  <script>
+<div id="root"></div>
+<script src="https://unpkg.com/react/umd/react.development.js" crossorigin></script>
+<script src="https://unpkg.com/react-dom/umd/react-dom.development.js" crossorigin></script>
+<script src="https://unpkg.com/babel-standalone@6/babel.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@solana/web3.js@1.95.2/lib/index.iife.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js"></script>
+<script type="text/babel">
     const TOKENS = [
-      { symbol: "SOL", name: "Solana", mint: "So11111111111111111111111111111111111111112", decimals: 9, cgId: "solana" },
-      { symbol: "BONK", name: "Bonk", mint: "DezX1xQ6ZhhXPb9D5e8C2J9pYc3i8c1a6h8VfmYbZ3Qh", decimals: 5, cgId: "bonk" },
-      { symbol: "MEW", name: "cat in a dogs world", mint: "6cA7QVY6L9Dn7dEyEfrXzQK6pQ6TjA2R8fLJwNr1cCzN", decimals: 6, cgId: "cat-in-a-dogs-world" }
+        { symbol: "SOL", name: "Solana", mint: "So11111111111111111111111111111111111111112", decimals: 9, image: "https://cryptologos.cc/logos/solana-sol-logo.png", cgId: "solana" },
+        { symbol: "BONK", name: "Bonk", mint: "DezX1xQ6ZhhXPb9D5e8C2J9pYc3i8c1a6h8VfmYbZ3Qh", decimals: 5, image: "https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/DezX1xQ6ZhhXPb9D5e8C2J9pYc3i8c1a6h8VfmYbZ3Qh/logo.png", cgId: "bonk" },
+        { symbol: "MEW", name: "cat in a dogs world", mint: "6cA7QVY6L9Dn7dEyEfrXzQK6pQ6TjA2R8fLJwNr1cCzN", decimals: 6, image: "https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/6cA7QVY6L9Dn7dEyEfrXzQK6pQ6TjA2R8fLJwNr1cCzN/logo.png", cgId: "cat-in-a-dogs-world" }
     ];
-
     const WALLET_OPTIONS = [
-      { name: "Phantom", check: () => window.solana && window.solana.isPhantom, icon: "https://cdn.jsdelivr.net/gh/solana-labs/token-list/assets/mainnet/phantom/logo.png", url: "https://phantom.app/download" }
+        { name: "Phantom", check: () => window.solana && window.solana.isPhantom, icon: "https://cdn.jsdelivr.net/gh/solana-labs/token-list/assets/mainnet/phantom/logo.png", url: "https://phantom.app/download" },
+        { name: "Brave Wallet", check: () => window.solana && window.solana.isBrave, icon: "https://cdn.jsdelivr.net/gh/solana-labs/token-list/assets/mainnet/brave/logo.png", url: "https://brave.com/wallet/" },
+        { name: "Bitget Wallet", check: () => window.solana && window.solana.isBitget, icon: "https://cdn.jsdelivr.net/gh/solana-labs/token-list/assets/mainnet/bitget/logo.png", url: "https://web3.bitget.com/en/wallet-download" },
+        { name: "OKX Wallet", check: () => window.solana && window.solana.isOKX, icon: "https://cdn.jsdelivr.net/gh/solana-labs/token-list/assets/mainnet/okx/logo.png", url: "https://www.okx.com/web3" },
+        { name: "MetaMask (Solana)", check: () => window.solana && window.solana.isMetaMask, icon: "https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/metamask/logo.png", url: "https://metamask.io/download.html" },
+        { name: "Fixorium Wallet", check: () => window.solana && window.solana.isFixorium, icon: "https://cryptologos.cc/logos/solana-sol-logo.png", url: "#" }
     ];
 
-    let wallet = null; // {address, balance, type, provider}
-    let tokenPrices = {};
-    let tokenPriceFetchError = false;
+    function App() {
+        const [wallet, setWallet] = React.useState(null);
+        const [tokenPrices, setTokenPrices] = React.useState({});
+        const [tokenPriceFetchError, setTokenPriceFetchError] = React.useState(false);
+        const [popupContent, setPopupContent] = React.useState('');
+        const [connectStatus, setConnectStatus] = React.useState(''); // Add connectStatus state
 
-    async function fetchTokenPrices() {
-      try {
-        const ids = TOKENS.map(t => t.cgId).join(",");
-        const url = `https://api.coingecko.com/api/v3/simple/price?ids=${ids}&vs_currencies=usd`;
-        const res = await fetch(url);
-        if (!res.ok) throw new Error("Price API Error");
-        const data = await res.json();
-        tokenPrices = {};
-        TOKENS.forEach(t => {
-          if (t.cgId && data[t.cgId] && data[t.cgId].usd)
-            tokenPrices[t.symbol] = data[t.cgId].usd;
-          else
-            tokenPrices[t.symbol] = null;
-        });
-        tokenPriceFetchError = false;
-      } catch (e) {
-        tokenPriceFetchError = true;
-        TOKENS.forEach(t => { tokenPrices[t.symbol] = null; });
-      }
-      renderTokens();
-    }
+        React.useEffect(() => {
+            fetchTokenPrices();
+            const intervalId = setInterval(fetchTokenPrices, 60000);
+            return () => clearInterval(intervalId);
+        }, []);
 
-    function showPopup(html) {
-      document.getElementById("popupRoot").innerHTML = `<div class=\"popup-bg\"><div class=\"popup-box\">${html}</div></div>`;
-    }
-    function closePopup() {
-      document.getElementById("popupRoot").innerHTML = '';
-    }
-
-    function showConnectPopup() {
-      let html = `<div class=\"popup-title\">Connect Your Solana Wallet</div>`;
-      html += WALLET_OPTIONS.map(opt => `
-        <button class=\"popup-btn\" onclick=\"window.connectSolWallet('${opt.name}')\">
-          <img src=\"${opt.icon}\" alt=\"\" style=\"width:20px;vertical-align:middle;margin-right:6px;\"> ${opt.name}
-        </button>
-      `).join('');
-      html += `
-        <div class=\"popup-status\" id=\"connectStatus\"></div>
-        <div class=\"popup-close\" onclick=\"closePopup()\">Cancel</div>`;
-      showPopup(html);
-    }
-
-    window.connectSolWallet = async function(walletName) {
-      const statusEl = document.getElementById("connectStatus");
-      let solProvider = null, type = walletName;
-      if (walletName === "Phantom") {
-        solProvider = window.solana && window.solana.isPhantom ? window.solana : null;
-      }
-      if (!solProvider) {
-        statusEl.innerHTML = \\`${walletName} not detected! <a href=\"${WALLET_OPTIONS.find(w=>w.name===walletName).url}\" target=\"_blank\" style=\"color:#19FB9B\">Install Here</a>\`;
-        return;
-      }
-      statusEl.textContent = `Connecting to ${walletName}...`;
-      try {
-        const resp = await solProvider.connect();
-        if (!resp || !resp.publicKey) throw new Error("No publicKey returned");
-        const address = resp.publicKey.toString();
-        const conn = new solanaWeb3.Connection(solanaWeb3.clusterApiUrl("mainnet-beta"));
-        const balanceLamports = await conn.getBalance(new solanaWeb3.PublicKey(address));
-        const balanceSol = (balanceLamports / 1e9).toFixed(4);
-        wallet = { address, balance: balanceSol, type, provider: solProvider };
-        updateWalletInfo();
-        closePopup();
-      } catch (e) {
-        statusEl.textContent = `${walletName} connection failed!`;
-      }
-    };
-
-    function updateWalletInfo() {
-      const el = document.getElementById("walletInfo");
-      if (wallet) {
-        el.innerHTML = `
-          <div>Connected: <span style=\"color:#19FB9B;\">${wallet.address}</span></div>
-          <div>Balance: <span style=\"color:#19FB9B;\">${wallet.balance}</span> SOL</div>
-          <div style=\"margin-top:0.3em;color:#9945FF;font-size:0.98em;\">Wallet: ${wallet.type}</div>
-        `;
-      } else {
-        el.textContent = "";
-      }
-    }
-
-    function renderTokens() {
-      let html = '';
-      TOKENS.forEach((t, i) => {
-        let priceStr = 'Loading...';
-        if (tokenPrices[t.symbol] === null && tokenPriceFetchError) {
-          priceStr = `<span style=\"color: #ff5c91;\">Unavailable</span>`;
-        } else if (tokenPrices[t.symbol] !== undefined && tokenPrices[t.symbol] !== null) {
-          priceStr = `$${tokenPrices[t.symbol].toLocaleString(undefined, {minimumFractionDigits: 3, maximumFractionDigits: 8})}`;
+        async function fetchTokenPrices() {
+            try {
+                const ids = TOKENS.map(t => t.cgId).join(",");
+                const url = `https://api.coingecko.com/api/v3/simple/price?ids=${ids}&vs_currencies=usd`;
+                const res = await fetch(url);
+                if (!res.ok) throw new Error("Price API Error");
+                const data = await res.json();
+                const prices = {};
+                TOKENS.forEach(t => {
+                    if (t.cgId && data[t.cgId] && data[t.cgId].usd)
+                        prices[t.symbol] = data[t.cgId].usd;
+                    else
+                        prices[t.symbol] = null;
+                });
+                setTokenPrices(prices);
+                setTokenPriceFetchError(false);
+            } catch (e) {
+                setTokenPriceFetchError(true);
+                const prices = {};
+                TOKENS.forEach(t => { prices[t.symbol] = null; });
+                setTokenPrices(prices);
+            }
         }
-        html += `
-          <div class=\"token-row\" onclick=\"showTradePopup(${i})\">
-            <span class=\"token-symbol\">${t.symbol}</span>
-            <span class=\"token-name\">${t.name}</span>
-            <span class=\"token-price\" id=\"price-${t.symbol}\">${priceStr}</span>
-            <button class=\"token-action\" onclick=\"event.stopPropagation();showTradePopup(${i})\">Buy/Sell</button>
-          </div>
-        `;
-      });
-      document.getElementById("tokenList").innerHTML = html;
+
+        const showPopup = (html) => {
+            setPopupContent(html);
+        };
+
+        const closePopup = () => {
+            setPopupContent('');
+            setConnectStatus(''); // Clear connectStatus when closing popup
+        };
+
+        const phantomDeepLink = () => {
+            const url = encodeURIComponent(window.location.href);
+            window.location.href = `https://phantom.app/ul/browse/${url}`;
+        };
+
+        const showConnectPopup = () => {
+            let html = `<div class="popup-title">Connect Your Solana Wallet</div>`;
+            html += WALLET_OPTIONS.map(opt => `
+                <button class="popup-btn" onclick="window.connectSolWallet('${opt.name}')">
+                    <img src="${opt.icon}" alt="" style="width:20px;vertical-align:middle;margin-right:6px;"> ${opt.name}
+                </button>
+            `).join('');
+            html += `
+                <button class="deep-link-btn" onclick="phantomDeepLink()">
+                    <img src="https://cdn.jsdelivr.net/gh/solana-labs/token-list/assets/mainnet/phantom/logo.png" alt="" style="width:20px;vertical-align:middle;margin-right:6px;"> Phantom Mobile (Universal Link)
+                </button>
+                <div class="popup-status" id="connectStatus">${connectStatus}</div>
+                <div style="margin-top:1em;font-size:0.94em;">
+                    If not installed, <a href="${WALLET_OPTIONS.find(w => w.name === "Phantom").url}" target="_blank" style="color:#19FB9B;">Get Phantom</a> /
+                    <a href="${WALLET_OPTIONS.find(w => w.name === "MetaMask (Solana)").url}" target="_blank" style="color:#9945FF;">MetaMask Solana</a> /
+                    <a href="${WALLET_OPTIONS.find(w => w.name === "Brave Wallet").url}" target="_blank" style="color:#ffdc5c;">Brave Wallet</a> /
+                    <a href="${WALLET_OPTIONS.find(w => w.name === "Bitget Wallet").url}" target="_blank" style="color:#ffdc5c;">Bitget Wallet</a> /
+                    <a href="${WALLET_OPTIONS.find(w => w.name === "OKX Wallet").url}" target="_blank" style="color:#19FB9B;">OKX Wallet</a>
+                </div>
+                <div class="popup-close" onclick="closePopup()">Cancel</div>`;
+            showPopup(html);
+        };
+
+        // Move connectSolWallet inside the App component
+        const connectSolWallet = async (walletName) => {
+            setConnectStatus(`Connecting to ${walletName}...`); // Update connectStatus
+            let solProvider = null, type = walletName;
+
+            switch (walletName) {
+                case "Phantom": solProvider = window.solana && window.solana.isPhantom ? window.solana : null; break;
+                case "Brave Wallet": solProvider = window.solana && window.solana.isBrave ? window.solana : null; break;
+                case "Bitget Wallet": solProvider = window.solana && window.solana.isBitget ? window.solana : null; break;
+                case "OKX Wallet": solProvider = window.solana && window.solana.isOKX ? window.solana : null; break;
+                case "MetaMask (Solana)": solProvider = window.solana && window.solana.isMetaMask ? window.solana : null; break;
+                case "Fixorium Wallet": solProvider = window.solana && window.solana.isFixorium ? window.solana : null; break;
+            }
+
+            if (!solProvider) {
+                setConnectStatus(`${walletName} not detected! <a href="${WALLET_OPTIONS.find(w => w.name === walletName).url}" target="_blank" style="color:#19FB9B">Install Here</a>`);
+                return;
+            }
+
+            if (solProvider.isPhantom && solProvider.isMobile) {
+                try {
+                    setConnectStatus(`Opening Phantom Mobile...`);
+                    await solProvider.connect();
+                    setTimeout(() => { closePopup(); }, 1500);
+                    return;
+                } catch (e) {
+                    setConnectStatus("Phantom Mobile connection failed!");
+                    return;
+                }
+            }
+
+            try {
+                const resp = await solProvider.connect();
+                if (!resp || !resp.publicKey) throw new Error("No publicKey returned");
+                const address = resp.publicKey.toString();
+                const conn = new solanaWeb3.Connection(solanaWeb3.clusterApiUrl("mainnet-beta"));
+                const balanceLamports = await conn.getBalance(new solanaWeb3.PublicKey(address));
+                const balanceSol = (balanceLamports / 1e9).toFixed(4);
+                const newWallet = { address, balance: balanceSol, type, provider: solProvider };
+                setWallet(newWallet);
+                closePopup();
+            } catch (e) {
+                setConnectStatus(`${walletName} connection failed!`);
+            }
+        };
+
+        // Make connectSolWallet available in the window scope
+        window.connectSolWallet = connectSolWallet;
+
+        const updateWalletInfo = () => {
+            if (wallet) {
+                return (
+                    <div className="wallet-info">
+                        <div>Connected: <span style={{ color: '#19FB9B' }}>{wallet.address}</span></div>
+                        <div>Balance: <span style={{ color: '#19FB9B' }}>{wallet.balance}</span> SOL</div>
+                        <div style={{ marginTop: '0.3em', color: '#9945FF', fontSize: '0.98em' }}>Wallet: {wallet.type}</div>
+                    </div>
+                );
+            } else {
+                return null;
+            }
+        };
+
+        const renderTokens = () => {
+            return (
+                <div className="token-list">
+                    {TOKENS.map((t, i) => {
+                        let priceStr = 'Loading...';
+                        if (tokenPrices[t.symbol] === null && tokenPriceFetchError) {
+                            priceStr = <span style={{ color: '#ff5c91' }}>Unavailable</span>;
+                        } else if (tokenPrices[t.symbol] !== undefined && tokenPrices[t.symbol] !== null) {
+                            priceStr = `$${tokenPrices[t.symbol].toLocaleString(undefined, { minimumFractionDigits: 3, maximumFractionDigits: 8 })}`;
+                        }
+                        return (
+                            <div className="token-row" key={i} onClick={() => showTradePopup(i)}>
+                                <img className="token-img" src={t.image} alt={t.symbol} onError={(e) => { e.target.onerror = null; e.target.src = "https://cryptologos.cc/logos/solana-sol-logo.png" }} />
+                                <span className="token-symbol">{t.symbol}</span>
+                                <span className="token-name">{t.name}</span>
+                                <span className="token-price" id={`price-${t.symbol}`}>{priceStr}</span>
+                                <button className="token-action" onClick={(event) => { event.stopPropagation(); showTradePopup(i) }}>Buy/Sell</button>
+                            </div>
+                        );
+                    })}
+                </div>
+            );
+        };
+
+        const showTradePopup = (idx) => {
+            const t = TOKENS[idx];
+            let priceSection = '';
+            if (tokenPrices[t.symbol] !== undefined && tokenPrices[t.symbol] !== null) {
+                priceSection = <div style={{ marginBottom: '0.5em', color: '#ffdc5c', fontSize: '1.1em' }}>Market Price: ${tokenPrices[t.symbol]}</div>;
+            }
+            const html = `
+                <div class="popup-title">
+                    Trade ${t.name} (${t.symbol})
+                </div>
+                ${priceSection}
+                <div class="popup-row">
+                    <label class="popup-label" for="tradeSide">Type:</label>
+                    <select class="popup-select" id="tradeSide">
+                        <option value="buy">Buy</option>
+                        <option value="sell">Sell</option>
+                    </select>
+                </div>
+                <div class="popup-row">
+                    <label class="popup-label" for="tradeAmount">Amount:</label>
+                    <input class="popup-input" id="tradeAmount" type="number" min="0" placeholder="Amount">
+                </div>
+                <button class="popup-btn" onclick="startTrade(${idx})">Execute Trade</button>
+                <div class="popup-status" id="tradeStatus"></div>
+                <div class="popup-close" onclick="closePopup()">Cancel</div>
+            `;
+            showPopup(html);
+        };
+
+        window.startTrade = async function (idx) {
+            const t = TOKENS[idx];
+            const statusEl = document.getElementById("tradeStatus");
+            if (!wallet || !wallet.address || !wallet.provider) {
+                statusEl.textContent = "Connect wallet first!";
+                return;
+            }
+            const side = document.getElementById("tradeSide").value;
+            const amount = parseFloat(document.getElementById("tradeAmount").value);
+            if (!amount || amount <= 0) {
+                statusEl.textContent = "Enter valid amount.";
+                return;
+            }
+            statusEl.textContent = "Fetching quote...";
+            try {
+                const fromMint = side === "buy" ? TOKENS[0].mint : t.mint;
+                const toMint = side === "buy" ? t.mint : TOKENS[0].mint;
+                const decimals = side === "buy" ? TOKENS[0].decimals : t.decimals;
+                const amountRaw = Math.floor(amount * Math.pow(10, decimals));
+                const quoteUrl = `https://quote-api.jup.ag/v6/quote?inputMint=${fromMint}&outputMint=${toMint}&amount=${amountRaw}&slippageBps=30`;
+                const quoteRes = await fetch(quoteUrl);
+                const quote = await quoteRes.json();
+                if (!quote.routes || !quote.routes.length) throw new Error("No swap route found.");
+                statusEl.textContent = "Building swap transaction...";
+                const swapRes = await fetch("https://quote-api.jup.ag/v6/swap", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        route: quote.routes[0],
+                        userPublicKey: wallet.address,
+                        wrapUnwrapSOL: true,
+                        dynamicComputeUnitLimit: true
+                    })
+                });
+                const swapData = await swapRes.json();
+                if (!swapData.swapTransaction) throw new Error("Failed to build swap transaction.");
+                statusEl.textContent = "Signing transaction...";
+                let signedTx, txid;
+                const connection = new solanaWeb3.Connection(solanaWeb3.clusterApiUrl("mainnet-beta"));
+                const tx = solanaWeb3.Transaction.from(Buffer.from(swapData.swapTransaction, "base64"));
+                tx.feePayer = new solanaWeb3.PublicKey(wallet.address);
+                tx.recentBlockhash = (await connection.getRecentBlockhash()).blockhash;
+                signedTx = await wallet.provider.signTransaction(tx);
+                statusEl.textContent = "Sending transaction...";
+                txid = await connection.sendRawTransaction(signedTx.serialize());
+                statusEl.textContent = "Confirming transaction...";
+                await connection.confirmTransaction(txid, "finalized");
+                statusEl.innerHTML = `Trade successful!<br>Tx: <a href="https://solscan.io/tx/${txid}" target="_blank" style="color:#19FB9B">${txid}</a>`;
+            } catch (e) {
+                statusEl.textContent = "Trade failed: " + (e.message || e);
+            }
+        };
+
+        return (
+            <div>
+                <div className="header">
+                    <img className="logo" src="https://cryptologos.cc/logos/solana-sol-logo.png" alt="Fixorium Logo" />
+                    FIXORIUM Wallet (Solana Only)
+                </div>
+                <button className="connect-btn" onClick={showConnectPopup}>Connect Wallet</button>
+                {updateWalletInfo()}
+                {renderTokens()}
+                <div className="powered">
+                    Powered by <a href="https://jup.ag/" target="_blank" style={{ color: '#9945FF' }}>Jupiter</a> & <a href="https://www.coingecko.com/" target="_blank" style={{ color: '#19FB9B' }}>CoinGecko</a>
+                </div>
+                {popupContent && (
+                    <div className="popup-bg">
+                        <div className="popup-box" dangerouslySetInnerHTML={{ __html: popupContent }} />
+                    </div>
+                )}
+            </div>
+        );
     }
 
-    window.showTradePopup = function(idx) {
-      const t = TOKENS[idx];
-      let priceSection = '';
-      if (tokenPrices[t.symbol] !== undefined && tokenPrices[t.symbol] !== null) {
-        priceSection = `<div style=\"margin-bottom:0.5em;color:#ffdc5c;font-size:1.1em;\">Market Price: $${tokenPrices[t.symbol]}</div>`;
-      }
-      showPopup(`
-        <div class=\"popup-title\">Trade ${t.name} (${t.symbol})</div>
-        ${priceSection}
-        <div class=\"popup-row\">
-          <label class=\"popup-label\" for=\"tradeSide\">Type:</label>
-          <select class=\"popup-select\" id=\"tradeSide\">
-            <option value=\"buy\">Buy</option>
-            <option value=\"sell\">Sell</option>
-          </select>
-        </div>
-        <div class=\"popup-row\">
-          <label class=\"popup-label\" for=\"tradeAmount\">Amount:</label>
-          <input class=\"popup-input\" id=\"tradeAmount\" type=\"number\" min=\"0\" placeholder=\"Amount\">
-        </div>
-        <button class=\"popup-btn\" onclick=\"window.startTrade(${idx})\">Execute Trade</button>
-        <div class=\"popup-status\" id=\"tradeStatus\"></div>
-        <div class=\"popup-close\" onclick=\"closePopup()\">Cancel</div>
-      `);
-    };
-
-    window.startTrade = async function(idx) {
-      const t = TOKENS[idx];
-      const statusEl = document.getElementById("tradeStatus");
-      if (!wallet || !wallet.address || !wallet.provider) {
-        statusEl.textContent = "Connect wallet first!";
-        return;
-      }
-      const side = document.getElementById("tradeSide").value;
-      const amount = parseFloat(document.getElementById("tradeAmount").value);
-      if (!amount || amount <= 0) {
-        statusEl.textContent = "Enter valid amount.";
-        return;
-      }
-      statusEl.textContent = "Fetching quote...";
-      try {
-        const fromMint = side === "buy" ? TOKENS[0].mint : t.mint;
-        const toMint = side === "buy" ? t.mint : TOKENS[0].mint;
-        const decimals = side === "buy" ? TOKENS[0].decimals : t.decimals;
-        const amountRaw = Math.floor(amount * Math.pow(10, decimals));
-        const quoteUrl = `https://quote-api.jup.ag/v6/quote?inputMint=${fromMint}&outputMint=${toMint}&amount=${amountRaw}&slippageBps=30`;
-        const quoteRes = await fetch(quoteUrl);
-        const quote = await quoteRes.json();
-        if (!quote.routes || !quote.routes.length) throw new Error("No swap route found.");
-        statusEl.textContent = "Building swap transaction...";
-        const swapRes = await fetch("https://quote-api.jup.ag/v6/swap", {
-          method: "POST",
-          headers: {"Content-Type": "application/json"},
-          body: JSON.stringify({
-            route: quote.routes[0],
-            userPublicKey: wallet.address,
-            wrapUnwrapSOL: true,
-            dynamicComputeUnitLimit: true
-          })
-        });
-        const swapData = await swapRes.json();
-        if (!swapData.swapTransaction) throw new Error("Failed to build swap transaction.");
-        statusEl.textContent = "Signing transaction...";
-        let signedTx, txid;
-        const connection = new solanaWeb3.Connection(solanaWeb3.clusterApiUrl("mainnet-beta"));
-        const tx = solanaWeb3.Transaction.from(Buffer.from(swapData.swapTransaction, "base64"));
-        tx.feePayer = new solanaWeb3.PublicKey(wallet.address);
-        tx.recentBlockhash = (await connection.getRecentBlockhash()).blockhash;
-        signedTx = await wallet.provider.signTransaction(tx);
-        statusEl.textContent = "Sending transaction...";
-        txid = await connection.sendRawTransaction(signedTx.serialize());
-        statusEl.textContent = "Confirming transaction...";
-        await connection.confirmTransaction(txid, "finalized");
-        statusEl.innerHTML = `Trade successful!<br>Tx: <a href=\"https://solscan.io/tx/${txid}\" target=\"_blank\" style=\"color:#19FB9B\">${txid}</a>`;
-      } catch (e) {
-        statusEl.textContent = "Trade failed: " + (e.message || e);
-      }
-    };
-
-    document.getElementById("connectBtn").onclick = showConnectPopup;
-
-    fetchTokenPrices();
-    setInterval(fetchTokenPrices, 60000); // Refresh prices every 60s
-    renderTokens();
-  </script>
+    ReactDOM.render(<App />, document.getElementById('root'));
+</script>
 </body>
 </html>
