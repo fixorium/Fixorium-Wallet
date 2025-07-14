@@ -1,513 +1,688 @@
  <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FIXORIUM Wallet (Solana)</title>
-    <link href="https://fonts.googleapis.com/css?family=Arial:400,500,700&display=swap" rel="stylesheet">
-    <style>
-        body {
-            background: linear-gradient(135deg, #181824 0%, #232339 100%);
-            color: #e3e7ed;
-            font-family: Arial, sans-serif;
-            margin: 0;
-            min-height: 100vh;
-        }
-        .header {
-            text-align: center;
-            font-size: 2em;
-            font-weight: 700;
-            margin: 2em 0 1em 0;
-            color: #9945FF;
-            letter-spacing: 0.03em;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-        }
-        .logo {
-            width: 70px;
-            height: 70px;
-            border-radius: 50%;
-            box-shadow: 0 6px 24px #9945ff46;
-            margin-bottom: 0.5em;
-            background: #fff;
-            object-fit: cover;
-        }
-        .connect-btn {
-            display: block;
-            margin: 0 auto 1.5em auto;
-            background: linear-gradient(90deg, #9945FF, #19FB9B);
-            color: #181824;
-            border: none;
-            border-radius: 10px;
-            font-weight: 600;
-            font-size: 1.2em;
-            padding: 0.7em 2em;
-            cursor: pointer;
-            box-shadow: 0 2px 12px #9945ff2b;
-            transition: background 0.15s;
-        }
-        .connect-btn:hover { filter: brightness(1.09); }
-        .wallet-info {
-            text-align: center;
-            margin-bottom: 2em;
-            font-size: 1.1em;
-            background: #232339;
-            border-radius: 10px;
-            display: inline-block;
-            min-width: 270px;
-            padding: 1em 1.5em;
-            box-shadow: 0 2px 18px #2323392b;
-        }
-        .token-list {
-            width: 96%;
-            max-width: 700px;
-            margin: 0 auto;
-            background: #232339;
-            border-radius: 18px;
-            box-shadow: 0 4px 20px rgba(60,72,88,0.14);
-            padding: 1.2em 1em;
-        }
-        .token-row {
-            display: flex;
-            align-items: center;
-            border-bottom: 1px solid #29294a;
-            padding: 1em 0.2em;
-            cursor: pointer;
-            transition: background 0.13s;
-        }
-        .token-row:last-child { border-bottom: none; }
-        .token-row:hover { background: #191923; }
-        .token-img {
-            width: 36px;
-            height: 36px;
-            border-radius: 50%;
-            margin-right: 1em;
-            background: #fff;
-            border: 2px solid #9945FF;
-            box-shadow: 0 2px 10px #9945ff33;
-            object-fit: cover;
-        }
-        .token-symbol {
-            font-weight: 700;
-            color: #19FB9B;
-            margin-right: 0.8em;
-            font-size: 1.1em;
-        }
-        .token-name {
-            color: #b6b8c1;
-            font-size: 1.08em;
-            margin-right: auto;
-        }
-        .token-price {
-            color: #ffdc5c;
-            font-size: 1.08em;
-            margin-right: 1em;
-            font-weight: bold;
-            min-width: 80px;
-            text-align: right;
-        }
-        .token-action {
-            background: linear-gradient(90deg, #9945FF, #19FB9B);
-            color: #fff;
-            border: none;
-            border-radius: 8px;
-            font-weight: 600;
-            font-size: 1em;
-            padding: 0.4em 1em;
-            cursor: pointer;
-            transition: background 0.15s;
-            box-shadow: 0 2px 12px #9945ff2b;
-        }
-        .token-action:hover { filter: brightness(1.09); }
-        .popup-bg {
-            position: fixed;
-            top:0;left:0;right:0;bottom:0;
-            background: rgba(20,20,32,0.85);
-            z-index: 9999;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-        .popup-box {
-            background: #232339;
-            border-radius: 16px;
-            box-shadow: 0 6px 32px rgba(80,100,120,0.16);
-            padding: 2em 1.5em;
-            max-width: 340px;
-            width: 94vw;
-            text-align: center;
-            color: #e3e7ed;
-        }
-        .popup-title {
-            font-size: 1.15em;
-            font-weight: bold;
-            color: #9945FF;
-            margin-bottom: 1em;
-        }
-        .popup-btn {
-            background: linear-gradient(90deg, #9945FF, #19FB9B);
-            color: #181824;
-            border: none;
-            border-radius: 8px;
-            font-weight: 600;
-            font-size: 1em;
-            padding: 0.5em 1em;
-            margin: 0.5em 0;
-            cursor: pointer;
-            width: 100%;
-            transition: background 0.15s;
-            box-shadow: 0 2px 12px #9945ff2b;
-        }
-        .popup-btn:hover { filter: brightness(1.08); }
-        .popup-close {
-            margin-top: 1.2em;
-            color: #b6b8c1;
-            text-decoration: underline;
-            cursor: pointer;
-            font-size: 0.98em;
-        }
-        .popup-row {
-            margin: 1em 0;
-            text-align: left;
-        }
-        .popup-label {
-            font-weight: 600;
-            margin-bottom: 0.3em;
-            display: block;
-        }
-        .popup-input, .popup-select {
-            width: 100%;
-            padding: 0.55em 0.9em;
-            border-radius: 8px;
-            border: 1px solid #29294a;
-            font-size: 1em;
-            background: #181824;
-            color: #e3e7ed;
-            font-family: Arial, sans-serif;
-            margin-bottom: 0.6em;
-        }
-        .popup-status {
-            margin-top: 1em;
-            color: #19FB9B;
-            font-size: 1.01em;
-            min-height: 1.3em;
-        }
-        .popup-error {
-            color: #ff5c91;
-            font-size: 1.01em;
-            min-height: 1.3em;
-            margin-top: 1em;
-        }
-        .qr-box {
-            margin: 1em auto 0 auto;
-            text-align: center;
-        }
-        .powered {
-            text-align: center;
-            color: #b6b8c1;
-            margin: 2em 0 0.5em 0;
-            font-size: 0.93em;
-            letter-spacing: 0.02em;
-        }
-        @media (max-width: 600px) {
-            .header { font-size: 1.4em; }
-            .logo { width: 54px; height: 54px; }
-            .wallet-info { min-width: 180px; padding: 0.7em 0.9em; }
-        }
-        .wallets-row {display:flex;flex-wrap:wrap;gap:6px;}
-        .wallets-row img {width:28px;height:28px;border-radius:50%;margin-right:4px;vertical-align:middle;border:1px solid #232339;background:#fff;}
-        .deep-link-btn {margin:0.5em 0;background:linear-gradient(90deg,#9945FF,#19FB9B);color:#181824;border:none;border-radius:8px;font-weight:600;font-size:1em;padding:0.5em 1em;cursor:pointer;box-shadow:0 2px 12px #9945ff2b;transition:background 0.15s;width:100%;display:block;}
-        .deep-link-btn:hover {filter:brightness(1.09);}
-    </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Fixorium Solana SPL Token Swap dApp</title>
+  <!-- Include React and ReactDOM from CDN -->
+  <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <!-- Babel for JSX transpiling in browser -->
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <!-- axios -->
+  <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+  <!-- solana/web3.js -->
+  <script src="https://cdn.jsdelivr.net/npm/@solana/web3.js@1.75.0/lib/index.iife.min.js"></script>
+  <!-- solana/spl-token -->
+  <script src="https://cdn.jsdelivr.net/npm/@solana/spl-token@0.3.5/lib/index.iife.min.js"></script>
+
+  <style>
+    body {
+      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+      max-width: 480px;
+      margin: 30px auto;
+      font-size: 14px;
+      background: #f9f9f9;
+      color: #222;
+      padding: 0 15px 50px 15px;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+    h2 {
+      font-weight: 600;
+      text-align: center;
+      margin-bottom: 25px;
+      font-size: 1.4rem;
+    }
+    button {
+      cursor: pointer;
+      background-color: #007aff;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      font-size: 0.9rem;
+      padding: 8px 16px;
+      transition: background-color 0.3s ease;
+    }
+    button:hover:not([disabled]){
+      background-color: #005ecb;
+    }
+    button[disabled] {
+      background-color: #a0a0a0;
+      cursor: not-allowed;
+    }
+    fieldset {
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      padding: 15px;
+      margin-top: 12px;
+      background: white;
+    }
+    legend {
+      font-weight: 700;
+      font-size: 1.1rem;
+      padding: 0 8px;
+    }
+    label {
+      font-weight: 600;
+      font-size: 0.85rem;
+      margin-bottom: 4px;
+      display: block;
+    }
+    select, input[type=number] {
+      width: 100%;
+      padding: 6px 8px;
+      font-size: 0.9rem;
+      border: 1px solid #bbb;
+      border-radius: 5px;
+      box-sizing: border-box;
+      margin-top: 4px;
+      margin-bottom: 6px;
+      transition: border-color 0.2s ease;
+    }
+    select:focus, input[type=number]:focus {
+      outline: none;
+      border-color: #007aff;
+      box-shadow: 0 0 3px #007aff66;
+    }
+    small {
+      color: #555;
+      display: block;
+      margin-top: -4px;
+      margin-bottom: 12px;
+      font-size: 0.75rem;
+    }
+    .btn-swap {
+      margin: 10px auto;
+      display: block;
+      font-weight: 600;
+      font-size: 1rem;
+    }
+    .route-box {
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      padding: 10px;
+      margin-bottom: 6px;
+      cursor: pointer;
+      font-size: 0.875rem;
+      background: white;
+      transition: border-color 0.25s ease, background-color 0.25s ease;
+      user-select: none;
+    }
+    .route-box:hover {
+      border-color: #007aff;
+      background-color: #f0f8ff;
+    }
+    .route-box.selected {
+      border-color: #007aff;
+      background-color: #e2f0ff;
+    }
+    p.status {
+      margin-top: 20px;
+      word-wrap: break-word;
+      font-size: 0.85rem;
+      color: #005ecb;
+      font-weight: 600;
+    }
+    footer {
+      margin-top: 40px;
+      font-size: 0.75rem;
+      color: #666;
+      text-align: center;
+      user-select:none;
+    }
+    a {
+      color: #007aff;
+      text-decoration: underline;
+    }
+  </style>
 </head>
 <body>
-<div id="root"></div>
-<script src="https://unpkg.com/react/umd/react.development.js" crossorigin></script>
-<script src="https://unpkg.com/react-dom/umd/react-dom.development.js" crossorigin></script>
-<script src="https://unpkg.com/babel-standalone@6/babel.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/@solana/web3.js@1.95.2/lib/index.iife.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js"></script>
-<script type="text/babel">
-    const TOKENS = [
-        { symbol: "SOL", name: "Solana", mint: "So11111111111111111111111111111111111111112", decimals: 9, image: "https://cryptologos.cc/logos/solana-sol-logo.png", cgId: "solana" },
-        { symbol: "BONK", name: "Bonk", mint: "DezX1xQ6ZhhXPb9D5e8C2J9pYc3i8c1a6h8VfmYbZ3Qh", decimals: 5, image: "https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/DezX1xQ6ZhhXPb9D5e8C2J9pYc3i8c1a6h8VfmYbZ3Qh/logo.png", cgId: "bonk" },
-        { symbol: "MEW", name: "cat in a dogs world", mint: "6cA7QVY6L9Dn7dEyEfrXzQK6pQ6TjA2R8fLJwNr1cCzN", decimals: 6, image: "https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/6cA7QVY6L9Dn7dEyEfrXzQK6pQ6TjA2R8fLJwNr1cCzN/logo.png", cgId: "cat-in-a-dogs-world" }
+  <div id="root"></div>
+
+  <script type="text/babel">
+
+    const {
+      useState,
+      useEffect,
+      useCallback,
+      StrictMode,
+    } = React;
+
+    const {
+      Connection,
+      PublicKey,
+      clusterApiUrl,
+      Transaction,
+    } = solanaWeb3;
+
+    const {
+      TOKEN_PROGRAM_ID,
+      getOrCreateAssociatedTokenAccount,
+      createTransferInstruction,
+    } = splToken;
+
+    const SOL_MINT = 'So11111111111111111111111111111111111111112';
+    const JUPITER_API_BASE = 'https://quote-api.jup.ag/v4';
+
+    // Verified 10 trending tokens on mainnet-beta
+    const tokensList = [
+      {
+        address: 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v',
+        symbol: 'USDC',
+        name: 'USD Coin',
+        decimals: 6,
+        logoURI: 'https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/solana/assets/EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v/logo.png',
+      },
+      {
+        address: 'Es9vMFrzaCER7N1TvjVqauDziYbPEmxW5M9VpX1TTd8C',
+        symbol: 'USDT',
+        name: 'Tether USD',
+        decimals: 6,
+        logoURI: 'https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/solana/assets/Es9vMFrzaCER7N1TvjVqauDziYbPEmxW5M9VpX1TTd8C/logo.png',
+      },
+      {
+        address: 'SRMuApVNdxXokk5GT7XD5cUUgXMBCoAz2LHeuAoKWRt',
+        symbol: 'SRM',
+        name: 'Serum',
+        decimals: 6,
+        logoURI: 'https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/solana/assets/SRMuApVNdxXokk5GT7XD5cUUgXMBCoAz2LHeuAoKWRt/logo.png',
+      },
+      {
+        address: '4k3Dyjzvzp8e4wJ7TGLkpvJ7YenqR6AMx7jxUnnGghPf',
+        symbol: 'RAY',
+        name: 'Raydium',
+        decimals: 6,
+        logoURI: 'https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/solana/assets/4k3Dyjzvzp8e4wJ7TGLkpvJ7YenqR6AMx7jxUnnGghPf/logo.png',
+      },
+      {
+        address: 'orcaE6ZxFtoajT2zF3ahNHPs2bWkm8c5KxjxHPv3RRZ4',
+        symbol: 'ORCA',
+        name: 'Orca',
+        decimals: 6,
+        logoURI: 'https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/solana/assets/orcaE6ZxFtoajT2zF3ahNHPs2bWkm8c5KxjxHPv3RRZ4/logo.png',
+      },
+      {
+        address: 'FTTGFt2jEQq3RpAm3qNihC84sFD3AYwhzMTeKuFzQZ9',
+        symbol: 'FTT',
+        name: 'FTT Token',
+        decimals: 6,
+        logoURI: 'https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/solana/assets/FTTGFt2jEQq3RpAm3qNihC84sFD3AYwhzMTeKuFzQZ9/logo.png',
+      },
+      {
+        address: 'DezXAZ8z7PnrnRJjzQeCQBmfPtujfq6nCzFFWiP2LsXX',
+        symbol: 'BONK',
+        name: 'Bonk Token',
+        decimals: 0,
+        logoURI: 'https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/solana/assets/DezXAZ8z7PnrnRJjzQeCQBmfPtujfq6nCzFFWiP2LsXX/logo.png',
+      },
+      {
+        address: '7xKXtg2CW87d97TXJSDpbD5jBkheTqA83TZRuJosgAsU',
+        symbol: 'SAMO',
+        name: 'Samoyedcoin',
+        decimals: 9,
+        logoURI: 'https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/solana/assets/7xKXtg2CW87d97TXJSDpbD5jBkheTqA83TZRuJosgAsU/logo.png',
+      },
+      {
+        address: 'CopeJxzv7ss9ruvT8WDD7i5ZRtcQBNM6AtURNyagova',
+        symbol: 'COPE',
+        name: 'COPE Token',
+        decimals: 9,
+        logoURI: 'https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/solana/assets/CopeJxzv7ss9ruvT8WDD7i5ZRtcQBNM6AtURNyagova/logo.png',
+      },
+      {
+        address: 'StepRfZh3P5GbAmMKB3vTf1GhT7jDLpD5ZYhKv9HQ9H',
+        symbol: 'STEP',
+        name: 'Step Finance',
+        decimals: 6,
+        logoURI: 'https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/solana/assets/StepRfZh3P5GbAmMKB3vTf1GhT7jDLpD5ZYhKv9HQ9H/logo.png',
+      }
     ];
-    const WALLET_OPTIONS = [
-        { name: "Phantom", check: () => window.solana && window.solana.isPhantom, icon: "https://cdn.jsdelivr.net/gh/solana-labs/token-list/assets/mainnet/phantom/logo.png", url: "https://phantom.app/download" },
-        { name: "Brave Wallet", check: () => window.solana && window.solana.isBrave, icon: "https://cdn.jsdelivr.net/gh/solana-labs/token-list/assets/mainnet/brave/logo.png", url: "https://brave.com/wallet/" },
-        { name: "Bitget Wallet", check: () => window.solana && window.solana.isBitget, icon: "https://cdn.jsdelivr.net/gh/solana-labs/token-list/assets/mainnet/bitget/logo.png", url: "https://web3.bitget.com/en/wallet-download" },
-        { name: "OKX Wallet", check: () => window.solana && window.solana.isOKX, icon: "https://cdn.jsdelivr.net/gh/solana-labs/token-list/assets/mainnet/okx/logo.png", url: "https://www.okx.com/web3" },
-        { name: "MetaMask (Solana)", check: () => window.solana && window.solana.isMetaMask, icon: "https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/metamask/logo.png", url: "https://metamask.io/download.html" },
-        { name: "Fixorium Wallet", check: () => window.solana && window.solana.isFixorium, icon: "https://cryptologos.cc/logos/solana-sol-logo.png", url: "#" }
-    ];
+
+    const network = clusterApiUrl('mainnet-beta');
+    const connection = new Connection(network, 'confirmed');
 
     function App() {
-        const [wallet, setWallet] = React.useState(null);
-        const [tokenPrices, setTokenPrices] = React.useState({});
-        const [tokenPriceFetchError, setTokenPriceFetchError] = React.useState(false);
-        const [popupContent, setPopupContent] = React.useState('');
-        const [connectStatus, setConnectStatus] = React.useState(''); // Add connectStatus state
+      const [walletConnected, setWalletConnected] = useState(false);
+      const [publicKey, setPublicKey] = useState(null);
+      const [solBalance, setSolBalance] = useState(0);
+      const [fromToken, setFromToken] = useState({
+        address: SOL_MINT,
+        symbol: 'SOL',
+        name: 'SOL',
+        decimals: 9,
+        logoURI: 'https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/solana/info/logo.png',
+      });
+      const [toToken, setToToken] = useState(tokensList[0]);
+      const [amount, setAmount] = useState('0');
+      const [routes, setRoutes] = useState([]);
+      const [selectedRoute, setSelectedRoute] = useState(null);
+      const [loadingQuotes, setLoadingQuotes] = useState(false);
+      const [swapping, setSwapping] = useState(false);
+      const [txStatus, setTxStatus] = useState(null);
+      const [tokenBalances, setTokenBalances] = useState({});
 
-        React.useEffect(() => {
-            fetchTokenPrices();
-            const intervalId = setInterval(fetchTokenPrices, 60000);
-            return () => clearInterval(intervalId);
-        }, []);
+      // Connect Phantom wallet
+      const connectWallet = useCallback(async () => {
+        if (window.solana && window.solana.isPhantom) {
+          try {
+            const resp = await window.solana.connect();
+            const pk = new PublicKey(resp.publicKey.toString());
+            setPublicKey(pk);
+            setWalletConnected(true);
+          } catch (err) {
+            console.error('Wallet connection failed:', err);
+            alert('Failed to connect wallet: ' + err.message || err);
+          }
+        } else {
+          alert('Phantom wallet not found. Please install it from https://phantom.app/');
+        }
+      }, []);
 
-        async function fetchTokenPrices() {
-            try {
-                const ids = TOKENS.map(t => t.cgId).join(",");
-                const url = `https://api.coingecko.com/api/v3/simple/price?ids=${ids}&vs_currencies=usd`;
-                const res = await fetch(url);
-                if (!res.ok) throw new Error("Price API Error");
-                const data = await res.json();
-                const prices = {};
-                TOKENS.forEach(t => {
-                    if (t.cgId && data[t.cgId] && data[t.cgId].usd)
-                        prices[t.symbol] = data[t.cgId].usd;
-                    else
-                        prices[t.symbol] = null;
-                });
-                setTokenPrices(prices);
-                setTokenPriceFetchError(false);
-            } catch (e) {
-                setTokenPriceFetchError(true);
-                const prices = {};
-                TOKENS.forEach(t => { prices[t.symbol] = null; });
-                setTokenPrices(prices);
+      // Disconnect wallet
+      const disconnectWallet = useCallback(async () => {
+        if (window.solana && window.solana.isPhantom) {
+          try {
+            await window.solana.disconnect();
+            setWalletConnected(false);
+            setPublicKey(null);
+            setSolBalance(0);
+            setTokenBalances({});
+            setRoutes([]);
+            setSelectedRoute(null);
+            setTxStatus(null);
+          } catch (err) {
+            console.error('Wallet disconnection failed:', err);
+          }
+        }
+      }, []);
+
+      // Fetch balances when publicKey changes
+      useEffect(() => {
+        const fetchBalances = async () => {
+          if (!publicKey) return;
+          try {
+            const balance = await connection.getBalance(publicKey);
+            setSolBalance(balance / 1e9);
+
+            let balances = {};
+            // Fetch SPL token balances
+            for (const token of tokensList) {
+              try {
+                const mintPubkey = new PublicKey(token.address);
+                const tokenAccounts = await connection.getTokenAccountsByOwner(publicKey, { mint: mintPubkey });
+                if (tokenAccounts.value.length > 0) {
+                  const accountInfo = await connection.getParsedAccountInfo(tokenAccounts.value[0].pubkey);
+                  const uiAmount = accountInfo.value?.data?.parsed?.info?.tokenAmount?.uiAmount || 0;
+                  balances[token.address] = uiAmount;
+                } else {
+                  balances[token.address] = 0;
+                }
+              } catch (e) {
+                balances[token.address] = 0;
+              }
             }
+            setTokenBalances(balances);
+          } catch (e) {
+            console.error('Error fetching balances:', e);
+          }
+        };
+        fetchBalances();
+      }, [publicKey]);
+
+      // Phantom wallet event listeners
+      useEffect(() => {
+        if (!window.solana || !window.solana.isPhantom) return undefined;
+        const handleConnect = (pk) => {
+          setPublicKey(new PublicKey(pk.toString()));
+          setWalletConnected(true);
+        };
+        const handleDisconnect = () => {
+          setWalletConnected(false);
+          setPublicKey(null);
+          setSolBalance(0);
+          setTokenBalances({});
+          setRoutes([]);
+          setSelectedRoute(null);
+          setTxStatus(null);
+        };
+
+        window.solana.on('connect', handleConnect);
+        window.solana.on('disconnect', handleDisconnect);
+
+        if (window.solana.isConnected) {
+          setPublicKey(new PublicKey(window.solana.publicKey.toString()));
+          setWalletConnected(true);
         }
 
-        const showPopup = (html) => {
-            setPopupContent(html);
+        return () => {
+          if (window.solana.removeListener) {
+            window.solana.removeListener('connect', handleConnect);
+            window.solana.removeListener('disconnect', handleDisconnect);
+          }
         };
+      }, []);
 
-        const closePopup = () => {
-            setPopupContent('');
-            setConnectStatus(''); // Clear connectStatus when closing popup
-        };
+      // Convert amount string to base unit number
+      const toLamports = (amountStr, decimals) => {
+        const decimalAmount = parseFloat(amountStr);
+        if (isNaN(decimalAmount) || decimalAmount <= 0) return 0;
+        return Math.round(decimalAmount * 10 ** decimals);
+      };
 
-        const phantomDeepLink = () => {
-            const url = encodeURIComponent(window.location.href);
-            window.location.href = `https://phantom.app/ul/browse/${url}`;
-        };
+      // Get swap quotes from Jupiter API
+      const getSwapQuotes = async () => {
+        if (!publicKey) {
+          alert('Please connect wallet first');
+          return;
+        }
+        if (!amount || isNaN(parseFloat(amount)) || parseFloat(amount) <= 0) {
+          alert('Enter a valid amount');
+          return;
+        }
+        setLoadingQuotes(true);
+        setRoutes([]);
+        setSelectedRoute(null);
 
-        const showConnectPopup = () => {
-            let html = `<div class="popup-title">Connect Your Solana Wallet</div>`;
-            html += WALLET_OPTIONS.map(opt => `
-                <button class="popup-btn" onclick="window.connectSolWallet('${opt.name}')">
-                    <img src="${opt.icon}" alt="" style="width:20px;vertical-align:middle;margin-right:6px;"> ${opt.name}
-                </button>
-            `).join('');
-            html += `
-                <button class="deep-link-btn" onclick="phantomDeepLink()">
-                    <img src="https://cdn.jsdelivr.net/gh/solana-labs/token-list/assets/mainnet/phantom/logo.png" alt="" style="width:20px;vertical-align:middle;margin-right:6px;"> Phantom Mobile (Universal Link)
-                </button>
-                <div class="popup-status" id="connectStatus">${connectStatus}</div>
-                <div style="margin-top:1em;font-size:0.94em;">
-                    If not installed, <a href="${WALLET_OPTIONS.find(w => w.name === "Phantom").url}" target="_blank" style="color:#19FB9B;">Get Phantom</a> /
-                    <a href="${WALLET_OPTIONS.find(w => w.name === "MetaMask (Solana)").url}" target="_blank" style="color:#9945FF;">MetaMask Solana</a> /
-                    <a href="${WALLET_OPTIONS.find(w => w.name === "Brave Wallet").url}" target="_blank" style="color:#ffdc5c;">Brave Wallet</a> /
-                    <a href="${WALLET_OPTIONS.find(w => w.name === "Bitget Wallet").url}" target="_blank" style="color:#ffdc5c;">Bitget Wallet</a> /
-                    <a href="${WALLET_OPTIONS.find(w => w.name === "OKX Wallet").url}" target="_blank" style="color:#19FB9B;">OKX Wallet</a>
-                </div>
-                <div class="popup-close" onclick="closePopup()">Cancel</div>`;
-            showPopup(html);
-        };
+        try {
+          const inputMint = fromToken.symbol === 'SOL' ? SOL_MINT : fromToken.address;
+          const outputMint = toToken.symbol === 'SOL' ? SOL_MINT : toToken.address;
+          const inputAmount = toLamports(amount, fromToken.decimals);
+          if (inputAmount === 0) {
+            alert('Invalid amount');
+            setLoadingQuotes(false);
+            return;
+          }
 
-        // Move connectSolWallet inside the App component
-        const connectSolWallet = async (walletName) => {
-            setConnectStatus(`Connecting to ${walletName}...`); // Update connectStatus
-            let solProvider = null, type = walletName;
+          const resp = await axios.get(`${JUPITER_API_BASE}/quote`, {
+            params: {
+              inputMint,
+              outputMint,
+              amount: inputAmount,
+              slippageBps: 50,
+              swapMode: 'ExactIn',
+            },
+          });
 
-            switch (walletName) {
-                case "Phantom": solProvider = window.solana && window.solana.isPhantom ? window.solana : null; break;
-                case "Brave Wallet": solProvider = window.solana && window.solana.isBrave ? window.solana : null; break;
-                case "Bitget Wallet": solProvider = window.solana && window.solana.isBitget ? window.solana : null; break;
-                case "OKX Wallet": solProvider = window.solana && window.solana.isOKX ? window.solana : null; break;
-                case "MetaMask (Solana)": solProvider = window.solana && window.solana.isMetaMask ? window.solana : null; break;
-                case "Fixorium Wallet": solProvider = window.solana && window.solana.isFixorium ? window.solana : null; break;
-            }
+          if (resp.data && resp.data.data && resp.data.data.length > 0) {
+            setRoutes(resp.data.data);
+            setSelectedRoute(resp.data.data[0]);
+          } else {
+            alert('No swap routes found for this pair and amount');
+            setRoutes([]);
+            setSelectedRoute(null);
+          }
+        } catch (e) {
+          console.error('Failed to fetch swap routes:', e);
+          alert('Failed to fetch swap routes');
+        }
+        setLoadingQuotes(false);
+      };
 
-            if (!solProvider) {
-                setConnectStatus(`${walletName} not detected! <a href="${WALLET_OPTIONS.find(w => w.name === walletName).url}" target="_blank" style="color:#19FB9B">Install Here</a>`);
-                return;
-            }
+      // Execute the swap using Jupiter swap endpoint
+      const executeSwap = async () => {
+        if (!publicKey) {
+          alert('Connect your wallet first');
+          return;
+        }
+        if (!selectedRoute) {
+          alert('No swap route selected');
+          return;
+        }
+        setSwapping(true);
+        setTxStatus(null);
 
-            if (solProvider.isPhantom && solProvider.isMobile) {
-                try {
-                    setConnectStatus(`Opening Phantom Mobile...`);
-                    await solProvider.connect();
-                    setTimeout(() => { closePopup(); }, 1500);
-                    return;
-                } catch (e) {
-                    setConnectStatus("Phantom Mobile connection failed!");
-                    return;
-                }
-            }
+        try {
+          const resp = await axios.post(`${JUPITER_API_BASE}/swap`, {
+            route: selectedRoute,
+            userPublicKey: publicKey.toBase58(),
+          });
 
+          if (!resp.data || !resp.data.swapTransactions) {
+            alert('Failed to get swap transactions');
+            setSwapping(false);
+            return;
+          }
+
+          const { swapTransactions } = resp.data;
+
+          // Handle optional setup transaction
+          if (swapTransactions.setupTransaction) {
+            const setupTx = Transaction.from(Buffer.from(swapTransactions.setupTransaction, 'base64'));
+            setupTx.feePayer = publicKey;
+            const { blockhash } = await connection.getLatestBlockhash();
+            setupTx.recentBlockhash = blockhash;
+
+            const signedSetupTx = await window.solana.signTransaction(setupTx);
+            const setupTxid = await connection.sendRawTransaction(signedSetupTx.serialize());
+            await connection.confirmTransaction(setupTxid, 'confirmed');
+          }
+
+          // Main swap transaction
+          const swapTx = Transaction.from(Buffer.from(swapTransactions.swapTransaction, 'base64'));
+          swapTx.feePayer = publicKey;
+          const { blockhash } = await connection.getLatestBlockhash();
+          swapTx.recentBlockhash = blockhash;
+
+          const signedSwapTx = await window.solana.signTransaction(swapTx);
+          const txid = await connection.sendRawTransaction(signedSwapTx.serialize());
+          setTxStatus(`Transaction submitted: ${txid}`);
+          await connection.confirmTransaction(txid, 'confirmed');
+          setTxStatus(`Transaction confirmed: ${txid}`);
+
+          // Refresh balances
+          const newSolBalance = await connection.getBalance(publicKey);
+          setSolBalance(newSolBalance / 1e9);
+
+          let balances = {};
+          for (const token of tokensList) {
             try {
-                const resp = await solProvider.connect();
-                if (!resp || !resp.publicKey) throw new Error("No publicKey returned");
-                const address = resp.publicKey.toString();
-                const conn = new solanaWeb3.Connection(solanaWeb3.clusterApiUrl("mainnet-beta"));
-                const balanceLamports = await conn.getBalance(new solanaWeb3.PublicKey(address));
-                const balanceSol = (balanceLamports / 1e9).toFixed(4);
-                const newWallet = { address, balance: balanceSol, type, provider: solProvider };
-                setWallet(newWallet);
-                closePopup();
-            } catch (e) {
-                setConnectStatus(`${walletName} connection failed!`);
+              const mintPubkey = new PublicKey(token.address);
+              const tokenAccounts = await connection.getTokenAccountsByOwner(publicKey, { mint: mintPubkey });
+              if (tokenAccounts.value.length > 0) {
+                const accountInfo = await connection.getParsedAccountInfo(tokenAccounts.value[0].pubkey);
+                const uiAmount = accountInfo.value?.data?.parsed?.info?.tokenAmount?.uiAmount || 0;
+                balances[token.address] = uiAmount;
+              } else {
+                balances[token.address] = 0;
+              }
+            } catch {
+              balances[token.address] = 0;
             }
-        };
+          }
+          setTokenBalances(balances);
 
-        // Make connectSolWallet available in the window scope
-        window.connectSolWallet = connectSolWallet;
+        } catch (e) {
+          if (e?.message) {
+            alert(`Swap failed: ${e.message}`);
+          } else {
+            alert('Swap failed, check console.');
+          }
+          console.error(e);
+        }
+        setSwapping(false);
+      };
 
-        const updateWalletInfo = () => {
-            if (wallet) {
-                return (
-                    <div className="wallet-info">
-                        <div>Connected: <span style={{ color: '#19FB9B' }}>{wallet.address}</span></div>
-                        <div>Balance: <span style={{ color: '#19FB9B' }}>{wallet.balance}</span> SOL</div>
-                        <div style={{ marginTop: '0.3em', color: '#9945FF', fontSize: '0.98em' }}>Wallet: {wallet.type}</div>
-                    </div>
-                );
-            } else {
-                return null;
-            }
-        };
+      // Display balance helper
+      const displayBalance = (token) => {
+        if (token.symbol === 'SOL') {
+          return solBalance.toFixed(4);
+        }
+        return (tokenBalances[token.address] || 0).toFixed(4);
+      };
 
-        const renderTokens = () => {
-            return (
-                <div className="token-list">
-                    {TOKENS.map((t, i) => {
-                        let priceStr = 'Loading...';
-                        if (tokenPrices[t.symbol] === null && tokenPriceFetchError) {
-                            priceStr = <span style={{ color: '#ff5c91' }}>Unavailable</span>;
-                        } else if (tokenPrices[t.symbol] !== undefined && tokenPrices[t.symbol] !== null) {
-                            priceStr = `$${tokenPrices[t.symbol].toLocaleString(undefined, { minimumFractionDigits: 3, maximumFractionDigits: 8 })}`;
-                        }
-                        return (
-                            <div className="token-row" key={i} onClick={() => showTradePopup(i)}>
-                                <img className="token-img" src={t.image} alt={t.symbol} onError={(e) => { e.target.onerror = null; e.target.src = "https://cryptologos.cc/logos/solana-sol-logo.png" }} />
-                                <span className="token-symbol">{t.symbol}</span>
-                                <span className="token-name">{t.name}</span>
-                                <span className="token-price" id={`price-${t.symbol}`}>{priceStr}</span>
-                                <button className="token-action" onClick={(event) => { event.stopPropagation(); showTradePopup(i) }}>Buy/Sell</button>
-                            </div>
-                        );
-                    })}
-                </div>
-            );
-        };
+      // Swap "from" and "to" tokens in UI
+      const swapFromTo = () => {
+        const oldFrom = fromToken;
+        setFromToken(toToken);
+        setToToken(oldFrom);
+        setAmount('0');
+        setRoutes([]);
+        setSelectedRoute(null);
+        setTxStatus(null);
+      };
 
-        const showTradePopup = (idx) => {
-            const t = TOKENS[idx];
-            let priceSection = '';
-            if (tokenPrices[t.symbol] !== undefined && tokenPrices[t.symbol] !== null) {
-                priceSection = <div style={{ marginBottom: '0.5em', color: '#ffdc5c', fontSize: '1.1em' }}>Market Price: ${tokenPrices[t.symbol]}</div>;
-            }
-            const html = `
-                <div class="popup-title">
-                    Trade ${t.name} (${t.symbol})
-                </div>
-                ${priceSection}
-                <div class="popup-row">
-                    <label class="popup-label" for="tradeSide">Type:</label>
-                    <select class="popup-select" id="tradeSide">
-                        <option value="buy">Buy</option>
-                        <option value="sell">Sell</option>
-                    </select>
-                </div>
-                <div class="popup-row">
-                    <label class="popup-label" for="tradeAmount">Amount:</label>
-                    <input class="popup-input" id="tradeAmount" type="number" min="0" placeholder="Amount">
-                </div>
-                <button class="popup-btn" onclick="startTrade(${idx})">Execute Trade</button>
-                <div class="popup-status" id="tradeStatus"></div>
-                <div class="popup-close" onclick="closePopup()">Cancel</div>
-            `;
-            showPopup(html);
-        };
-
-        window.startTrade = async function (idx) {
-            const t = TOKENS[idx];
-            const statusEl = document.getElementById("tradeStatus");
-            if (!wallet || !wallet.address || !wallet.provider) {
-                statusEl.textContent = "Connect wallet first!";
-                return;
-            }
-            const side = document.getElementById("tradeSide").value;
-            const amount = parseFloat(document.getElementById("tradeAmount").value);
-            if (!amount || amount <= 0) {
-                statusEl.textContent = "Enter valid amount.";
-                return;
-            }
-            statusEl.textContent = "Fetching quote...";
-            try {
-                const fromMint = side === "buy" ? TOKENS[0].mint : t.mint;
-                const toMint = side === "buy" ? t.mint : TOKENS[0].mint;
-                const decimals = side === "buy" ? TOKENS[0].decimals : t.decimals;
-                const amountRaw = Math.floor(amount * Math.pow(10, decimals));
-                const quoteUrl = `https://quote-api.jup.ag/v6/quote?inputMint=${fromMint}&outputMint=${toMint}&amount=${amountRaw}&slippageBps=30`;
-                const quoteRes = await fetch(quoteUrl);
-                const quote = await quoteRes.json();
-                if (!quote.routes || !quote.routes.length) throw new Error("No swap route found.");
-                statusEl.textContent = "Building swap transaction...";
-                const swapRes = await fetch("https://quote-api.jup.ag/v6/swap", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({
-                        route: quote.routes[0],
-                        userPublicKey: wallet.address,
-                        wrapUnwrapSOL: true,
-                        dynamicComputeUnitLimit: true
-                    })
-                });
-                const swapData = await swapRes.json();
-                if (!swapData.swapTransaction) throw new Error("Failed to build swap transaction.");
-                statusEl.textContent = "Signing transaction...";
-                let signedTx, txid;
-                const connection = new solanaWeb3.Connection(solanaWeb3.clusterApiUrl("mainnet-beta"));
-                const tx = solanaWeb3.Transaction.from(Buffer.from(swapData.swapTransaction, "base64"));
-                tx.feePayer = new solanaWeb3.PublicKey(wallet.address);
-                tx.recentBlockhash = (await connection.getRecentBlockhash()).blockhash;
-                signedTx = await wallet.provider.signTransaction(tx);
-                statusEl.textContent = "Sending transaction...";
-                txid = await connection.sendRawTransaction(signedTx.serialize());
-                statusEl.textContent = "Confirming transaction...";
-                await connection.confirmTransaction(txid, "finalized");
-                statusEl.innerHTML = `Trade successful!<br>Tx: <a href="https://solscan.io/tx/${txid}" target="_blank" style="color:#19FB9B">${txid}</a>`;
-            } catch (e) {
-                statusEl.textContent = "Trade failed: " + (e.message || e);
-            }
-        };
-
-        return (
-            <div>
-                <div className="header">
-                    <img className="logo" src="https://cryptologos.cc/logos/solana-sol-logo.png" alt="Fixorium Logo" />
-                    FIXORIUM Wallet (Solana Only)
-                </div>
-                <button className="connect-btn" onClick={showConnectPopup}>Connect Wallet</button>
-                {updateWalletInfo()}
-                {renderTokens()}
-                <div className="powered">
-                    Powered by <a href="https://jup.ag/" target="_blank" style={{ color: '#9945FF' }}>Jupiter</a> & <a href="https://www.coingecko.com/" target="_blank" style={{ color: '#19FB9B' }}>CoinGecko</a>
-                </div>
-                {popupContent && (
-                    <div className="popup-bg">
-                        <div className="popup-box" dangerouslySetInnerHTML={{ __html: popupContent }} />
-                    </div>
-                )}
+      return (
+        <div>
+          <h2>Fixorium Solana SPL Token Swap dApp</h2>
+          {!walletConnected ? (
+            <button onClick={connectWallet} style={{ minWidth: '100%' }}>
+              Connect Phantom Wallet
+            </button>
+          ) : (
+            <div style={{ marginBottom: 15 }}>
+              <p style={{ wordBreak: 'break-word', userSelect: 'text' }}>
+                <b>Wallet:</b> {publicKey?.toBase58()}
+              </p>
+              <p>
+                <b>SOL balance:</b> {solBalance.toFixed(4)} SOL
+              </p>
+              <button onClick={disconnectWallet} style={{ padding: '6px 12px' }}>
+                Disconnect
+              </button>
             </div>
-        );
+          )}
+
+          <fieldset disabled={!walletConnected || loadingQuotes || swapping}>
+            <legend>Swap</legend>
+
+            <label htmlFor="fromSelect">From:</label>
+            <select
+              id="fromSelect"
+              value={fromToken.address}
+              onChange={(e) => {
+                const sel =
+                  tokensList.find((t) => t.address === e.target.value) ||
+                  (e.target.value === SOL_MINT
+                    ? { address: SOL_MINT, symbol: 'SOL', name: 'SOL', decimals: 9, logoURI: '' }
+                    : null);
+                if (sel) {
+                  setFromToken(sel);
+                  setRoutes([]);
+                  setSelectedRoute(null);
+                  setAmount('');
+                  setTxStatus(null);
+                }
+              }}
+            >
+              <option value={SOL_MINT}>SOL</option>
+              {tokensList.map((token) => (
+                <option key={token.address} value={token.address}>
+                  {token.symbol}
+                </option>
+              ))}
+            </select>
+            <small>Balance: {displayBalance(fromToken)}</small>
+
+            <button className="btn-swap" onClick={swapFromTo} type="button" disabled={!walletConnected || swapping || loadingQuotes}>
+              ⇅ Swap from/to
+            </button>
+
+            <label htmlFor="toSelect">To:</label>
+            <select
+              id="toSelect"
+              value={toToken.address}
+              onChange={(e) => {
+                const sel =
+                  tokensList.find((t) => t.address === e.target.value) ||
+                  (e.target.value === SOL_MINT
+                    ? { address: SOL_MINT, symbol: 'SOL', name: 'SOL', decimals: 9, logoURI: '' }
+                    : null);
+                if (sel) {
+                  setToToken(sel);
+                  setRoutes([]);
+                  setSelectedRoute(null);
+                  setAmount('');
+                  setTxStatus(null);
+                }
+              }}
+            >
+              <option value={SOL_MINT}>SOL</option>
+              {tokensList.map((token) => (
+                <option key={token.address} value={token.address}>
+                  {token.symbol}
+                </option>
+              ))}
+            </select>
+            <small>Balance: {displayBalance(toToken)}</small>
+
+            <label htmlFor="amountInput">Amount ({fromToken.symbol}):</label>
+            <input
+              id="amountInput"
+              type="number"
+              min="0"
+              step="any"
+              placeholder="0"
+              value={amount}
+              onChange={(e) => setAmount(e.target.value)}
+              spellCheck="false"
+              inputMode="decimal"
+            />
+
+            <button
+              type="button"
+              onClick={getSwapQuotes}
+              disabled={loadingQuotes || !amount || parseFloat(amount) <= 0}
+              style={{ minWidth: '100%' }}
+            >
+              {loadingQuotes ? 'Loading quotes...' : 'Get Swap Quote'}
+            </button>
+          </fieldset>
+
+          {/* Swap routes display */}
+          {routes.length > 0 && !loadingQuotes && (
+            <fieldset>
+              <legend>Quotes</legend>
+              <div style={{ maxHeight: 250, overflowY: 'auto' }}>
+                {routes.map((r) => {
+                  const expectedOut = (parseInt(r.outAmount) / 10 ** toToken.decimals).toFixed(6);
+                  const priceImpactPct = (r.priceImpactPct * 100).toFixed(3);
+                  const isSelected = selectedRoute?.id === r.id;
+                  return (
+                    <div
+                      key={r.id}
+                      className={`route-box${isSelected ? ' selected' : ''}`}
+                      onClick={() => setSelectedRoute(r)}
+                      title={`Price Impact: ${priceImpactPct}%`}
+                      role="button"
+                      tabIndex={0}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' || e.key === ' ') setSelectedRoute(r);
+                      }}
+                    >
+                      <div>
+                        <b>Expected Out:</b> {expectedOut} {toToken.symbol}
+                      </div>
+                      <div>
+                        <b>Price Impact:</b> {priceImpactPct}%
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+              <button
+                type="button"
+                onClick={executeSwap}
+                disabled={!selectedRoute || swapping}
+                style={{ marginTop: 15, minWidth: '100%' }}
+              >
+                {swapping ? 'Swapping...' : `Swap ${amount} ${fromToken.symbol} → ${toToken.symbol}`}
+              </button>
+            </fieldset>
+          )}
+
+          {txStatus && <p className="status">{txStatus}</p>}
+
+          <footer>
+            Powered by Solana, Phantom &amp; <a href="https://jup.ag/" target="_blank" rel="noopener noreferrer">Jupiter Aggregator</a>
+          </footer>
+        </div>
+      );
     }
 
-    ReactDOM.render(<App />, document.getElementById('root'));
-</script>
+    const rootElem = document.getElementById('root');
+    const root = ReactDOM.createRoot(rootElem);
+    root.render(<StrictMode><App /></StrictMode>);
+  </script>
 </body>
 </html>
