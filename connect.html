@@ -101,24 +101,37 @@
       FIXERCOIN brings speed, security, and ultra-low fees to Solana traders. Connect your wallet below to start buying, selling, and swapping with the smoothest meme coin experience in crypto!
     </span>
   </div>
+
   <div class="wallet-list" id="extensionSection">
-    <button class="wallet-btn" onclick="connectPhantom()">
-      <img src="https://cryptologos.cc/logos/solana-sol-logo.png" alt="Phantom" /> Phantom (Solana)
+    <button class="wallet-btn" onclick="connectMetaMask()">
+      <img src="https://cdn.iconscout.com/icon/free/png-256/metamask-2728406-2261817.png" alt="MetaMask" /> Connect MetaMask (EVM)
     </button>
-    <button class="wallet-btn" onclick="connectSolflare()">
-      <img src="https://avatars.githubusercontent.com/u/70069609?s=200&v=4" alt="Solflare" /> Solflare (Solana)
-    </button>
-    <button class="wallet-btn" onclick="connectBackpack()">
-      <img src="https://pbs.twimg.com/profile_images/1732466769072377856/3U_Mu8vI_400x400.jpg" alt="Backpack" /> Backpack (Solana)
-    </button>
-    <button class="wallet-btn" onclick="connectMetaMaskOrBrave()">
-      <img src="https://cdn.iconscout.com/icon/free/png-256/metamask-2728406-2261817.png" alt="MetaMask/Brave" /> MetaMask / Brave Wallet
+    <button class="wallet-btn" onclick="connectBraveWallet()">
+      <img src="https://cdn.jsdelivr.net/gh/brave/brave-browser/assets/brave-icon.png" alt="Brave Wallet" /> Connect Brave Wallet (EVM/Solana)
     </button>
     <div class="info" id="info"></div>
   </div>
   <script src="https://cdn.jsdelivr.net/npm/@solana/web3.js@1.95.2/lib/index.iife.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"></script>
   <script>
+    window.addEventListener("DOMContentLoaded", showWalletDiagnostics);
+
+    // Show what wallets are detected at load
+    function showWalletDiagnostics() {
+      let msg = "";
+      if (window.ethereum) {
+        msg += "Detected window.ethereum";
+        if (window.ethereum.isBraveWallet) msg += "<br>- Brave Wallet (EVM) detected";
+        if (window.ethereum.isMetaMask) msg += "<br>- MetaMask extension detected";
+      }
+      if (window.solana) {
+        msg += "<br>Detected window.solana";
+        if (window.solana.isBrave) msg += "<br>- Brave Wallet (Solana) detected";
+      }
+      if (!msg) msg = "No wallet detected on page load.";
+      document.getElementById("info").innerHTML = msg;
+    }
+
     function postWallet(address, balance, walletType) {
       window.opener.postMessage({
         type: "wallet-connected",
@@ -137,82 +150,43 @@
       }
     }
 
-    // Phantom (Solana)
-    async function connectPhantom() {
-      if (window.solana && (window.solana.isPhantom || window.solana.isBlackjack)) {
+    async function connectMetaMask() {
+      if (window.ethereum && window.ethereum.isMetaMask) {
         try {
-          const resp = await window.solana.connect();
-          const address = resp.publicKey.toString();
-          const connection = new solanaWeb3.Connection(solanaWeb3.clusterApiUrl("mainnet-beta"));
-          const balanceLamports = await connection.getBalance(new solanaWeb3.PublicKey(address));
-          const balance = (balanceLamports / 1e9).toFixed(4);
-          postWallet(address, balance, window.solana.isPhantom ? "Phantom" : "Blackjack");
-        } catch (e) {
-          showInfo("Solana wallet connection failed!");
-        }
-      } else {
-        showInfo("Phantom/Blackjack wallet not found!", "https://phantom.app/download");
-      }
-    }
-
-    // Solflare
-    async function connectSolflare() {
-      if (window.solflare && window.solflare.isSolflare) {
-        try {
-          const resp = await window.solflare.connect();
-          const address = resp.publicKey.toString();
-          const connection = new solanaWeb3.Connection(solanaWeb3.clusterApiUrl("mainnet-beta"));
-          const balanceLamports = await connection.getBalance(new solanaWeb3.PublicKey(address));
-          const balance = (balanceLamports / 1e9).toFixed(4);
-          postWallet(address, balance, "Solflare");
-        } catch (e) {
-          showInfo("Solflare connection failed!");
-        }
-      } else {
-        showInfo("Solflare wallet not found!", "https://solflare.com/download");
-      }
-    }
-
-    // Backpack
-    async function connectBackpack() {
-      if (window.backpack && window.backpack.isBackpack) {
-        try {
-          const resp = await window.backpack.connect();
-          const address = resp.publicKey.toString();
-          const connection = new solanaWeb3.Connection(solanaWeb3.clusterApiUrl("mainnet-beta"));
-          const balanceLamports = await connection.getBalance(new solanaWeb3.PublicKey(address));
-          const balance = (balanceLamports / 1e9).toFixed(4);
-          postWallet(address, balance, "Backpack");
-        } catch (e) {
-          showInfo("Backpack connection failed!");
-        }
-      } else {
-        showInfo("Backpack wallet not found!", "https://backpack.app/download");
-      }
-    }
-
-    // MetaMask / Brave Wallet (EVM and Solana)
-    async function connectMetaMaskOrBrave() {
-      // Try EVM (MetaMask/Brave)
-      if (window.ethereum) {
-        try {
-          let walletType = "MetaMask";
-          if (window.ethereum.isBraveWallet) walletType = "Brave Wallet (EVM)";
           await window.ethereum.request({ method: 'eth_requestAccounts' });
           const provider = new ethers.providers.Web3Provider(window.ethereum);
           const signer = provider.getSigner();
           const address = await signer.getAddress();
           const balanceWei = await provider.getBalance(address);
           const balanceEth = ethers.utils.formatEther(balanceWei);
-          postWallet(address, parseFloat(balanceEth).toFixed(4), walletType);
+          postWallet(address, parseFloat(balanceEth).toFixed(4), "MetaMask");
+        } catch (e) {
+          showInfo("MetaMask connection failed!");
+        }
+      } else {
+        showInfo("MetaMask wallet not found!", "https://metamask.io/download.html");
+      }
+    }
+
+    async function connectBraveWallet() {
+      let isBraveEVM = window.ethereum && window.ethereum.isBraveWallet;
+      let isBraveSolana = window.solana && window.solana.isBrave;
+      if (isBraveEVM) {
+        try {
+          await window.ethereum.request({ method: 'eth_requestAccounts' });
+          const provider = new ethers.providers.Web3Provider(window.ethereum);
+          const signer = provider.getSigner();
+          const address = await signer.getAddress();
+          const balanceWei = await provider.getBalance(address);
+          const balanceEth = ethers.utils.formatEther(balanceWei);
+          postWallet(address, parseFloat(balanceEth).toFixed(4), "Brave Wallet (EVM)");
           return;
         } catch (e) {
-          showInfo("MetaMask/Brave Wallet (EVM) connection failed!");
+          showInfo("Brave Wallet (EVM) connection failed!");
           return;
         }
       }
-      // Try Solana via Brave Wallet (desktop only)
-      if (window.solana && window.solana.isBrave) {
+      if (isBraveSolana) {
         try {
           const resp = await window.solana.connect();
           const address = resp.publicKey.toString();
@@ -227,8 +201,8 @@
         }
       }
       showInfo(
-        "MetaMask or Brave Wallet not detected! Please install MetaMask or use Brave Browser with Brave Wallet enabled.",
-        "https://metamask.io/download.html"
+        "Brave Wallet not detected! You need Brave Browser with Brave Wallet enabled.",
+        "https://brave.com/wallet/"
       );
     }
   </script>
