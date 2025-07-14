@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>FIXORIUM Wallet - Solana Only (Phantom Extension & Mobile App)</title>
+  <title>FIXORIUM Wallet - Solana Only (Phantom, MetaMask, Brave, Bitget, OKX, Fixorium)</title>
   <meta name="viewport" content="width=device-width,initial-scale=1.0" />
   <link href="https://fonts.googleapis.com/css?family=Arial:400,500,700&display=swap" rel="stylesheet">
   <style>
@@ -160,22 +160,6 @@
       box-shadow: 0 2px 12px #9945ff2b;
     }
     .popup-btn:hover { filter: brightness(1.08); }
-    .deep-link-btn {
-      margin: 0.5em 0;
-      background: linear-gradient(90deg, #9945FF, #19FB9B);
-      color: #181824;
-      border: none;
-      border-radius: 8px;
-      font-weight: 600;
-      font-size: 1em;
-      padding: 0.5em 1em;
-      cursor: pointer;
-      box-shadow: 0 2px 12px #9945ff2b;
-      transition: background 0.15s;
-      width: 100%;
-      display: block;
-    }
-    .deep-link-btn:hover { filter: brightness(1.09); }
     .popup-close {
       margin-top: 1.2em;
       color: #b6b8c1;
@@ -246,7 +230,6 @@
   </div>
   <div id="popupRoot"></div>
   
-  <!-- Dependencies -->
   <script src="https://cdn.jsdelivr.net/npm/@solana/web3.js@1.95.2/lib/index.iife.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js"></script>
   <script>
@@ -257,11 +240,21 @@
       { symbol: "MEW", name: "cat in a dogs world", mint: "6cA7QVY6L9Dn7dEyEfrXzQK6pQ6TjA2R8fLJwNr1cCzN", decimals: 6, image: "https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/6cA7QVY6L9Dn7dEyEfrXzQK6pQ6TjA2R8fLJwNr1cCzN/logo.png", cgId: "cat-in-a-dogs-world" }
     ];
 
-    let wallet = null; // {address, balance, provider}
+    // Supported wallets for Solana
+    const WALLET_OPTIONS = [
+      { name: "Phantom", check: () => window.solana && window.solana.isPhantom, icon: "https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/phantom/logo.png", url: "https://phantom.app/download" },
+      { name: "MetaMask (Solana)", check: () => window.solana && window.solana.isMetaMask, icon: "https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/metamask/logo.png", url: "https://metamask.io/download.html" },
+      { name: "Brave Wallet", check: () => window.solana && window.solana.isBrave, icon: "https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/brave/logo.png", url: "https://brave.com/wallet/" },
+      { name: "Bitget Wallet", check: () => window.solana && window.solana.isBitget, icon: "https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/bitget/logo.png", url: "https://web3.bitget.com/en/wallet-download" },
+      { name: "OKX Wallet", check: () => window.solana && window.solana.isOKX, icon: "https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/okx/logo.png", url: "https://www.okx.com/web3" },
+      { name: "Fixorium Wallet", check: () => window.solana && window.solana.isFixorium, icon: "https://cryptologos.cc/logos/solana-sol-logo.png", url: "#" }
+    ];
+
+    let wallet = null; // {address, balance, type, provider}
     let tokenPrices = {};
     let tokenPriceFetchError = false;
 
-    // CoinGecko price fetch
+    // Fetch token prices from CoinGecko
     async function fetchTokenPrices() {
       try {
         const ids = TOKENS.map(t => t.cgId).join(",");
@@ -292,90 +285,83 @@
       document.getElementById("popupRoot").innerHTML = '';
     }
 
-    // Phantom Mobile deep link
-    function phantomDeepLink() {
-      const url = encodeURIComponent(window.location.href);
-      window.location.href = `https://phantom.app/ul/browse/${url}`;
-    }
-
     // Connect wallet popup
     function showConnectPopup() {
-      showPopup(`
-        <div class="popup-title">Connect Your Phantom Wallet</div>
-        <button class="popup-btn" onclick="window.connectPhantomExtension()">
-          <img src="https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/phantom/logo.png" alt="" style="width:20px;vertical-align:middle;margin-right:6px;">
-          Phantom Extension (Desktop)
-        </button>
-        <button class="deep-link-btn" onclick="phantomDeepLink()">
-          <img src="https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/phantom/logo.png" alt="" style="width:20px;vertical-align:middle;margin-right:6px;">
-          Phantom Mobile App
-        </button>
-        <div class="popup-status" id="connectStatus"></div>
-        <div class="popup-close" onclick="closePopup()">Cancel</div>
-      `);
+      let html = `<div class="popup-title">Connect Your Solana Wallet</div>`;
+      WALLET_OPTIONS.forEach(opt => {
+        html += `
+          <button class="popup-btn" onclick="window.connectSolWallet('${opt.name}')">
+            <img src="${opt.icon}" alt="" style="width:20px;vertical-align:middle;margin-right:6px;"> ${opt.name}
+          </button>
+        `;
+      });
+      html += `<div class="popup-status" id="connectStatus"></div>
+        <div style="margin-top:1em;font-size:0.94em;">
+          If not installed, <a href="https://phantom.app/download" target="_blank" style="color:#19FB9B;">Get Phantom</a> /
+          <a href="https://metamask.io/download.html" target="_blank" style="color:#9945FF;">Get MetaMask Solana</a> /
+          <a href="https://brave.com/wallet/" target="_blank" style="color:#ffdc5c;">Get Brave Wallet</a> /
+          <a href="https://web3.bitget.com/en/wallet-download" target="_blank" style="color:#ffdc5c;">Get Bitget</a> /
+          <a href="https://www.okx.com/web3" target="_blank" style="color:#19FB9B;">Get OKX</a>
+        </div>
+        <div class="popup-close" onclick="closePopup()">Cancel</div>`;
+      showPopup(html);
     }
 
-    // Phantom extension connect with robust event handling
-    window.connectPhantomExtension = async function() {
+    // Solana wallet connectors
+    window.connectSolWallet = async function(walletName) {
       const statusEl = document.getElementById("connectStatus");
-      if (!(window.solana && window.solana.isPhantom)) {
-        statusEl.innerHTML = `Phantom extension not found! <a href="https://phantom.app/download" target="_blank" style="color:#19FB9B">Install Here</a>`;
+      let solProvider = null, type = walletName;
+      switch(walletName) {
+        case "Phantom":
+          solProvider = window.solana && window.solana.isPhantom ? window.solana : null;
+          break;
+        case "MetaMask (Solana)":
+          solProvider = window.solana && window.solana.isMetaMask ? window.solana : null;
+          break;
+        case "Brave Wallet":
+          solProvider = window.solana && window.solana.isBrave ? window.solana : null;
+          break;
+        case "Bitget Wallet":
+          solProvider = window.solana && window.solana.isBitget ? window.solana : null;
+          break;
+        case "OKX Wallet":
+          solProvider = window.solana && window.solana.isOKX ? window.solana : null;
+          break;
+        case "Fixorium Wallet":
+          solProvider = window.solana && window.solana.isFixorium ? window.solana : null;
+          break;
+      }
+      if (!solProvider) {
+        statusEl.innerHTML = `${walletName} extension not found! <a href="${WALLET_OPTIONS.find(w=>w.name===walletName).url}" target="_blank" style="color:#19FB9B">Install Here</a>`;
         return;
       }
-      statusEl.textContent = "Connecting to Phantom extension...";
+      statusEl.textContent = `Connecting to ${walletName}...`;
       try {
-        // Listen for disconnect, account change
-        window.solana.on("disconnect", () => {
-          wallet = null;
-          updateWalletInfo();
-        });
-        window.solana.on("accountChanged", pubkey => {
-          if (!pubkey) {
-            wallet = null;
-            updateWalletInfo();
-          } else {
-            fetchAndDisplayPhantom(pubkey.toString());
-          }
-        });
-        // Try to connect
-        let resp;
-        try {
-          resp = await window.solana.connect();
-        } catch (e) {
-          // If already connected, use publicKey
-          if (window.solana.publicKey) {
-            resp = { publicKey: window.solana.publicKey };
-          } else {
-            throw e;
-          }
-        }
-        fetchAndDisplayPhantom(resp.publicKey.toString());
+        const resp = await solProvider.connect({ onlyIfTrusted: false });
+        const address = resp.publicKey.toString();
+        const conn = new solanaWeb3.Connection(solanaWeb3.clusterApiUrl("mainnet-beta"));
+        const balanceLamports = await conn.getBalance(new solanaWeb3.PublicKey(address));
+        const balanceSol = (balanceLamports / 1e9).toFixed(4);
+        wallet = { address, balance: balanceSol, type, provider: solProvider };
+        updateWalletInfo();
+        renderTokens(); // update tokens after connect
         closePopup();
       } catch (e) {
-        statusEl.textContent = "Phantom connection failed!";
+        statusEl.textContent = `${walletName} connection failed!`;
       }
     };
-
-    // Get balance and update wallet info
-    async function fetchAndDisplayPhantom(address) {
-      const conn = new solanaWeb3.Connection(solanaWeb3.clusterApiUrl("mainnet-beta"));
-      const balanceLamports = await conn.getBalance(new solanaWeb3.PublicKey(address));
-      const balanceSol = (balanceLamports / 1e9).toFixed(4);
-      wallet = { address, balance: balanceSol, provider: window.solana };
-      updateWalletInfo();
-    }
 
     // Update wallet info
     function updateWalletInfo() {
       const el = document.getElementById("walletInfo");
-      if (wallet) {
+      if (wallet && wallet.address && wallet.balance !== undefined) {
         el.innerHTML = `
           <div>Connected: <span style="color:#19FB9B;">${wallet.address}</span></div>
           <div>Balance: <span style="color:#19FB9B;">${wallet.balance}</span> SOL</div>
-          <div style="margin-top:0.3em;color:#9945FF;font-size:0.98em;">Wallet: Phantom</div>
+          <div style="margin-top:0.3em;color:#9945FF;font-size:0.98em;">Wallet: ${wallet.type}</div>
         `;
       } else {
-        el.textContent = "";
+        el.innerHTML = `<span style="color:#ff5c91;">No wallet connected.</span>`;
       }
     }
 
@@ -409,11 +395,13 @@
       if (tokenPrices[t.symbol] !== undefined && tokenPrices[t.symbol] !== null) {
         priceSection = `<div style="margin-bottom:0.5em;color:#ffdc5c;font-size:1.1em;">Market Price: $${tokenPrices[t.symbol]}</div>`;
       }
+      let connected = wallet && wallet.address && wallet.balance !== undefined;
       showPopup(`
         <div class="popup-title">
           Trade ${t.name} (${t.symbol})
         </div>
         ${priceSection}
+        ${connected ? `
         <div class="popup-row">
           <label class="popup-label" for="tradeSide">Type:</label>
           <select class="popup-select" id="tradeSide">
@@ -427,6 +415,9 @@
         </div>
         <button class="popup-btn" onclick="window.startTrade(${idx})">Execute Trade</button>
         <div class="popup-status" id="tradeStatus"></div>
+        ` : `
+        <div class="popup-error">Connect your wallet to buy or sell.</div>
+        `}
         <div class="popup-close" onclick="closePopup()">Cancel</div>
       `);
     };
