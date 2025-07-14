@@ -12,6 +12,7 @@
       font-family: Arial, sans-serif;
       margin: 0;
       min-height: 100vh;
+      font-size: 0.9em;
     }
     .header {
       display: flex;
@@ -38,11 +39,17 @@
       cursor: pointer;
       box-shadow: 0 2px 12px #9945ff2b;
       transition: background 0.15s;
+      margin-left: auto;
     }
     .connect-btn:hover { filter: brightness(1.09); }
     .banner {
       text-align: center;
       margin: 2em 0;
+    }
+    .commercial-ad {
+      margin: 1em 0;
+      font-size: 1.2em;
+      color: #19FB9B;
     }
     .token-list {
       width: 96%;
@@ -63,16 +70,6 @@
     }
     .token-row:last-child { border-bottom: none; }
     .token-row:hover { background: #191923; }
-    .token-img {
-      width: 36px;
-      height: 36px;
-      border-radius: 50%;
-      margin-right: 1em;
-      background: #fff;
-      border: 2px solid #9945FF;
-      box-shadow: 0 2px 10px #9945ff33;
-      object-fit: cover;
-    }
     .token-symbol {
       font-weight: 700;
       color: #19FB9B;
@@ -207,6 +204,7 @@
   <div class="banner">
     <h1>FIXERCOIN</h1>
   </div>
+  <div class="commercial-ad">Get the best deals on FIXERCOIN!</div>
   <div class="token-list" id="tokenList"></div>
   <div class="powered">
     Powered by <a href="https://jup.ag/" target="_blank" style="color:#9945FF;">Jupiter</a> & <a href="https://www.coingecko.com/" target="_blank" style="color:#19FB9B;">CoinGecko</a>
@@ -216,9 +214,9 @@
   <script src="https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js"></script>
   <script>
     const TOKENS = [
-      { symbol: "SOL", name: "Solana", mint: "So11111111111111111111111111111111111111112", decimals: 9, image: "https://cryptologos.cc/logos/solana-sol-logo.png", cgId: "solana" },
-      { symbol: "BONK", name: "Bonk", mint: "DezX1xQ6ZhhXPb9D5e8C2J9pYc3i8c1a6h8VfmYbZ3Qh", decimals: 5, image: "https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/DezX1xQ6ZhhXPb9D5e8C2J9pYc3i8c1a6h8VfmYbZ3Qh/logo.png", cgId: "bonk" },
-      { symbol: "MEW", name: "cat in a dogs world", mint: "6cA7QVY6L9Dn7dEyEfrXzQK6pQ6TjA2R8fLJwNr1cCzN", decimals: 6, image: "https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/6cA7QVY6L9Dn7dEyEfrXzQK6pQ6TjA2R8fLJwNr1cCzN/logo.png", cgId: "cat-in-a-dogs-world" }
+      { symbol: "SOL", name: "Solana", mint: "So11111111111111111111111111111111111111112", decimals: 9, cgId: "solana" },
+      { symbol: "BONK", name: "Bonk", mint: "DezX1xQ6ZhhXPb9D5e8C2J9pYc3i8c1a6h8VfmYbZ3Qh", decimals: 5, cgId: "bonk" },
+      { symbol: "MEW", name: "cat in a dogs world", mint: "6cA7QVY6L9Dn7dEyEfrXzQK6pQ6TjA2R8fLJwNr1cCzN", decimals: 6, cgId: "cat-in-a-dogs-world" }
     ];
 
     const WALLET_OPTIONS = [
@@ -278,7 +276,7 @@
         solProvider = window.solana && window.solana.isPhantom ? window.solana : null;
       }
       if (!solProvider) {
-        statusEl.innerHTML = `${walletName} not detected! <a href=\"${WALLET_OPTIONS.find(w=>w.name===walletName).url}\" target=\"_blank\" style=\"color:#19FB9B\">Install Here</a>`;
+        statusEl.innerHTML = \\`${walletName} not detected! <a href=\"${WALLET_OPTIONS.find(w=>w.name===walletName).url}\" target=\"_blank\" style=\"color:#19FB9B\">Install Here</a>\`;
         return;
       }
       statusEl.textContent = `Connecting to ${walletName}...`;
@@ -321,7 +319,6 @@
         }
         html += `
           <div class=\"token-row\" onclick=\"showTradePopup(${i})\">
-            <img class=\"token-img\" src=\"${t.image}\" alt=\"${t.symbol}\" onerror=\"this.src='https://cryptologos.cc/logos/solana-sol-logo.png'\"/>
             <span class=\"token-symbol\">${t.symbol}</span>
             <span class=\"token-name\">${t.name}</span>
             <span class=\"token-price\" id=\"price-${t.symbol}\">${priceStr}</span>
