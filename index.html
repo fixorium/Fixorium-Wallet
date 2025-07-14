@@ -3,12 +3,11 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>FIXORIUM - Solana SPL Token Swap dApp</title>
+  <title>FIXORIUM</title>
 
   <!-- React and ReactDOM -->
   <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
   <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 
   <!-- axios -->
   <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
@@ -20,7 +19,7 @@
 
   <style>
     body {
-      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+      font-family: "arial", arial, arial, arial, arial;
       max-width: 480px;
       margin: 30px auto 70px auto;
       font-size: 14px;
@@ -216,15 +215,14 @@
   <!-- Commercial Ad -->
   <div id="commercial-ad" role="banner" aria-label="FixerCoin Advertisement" tabindex="0" title="Click to visit FixerCoin website">
     <img src="https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/solana/assets/D2mGkp5D43jirFeapx8UZmpiH7FaWeX1eUWy94q1F2hD/logo.png" alt="FixerCoin Logo" />
-    The future of blockchain is <strong>FixerCoin (FIXR)</strong>! <a href="https://fixercoin.io" target="_blank" rel="noopener noreferrer" style="color:#ffd700; text-decoration: underline;">Learn More</a>
+    FIXERCOIN NATIVE TOKEN<strong>FIXORIUM NETWORK </strong>! <a href="https://tinyurl.com/fixorium" target="_blank" rel="noopener noreferrer" style="color:#ffd700; text-decoration: underline;"></a>
     <button id="ad-close-btn" aria-label="Close advertisement" title="Close Advertisement" tabindex="0">&times;</button>
   </div>
 
-  <script type="text/babel">
-
+  <script>
+    const e = React.createElement;
     const { useState, useEffect, useCallback, StrictMode } = React;
     const { Connection, PublicKey, clusterApiUrl, Transaction } = solanaWeb3;
-    const { TOKEN_PROGRAM_ID } = splToken;
 
     const SOL_MINT = 'So11111111111111111111111111111111111111112';
     const JUPITER_API_BASE = 'https://quote-api.jup.ag/v4';
@@ -305,27 +303,27 @@
 
     const connection = new Connection(clusterApiUrl('mainnet-beta'), 'confirmed');
 
-    function App() {
-      const [walletConnected, setWalletConnected] = useState(false);
-      const [publicKey, setPublicKey] = useState(null);
-      const [solBalance, setSolBalance] = useState(null);
-      const [fromToken, setFromToken] = useState({
+    function App(){
+      const state = React.useState;
+      const [walletConnected, setWalletConnected] = state(false);
+      const [publicKey, setPublicKey] = state(null);
+      const [solBalance, setSolBalance] = state(null);
+      const [fromToken, setFromToken] = state({
         address: SOL_MINT,
         symbol: 'SOL',
         name: 'SOL',
         decimals: 9,
         logoURI: 'https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/solana/info/logo.png',
       });
-      const [toToken, setToToken] = useState(tokensList[0]);
-      const [amount, setAmount] = useState('0');
-      const [routes, setRoutes] = useState([]);
-      const [selectedRoute, setSelectedRoute] = useState(null);
-      const [loadingQuotes, setLoadingQuotes] = useState(false);
-      const [swapping, setSwapping] = useState(false);
-      const [txStatus, setTxStatus] = useState(null);
-      const [tokenBalances, setTokenBalances] = useState({});
+      const [toToken, setToToken] = state(tokensList[0]);
+      const [amount, setAmount] = state('0');
+      const [routes, setRoutes] = state([]);
+      const [selectedRoute, setSelectedRoute] = state(null);
+      const [loadingQuotes, setLoadingQuotes] = state(false);
+      const [swapping, setSwapping] = state(false);
+      const [txStatus, setTxStatus] = state(null);
+      const [tokenBalances, setTokenBalances] = state({});
 
-      // Connect Phantom wallet
       const connectWallet = useCallback(async () => {
         try {
           if (window.solana && window.solana.isPhantom) {
@@ -341,7 +339,6 @@
         }
       }, []);
 
-      // Disconnect wallet
       const disconnectWallet = useCallback(async () => {
         try {
           if (window.solana && window.solana.isPhantom) {
@@ -360,8 +357,7 @@
         }
       }, []);
 
-      // Fetch balances when publicKey changes
-      useEffect(() => {
+      React.useEffect(() => {
         async function fetchBalances() {
           if (!publicKey) return;
 
@@ -397,8 +393,7 @@
         fetchBalances();
       }, [publicKey]);
 
-      // Listen Phantom wallet connect/disconnect events
-      useEffect(() => {
+      React.useEffect(() => {
         if (!(window.solana && window.solana.isPhantom)) return;
         const onConnect = (pk) => {
           setPublicKey(new PublicKey(pk.toString()));
@@ -431,14 +426,12 @@
         };
       }, []);
 
-      // Convert amount string to base units
       const toBaseUnits = (amountStr, decimals) => {
         const floatVal = parseFloat(amountStr);
         if (isNaN(floatVal) || floatVal <= 0) return 0;
         return Math.round(floatVal * 10 ** decimals);
       };
 
-      // Get swap quotes from Jupiter
       const getSwapQuotes = async () => {
         if (!publicKey) {
           alert('Please connect your wallet first');
@@ -462,7 +455,7 @@
             setLoadingQuotes(false);
             return;
           }
-          const response = await axios.get(`${JUPITER_API_BASE}/quote`, {
+          const response = await axios.get(JUPITER_API_BASE + "/quote", {
             params: {
               inputMint,
               outputMint,
@@ -486,7 +479,6 @@
         setLoadingQuotes(false);
       };
 
-      // Execute swap transaction via Jupiter
       const executeSwap = async () => {
         if (!publicKey) {
           alert('Please connect your wallet first');
@@ -499,7 +491,7 @@
         setSwapping(true);
         setTxStatus(null);
         try {
-          const response = await axios.post(`${JUPITER_API_BASE}/swap`, {
+          const response = await axios.post(JUPITER_API_BASE + "/swap", {
             route: selectedRoute,
             userPublicKey: publicKey.toBase58(),
           });
@@ -516,7 +508,7 @@
             setupTx.recentBlockhash = blockhash;
             const signedSetupTx = await window.solana.signTransaction(setupTx);
             const setupTxid = await connection.sendRawTransaction(signedSetupTx.serialize());
-            setTxStatus(`Setup transaction sent: ${setupTxid}`);
+            setTxStatus("Setup transaction sent: " + setupTxid);
             await connection.confirmTransaction(setupTxid, 'confirmed');
           }
           let swapTx = Transaction.from(Buffer.from(data.swapTransactions.swapTransaction, 'base64'));
@@ -525,9 +517,9 @@
           swapTx.recentBlockhash = blockhash;
           const signedSwapTx = await window.solana.signTransaction(swapTx);
           const swapTxid = await connection.sendRawTransaction(signedSwapTx.serialize());
-          setTxStatus(`Swap transaction submitted: ${swapTxid}`);
+          setTxStatus("Swap transaction submitted: " + swapTxid);
           await connection.confirmTransaction(swapTxid, 'confirmed');
-          setTxStatus(`Swap transaction confirmed: ${swapTxid}`);
+          setTxStatus("Swap transaction confirmed: " + swapTxid);
 
           const newSolBalance = await connection.getBalance(publicKey);
           setSolBalance(newSolBalance / 1e9);
@@ -550,17 +542,16 @@
           }
           setTokenBalances(balances);
 
-          setAmount('0');
+          setAmount("0");
           setRoutes([]);
           setSelectedRoute(null);
         } catch (error) {
           console.error('Swap failed', error);
-          alert(`Swap failed: ${error?.message ?? error}`);
+          alert("Swap failed: " + (error?.message ?? error));
         }
         setSwapping(false);
       };
 
-      // Display balance helper
       const displayBalance = (token) => {
         if (token.symbol === 'SOL') {
           if (solBalance === null) return 'Loading...';
@@ -571,7 +562,6 @@
         return bal.toFixed(4);
       };
 
-      // Swap from and to tokens
       const swapFromTo = () => {
         const oldFrom = fromToken;
         setFromToken(toToken);
@@ -582,214 +572,217 @@
         setTxStatus(null);
       };
 
-      return (
-        <div>
-          {!walletConnected ? (
-            <button onClick={connectWallet} style={{ minWidth: '100%' }} type="button" aria-label="Connect Phantom Wallet">
-              Connect Phantom Wallet
-            </button>
-          ) : (
-            <div style={{ marginBottom: 15 }}>
-              <p style={{ wordBreak: 'break-word', userSelect: 'text' }}><b>Wallet:</b> {publicKey?.toBase58()}</p>
-              <p><b>SOL balance:</b> {solBalance === null ? 'Loading...' : `${solBalance.toFixed(4)} SOL`}</p>
-              <button onClick={disconnectWallet} style={{ padding: '6px 12px' }} type="button" aria-label="Disconnect Wallet">
-                Disconnect
-              </button>
-            </div>
-          )}
+      // Elements without JSX via React.createElement
 
-          <fieldset disabled={!walletConnected || loadingQuotes || swapping} aria-disabled={!walletConnected || loadingQuotes || swapping}>
-            <legend>Swap</legend>
+      // Render Token options for select
+      function renderTokenOptions(selectedAddress) {
+        let options = [ e("option", {key: SOL_MINT, value: SOL_MINT}, "SOL") ];
+        tokensList.forEach(token => {
+          options.push(e("option", {key: token.address, value: token.address}, token.symbol));
+        });
+        return e("select", {
+          value: selectedAddress,
+          style: { width: "100%", padding: 6, fontSize: "0.9rem", marginTop: 4, marginBottom: 6, borderRadius: 5, border: "1px solid #bbb" },
+          onChange: null,
+        }, options);
+      }
 
-            <label htmlFor="fromSelect">From:</label>
-            <select
-              id="fromSelect"
-              aria-label="From token"
-              value={fromToken.address}
-              onChange={e => {
-                const sel = tokensList.find(t => t.address === e.target.value) || 
-                  (e.target.value === SOL_MINT ? {
-                    address: SOL_MINT,
-                    symbol: 'SOL',
-                    name: 'SOL',
-                    decimals: 9,
-                    logoURI: 'https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/solana/info/logo.png',
-                  } : null);
-                if (sel) {
-                  setFromToken(sel);
-                  setRoutes([]);
-                  setSelectedRoute(null);
-                  setAmount('');
-                  setTxStatus(null);
-                }
-              }}
-            >
-              <option value={SOL_MINT}>SOL</option>
-              {tokensList.map(token => (
-                <option value={token.address} key={token.address}>{token.symbol}</option>
-              ))}
-            </select>
-            <small>Balance: {displayBalance(fromToken)}</small>
+      // Main UI render
+      return e("div", null,
 
-            <button
-              className="btn-swap"
-              type="button"
-              onClick={swapFromTo}
-              disabled={!walletConnected || swapping || loadingQuotes}
-              aria-label="Swap from and to tokens"
-            >
-              ⇅ Swap from/to
-            </button>
+        !walletConnected ? e("button", {
+          onClick: connectWallet,
+          style: {minWidth: "100%"},
+          type: "button",
+          "aria-label": "Connect Phantom Wallet"
+        }, "Connect Phantom Wallet") : e("div", {style: {marginBottom: 15}}, 
+          e("p", {style: {wordBreak: "break-word", userSelect: "text"}},
+            e("b", null, "Wallet: "), publicKey ? publicKey.toBase58() : ""),
+          e("p", null,
+            e("b", null, "SOL balance: "), (solBalance === null ? "Loading..." : solBalance.toFixed(4) + " SOL")),
+          e("button", {
+            onClick: disconnectWallet,
+            style: {padding: "6px 12px"},
+            type: "button",
+            "aria-label": "Disconnect Wallet"
+          }, "Disconnect")
+        ),
 
-            <label htmlFor="toSelect">To:</label>
-            <select
-              id="toSelect"
-              aria-label="To token"
-              value={toToken.address}
-              onChange={e => {
-                const sel = tokensList.find(t => t.address === e.target.value) || 
-                  (e.target.value === SOL_MINT ? {
-                    address: SOL_MINT,
-                    symbol: 'SOL',
-                    name: 'SOL',
-                    decimals: 9,
-                    logoURI: 'https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/solana/info/logo.png',
-                  } : null);
-                if (sel) {
-                  setToToken(sel);
-                  setRoutes([]);
-                  setSelectedRoute(null);
-                  setAmount('');
-                  setTxStatus(null);
-                }
-              }}
-            >
-              <option value={SOL_MINT}>SOL</option>
-              {tokensList.map(token => (
-                <option value={token.address} key={token.address}>{token.symbol}</option>
-              ))}
-            </select>
-            <small>Balance: {displayBalance(toToken)}</small>
+        e("fieldset", {disabled: !walletConnected || loadingQuotes || swapping, "aria-disabled": !walletConnected || loadingQuotes || swapping},
+          e("legend", null, "Swap"),
 
-            <label htmlFor="amountInput">Amount ({fromToken.symbol}):</label>
-            <input
-              id="amountInput"
-              type="number"
-              min="0"
-              step="any"
-              placeholder="0"
-              aria-label={`Amount of ${fromToken.symbol}`}
-              value={amount}
-              onChange={e => setAmount(e.target.value)}
-              spellCheck="false"
-              inputMode="decimal"
-            />
+          e("label", {htmlFor: "fromSelect"}, "From:"),
+          e("select", {
+            id: "fromSelect",
+            "aria-label": "From token",
+            value: fromToken.address,
+            onChange: (ev) => {
+              const val = ev.target.value;
+              const sel = tokensList.find(t => t.address === val) || 
+                (val === SOL_MINT ? {
+                  address: SOL_MINT,
+                  symbol: "SOL",
+                  name: "SOL",
+                  decimals: 9,
+                  logoURI: "https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/solana/info/logo.png"
+                } : null);
+              if (sel) {
+                setFromToken(sel);
+                setRoutes([]);
+                setSelectedRoute(null);
+                setAmount("");
+                setTxStatus(null);
+              }
+            },
+            style: {width: "100%", padding: 6, fontSize: "0.9rem", marginTop: 4, marginBottom: 6, borderRadius: 5, border: "1px solid #bbb"}
+          }, [ e("option", {key: SOL_MINT, value: SOL_MINT}, "SOL") ].concat(tokensList.map(t => (
+            e("option", {key: t.address, value: t.address}, t.symbol)
+          )))),
+          e("small", null, "Balance: " + displayBalance(fromToken)),
 
-            <button
-              type="button"
-              onClick={getSwapQuotes}
-              disabled={loadingQuotes || !amount || parseFloat(amount) <= 0}
-              style={{ minWidth: '100%' }}
-              aria-label="Get swap quotes"
-            >
-              {loadingQuotes ? 'Loading quotes...' : 'Get Swap Quote'}
-            </button>
-          </fieldset>
+          e("button", {
+            className: "btn-swap",
+            onClick: swapFromTo,
+            type: "button",
+            disabled: !walletConnected || swapping || loadingQuotes,
+            "aria-label": "Swap from and to tokens",
+            style: {margin: "10px auto", display:"block", fontWeight:"600", fontSize:"1rem", userSelect:"none"},
+          }, "⇅ Swap from/to"),
 
-          {routes.length > 0 && !loadingQuotes && (
-            <fieldset>
-              <legend>Quotes</legend>
-              <div style={{maxHeight: 250, overflowY: 'auto'}}>
-                {routes.map(route => {
-                  const expectedOut = (parseInt(route.outAmount) / 10 ** toToken.decimals).toFixed(6);
-                  const priceImpactPct = (route.priceImpactPct * 100).toFixed(3);
-                  const selected = selectedRoute?.id === route.id;
-                  return (
-                    <div
-                      key={route.id}
-                      className={`route-box${selected ? ' selected' : ''}`}
-                      onClick={() => setSelectedRoute(route)}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter' || e.key === ' ') setSelectedRoute(route);
-                      }}
-                      tabIndex="0"
-                      role="button"
-                      aria-pressed={selected}
-                      aria-label={`Quote expected out ${expectedOut} ${toToken.symbol}. Price Impact ${priceImpactPct} percent. Click to select.`}
-                    >
-                      <div><b>Expected Out:</b> {expectedOut} {toToken.symbol}</div>
-                      <div><b>Price Impact:</b> {priceImpactPct}%</div>
-                    </div>
-                  );
-                })}
-              </div>
-              <button
-                type="button"
-                onClick={executeSwap}
-                disabled={!selectedRoute || swapping}
-                style={{ marginTop: 15, minWidth: '100%' }}
-                aria-label={`Execute swap from ${amount} ${fromToken.symbol} to ${toToken.symbol}`}
-              >
-                {swapping ? 'Swapping...' : `Swap ${amount} ${fromToken.symbol} → ${toToken.symbol}`}
-              </button>
-            </fieldset>
-          )}
+          e("label", {htmlFor: "toSelect"}, "To:"),
+          e("select", {
+            id: "toSelect",
+            "aria-label": "To token",
+            value: toToken.address,
+            onChange: (ev) => {
+              const val = ev.target.value;
+              const sel = tokensList.find(t => t.address === val) ||
+                (val === SOL_MINT ? {
+                  address: SOL_MINT,
+                  symbol: "SOL",
+                  name: "SOL",
+                  decimals: 9,
+                  logoURI: "https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/solana/info/logo.png"
+                } : null);
+              if (sel) {
+                setToToken(sel);
+                setRoutes([]);
+                setSelectedRoute(null);
+                setAmount("");
+                setTxStatus(null);
+              }
+            },
+            style: {width: "100%", padding: 6, fontSize: "0.9rem", marginTop: 4, marginBottom: 6, borderRadius: 5, border: "1px solid #bbb"}
+          }, [ e("option", {key: SOL_MINT, value: SOL_MINT}, "SOL") ].concat(tokensList.map(t => (
+            e("option", {key: t.address, value: t.address}, t.symbol)
+          )))),
+          e("small", null, "Balance: " + displayBalance(toToken)),
 
-          {txStatus && <p className="status" aria-live="polite" aria-atomic="true">{txStatus}</p>}
+          e("label", {htmlFor: "amountInput"}, "Amount (" + fromToken.symbol + "):"),
+          e("input", {
+            id: "amountInput",
+            type: "number",
+            min: "0",
+            step: "any",
+            placeholder: "0",
+            value: amount,
+            onChange: (ev) => setAmount(ev.target.value),
+            spellCheck: false,
+            inputMode: "decimal",
+            style: {width: "100%", padding: 6, fontSize: "0.9rem", marginTop: 4, marginBottom: 6, borderRadius: 5, border: "1px solid #bbb"}
+          }),
+          e("button", {
+            type: "button",
+            onClick: getSwapQuotes,
+            disabled: loadingQuotes || !amount || parseFloat(amount) <= 0,
+            style: {minWidth: "100%"},
+            "aria-label": "Get swap quotes"
+          }, loadingQuotes ? "Loading quotes..." : "Get Swap Quote")
+        ),
 
-          <footer>
-            Powered by Solana, Phantom &amp; <a href="https://jup.ag/" target="_blank" rel="noopener noreferrer">Jupiter Aggregator</a>
-          </footer>
-        </div>
+        routes.length > 0 && !loadingQuotes ? e("fieldset", null,
+          e("legend", null, "Quotes"),
+          e("div", {style: {maxHeight: 250, overflowY: "auto"}},
+            routes.map(route => {
+              const expectedOut = (parseInt(route.outAmount) / 10 ** toToken.decimals).toFixed(6);
+              const priceImpactPct = (route.priceImpactPct * 100).toFixed(3);
+              const selected = selectedRoute && selectedRoute.id === route.id;
+              return e("div", {
+                key: route.id,
+                className: "route-box" + (selected ? " selected" : ""),
+                onClick: () => setSelectedRoute(route),
+                onKeyDown: ev => {
+                  if (ev.key === "Enter" || ev.key === " ") setSelectedRoute(route);
+                },
+                tabIndex: 0,
+                role: "button",
+                "aria-pressed": selected,
+                "aria-label": "Quote expected out " + expectedOut + " " + toToken.symbol + ". Price Impact " + priceImpactPct + " percent. Click to select.",
+              }, 
+                e("div", null, e("b", null, "Expected Out: "), expectedOut + " " + toToken.symbol),
+                e("div", null, e("b", null, "Price Impact: "), priceImpactPct + "%")
+              )
+            })
+          ),
+          e("button", {
+            type: "button",
+            onClick: executeSwap,
+            disabled: !selectedRoute || swapping,
+            style: {marginTop: 15, minWidth: "100%"},
+            "aria-label": "Execute swap from " + amount + " " + fromToken.symbol + " to " + toToken.symbol,
+          }, swapping ? "Swapping..." : "Swap " + amount + " " + fromToken.symbol + " \u2192 " + toToken.symbol)
+        ) : null,
+
+        txStatus ? e("p", {className: "status", "aria-live": "polite", "aria-atomic": "true"}, txStatus) : null,
+
+        e("footer", null,
+          "Powered by FIXORIUM ", 
+          e("a", {href: "https://fixorium.vercel.app/", target: "_blank", rel: "noopener noreferrer"}, "")
+        )
       );
     }
 
-    // Controls the commercial ad's close behavior
+    // Ad interactions
     function setupAdClose() {
-      const ad = document.getElementById('commercial-ad');
-      const closeBtn = document.getElementById('ad-close-btn');
-      const adLink = ad.querySelector('a');
+      const ad = document.getElementById("commercial-ad");
+      const closeBtn = document.getElementById("ad-close-btn");
+      const adLink = ad.querySelector("a");
 
-      // Close on button click
-      closeBtn.addEventListener('click', (e) => {
+      closeBtn.addEventListener("click", (e) => {
         e.stopPropagation();
-        ad.style.display = 'none';
+        ad.style.display = "none";
       });
 
-      // Close on Escape key when focus is on close button or ad div
-      closeBtn.addEventListener('keydown', (e) => {
-        if(e.key === 'Escape') {
-          ad.style.display = 'none';
+      closeBtn.addEventListener("keydown", (e) => {
+        if (e.key === "Escape") {
+          ad.style.display = "none";
         }
       });
 
-      ad.addEventListener('keydown', (e) => {
-        if(e.key === 'Escape') {
-          ad.style.display = 'none';
+      ad.addEventListener("keydown", (e) => {
+        if (e.key === "Escape") {
+          ad.style.display = "none";
           ad.blur();
         }
       });
 
-      // Click on ad opens FixerCoin website in a new tab, except on close button clicks
-      ad.addEventListener('click', () => {
-        window.open('https://fixercoin.io', '_blank', 'noopener');
+      ad.addEventListener("click", () => {
+        window.open("https://tinyurl.com/fixorium", "_blank", "noopener");
       });
 
-      // Prevent click on link from bubbling so not counted as ad click
-      adLink.addEventListener('click', (e) => {
+      adLink.addEventListener("click", (e) => {
         e.stopPropagation();
       });
     }
 
-    const rootElem = document.getElementById('root');
+    // Render app
+    const rootElem = document.getElementById("root");
     const root = ReactDOM.createRoot(rootElem);
-    root.render(<StrictMode><App /></StrictMode>);
+    root.render(e(StrictMode, null, e(App)));
 
-    // Setup commercial ad close after DOM content loaded
-    window.addEventListener('DOMContentLoaded', () => {
+    window.addEventListener("DOMContentLoaded", () => {
       setupAdClose();
     });
-
   </script>
 </body>
 </html>
