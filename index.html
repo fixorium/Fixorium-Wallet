@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>IXORIUM </title>
+  <title>FIXORIUM </title>
   <!-- React & ReactDOM (CDN) -->
   <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
   <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
@@ -524,27 +524,27 @@
 
       return (
         <div>
-          <h2>Fixorium Solana SPL Token Swap dApp</h2>
+          <h2>FIXORIUM</h2>
           {!walletConnected ? (
             <button onClick={connectWallet} style={{ minWidth: '100%' }}>
-              Connect Phantom Wallet
+              CONNECT WALLET 
             </button>
           ) : (
             <div style={{ marginBottom: 15 }}>
               <p style={{ wordBreak: 'break-word', userSelect: 'text' }}>
-                <b>Wallet:</b> {publicKey?.toBase58()}
+                <b>WALLET:</b> {publicKey?.toBase58()}
               </p>
               <p>
-                <b>SOL balance:</b> {solBalance.toFixed(4)} SOL
+                <b>SOL BALANCE:</b> {solBalance.toFixed(4)} SOL
               </p>
               <button onClick={disconnectWallet} style={{ padding: '6px 12px' }}>
-                Disconnect
+                DISCONNECT 
               </button>
             </div>
           )}
 
           <fieldset disabled={!walletConnected || loadingQuotes || swapping}>
-            <legend>Swap</legend>
+            <legend>SWAP</legend>
             <label htmlFor="fromSelect">From:</label>
             <select
               id="fromSelect"
@@ -573,13 +573,13 @@
                 </option>
               ))}
             </select>
-            <small>Balance: {displayBalance(fromToken)}</small>
+            <small>BALANCE: {displayBalance(fromToken)}</small>
 
             <button className="btn-swap" onClick={swapFromTo} type="button" disabled={!walletConnected || swapping || loadingQuotes}>
-              ⇅ Swap from/to
+              ⇅ SWAP FROM/TO 
             </button>
 
-            <label htmlFor="toSelect">To:</label>
+            <label htmlFor="toSelect">TO:</label>
             <select
               id="toSelect"
               value={toToken.address}
@@ -605,9 +605,9 @@
                 </option>
               ))}
             </select>
-            <small>Balance: {displayBalance(toToken)}</small>
+            <small>BALANCE: {displayBalance(toToken)}</small>
 
-            <label htmlFor="amountInput">Amount ({fromToken.symbol}):</label>
+            <label htmlFor="amountInput">AMOUNT ({fromToken.symbol}):</label>
             <input
               id="amountInput"
               type="number"
@@ -626,14 +626,14 @@
               disabled={loadingQuotes || !amount || parseFloat(amount) <= 0}
               style={{ minWidth: '100%' }}
             >
-              {loadingQuotes ? 'Loading quotes...' : 'Get Swap Quote'}
+              {loadingQuotes ? 'Loading quotes...' : 'GET SWAP QUOTE}
             </button>
           </fieldset>
 
           {/* Swap routes display */}
           {routes.length > 0 && !loadingQuotes && (
             <fieldset>
-              <legend>Quotes</legend>
+              <legend>QUOTES</legend>
               <div style={{ maxHeight: 250, overflowY: 'auto' }}>
                 {routes.map((r) => {
                   const expectedOut = (parseInt(r.outAmount) / 10 ** toToken.decimals).toFixed(6);
@@ -652,10 +652,10 @@
                       }}
                     >
                       <div>
-                        <b>Expected Out:</b> {expectedOut} {toToken.symbol}
+                        <b>EXPECTED OUT:</b> {expectedOut} {toToken.symbol}
                       </div>
                       <div>
-                        <b>Price Impact:</b> {priceImpactPct}%
+                        <b>PRICE IMPACT:</b> {priceImpactPct}%
                       </div>
                     </div>
                   );
@@ -675,7 +675,7 @@
           {txStatus && <p className="status">{txStatus}</p>}
 
           <footer>
-            Powered by Solana, Phantom &amp; <a href="https://jup.ag/" target="_blank" rel="noopener noreferrer">Jupiter Aggregator</a>
+            Powered by  &amp; <a href="https://fixorium.vercel.app/" target="_blank" rel="noopener noreferrer">FIXORIUM</a>
           </footer>
         </div>
       );
