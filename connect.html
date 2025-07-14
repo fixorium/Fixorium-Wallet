@@ -80,6 +80,13 @@
       text-align: center;
       min-height: 1.4em;
     }
+    .install-link {
+      color: #19FB9B;
+      text-decoration: underline;
+      font-size: 0.99em;
+      display: block;
+      margin-top: 0.5em;
+    }
     @media (max-width: 500px) {
       .commercial, .wallet-list { max-width: 98vw; }
       .intro-title { font-size: 1em; }
@@ -104,18 +111,6 @@
     <button class="wallet-btn" onclick="connectSolflare()">
       <img src="https://avatars.githubusercontent.com/u/70069609?s=200&v=4" alt="Solflare" /> Solflare (Solana)
     </button>
-    <button class="wallet-btn" onclick="connectTorus()">
-      <img src="https://tor.us/images/ptor.png" alt="Torus" /> Torus (Solana/Ethereum)
-    </button>
-    <button class="wallet-btn" onclick="connectSlope()">
-      <img src="https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/Slope/logo.png" alt="Slope" /> Slope (Solana)
-    </button>
-    <button class="wallet-btn" onclick="connectGlow()">
-      <img src="https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/Glow/logo.png" alt="Glow" /> Glow (Solana)
-    </button>
-    <button class="wallet-btn" onclick="connectSollet()">
-      <img src="https://sollet.io/favicon.png" alt="Sollet" /> Sollet (Solana)
-    </button>
     <button class="wallet-btn" onclick="connectMetaMask()">
       <img src="https://cdn.iconscout.com/icon/free/png-256/metamask-2728406-2261817.png" alt="MetaMask" /> MetaMask (Ethereum)
     </button>
@@ -134,8 +129,12 @@
       setTimeout(() => window.close(), 800);
     }
 
-    function showInfo(msg) {
-      document.getElementById("info").textContent = msg;
+    function showInfo(msg, installUrl) {
+      const info = document.getElementById("info");
+      info.innerHTML = msg;
+      if (installUrl) {
+        info.innerHTML += `<br><a class="install-link" href="${installUrl}" target="_blank">Install Here</a>`;
+      }
     }
 
     async function connectPhantom() {
@@ -151,7 +150,7 @@
           showInfo("Phantom connection failed!");
         }
       } else {
-        showInfo("Phantom wallet not found!");
+        showInfo("Phantom wallet not found!", "https://phantom.app/download");
       }
     }
 
@@ -168,7 +167,7 @@
           showInfo("Backpack connection failed!");
         }
       } else {
-        showInfo("Backpack wallet not found!");
+        showInfo("Backpack wallet not found!", "https://backpack.app/download");
       }
     }
 
@@ -185,80 +184,7 @@
           showInfo("Solflare connection failed!");
         }
       } else {
-        showInfo("Solflare wallet not found!");
-      }
-    }
-
-    async function connectTorus() {
-      if (window.torus) {
-        try {
-          await window.torus.init();
-          const resp = await window.torus.login();
-          const address = resp.publicKey || resp[0];
-          const isSolana = address && address.length === 44;
-          let balance = "0";
-          if (isSolana) {
-            const connection = new solanaWeb3.Connection(solanaWeb3.clusterApiUrl("mainnet-beta"));
-            const balanceLamports = await connection.getBalance(new solanaWeb3.PublicKey(address));
-            balance = (balanceLamports / 1e9).toFixed(4);
-          }
-          postWallet(address, balance, "Torus");
-        } catch (e) {
-          showInfo("Torus connection failed!");
-        }
-      } else {
-        showInfo("Torus wallet not found!");
-      }
-    }
-
-    async function connectSlope() {
-      if (window.slope && window.slope.isSlope) {
-        try {
-          const resp = await window.slope.connect();
-          const address = resp.publicKey.toString();
-          const connection = new solanaWeb3.Connection(solanaWeb3.clusterApiUrl("mainnet-beta"));
-          const balanceLamports = await connection.getBalance(new solanaWeb3.PublicKey(address));
-          const balance = (balanceLamports / 1e9).toFixed(4);
-          postWallet(address, balance, "Slope");
-        } catch (e) {
-          showInfo("Slope connection failed!");
-        }
-      } else {
-        showInfo("Slope wallet not found!");
-      }
-    }
-
-    async function connectGlow() {
-      if (window.glow && window.glow.isGlow) {
-        try {
-          const resp = await window.glow.connect();
-          const address = resp.publicKey.toString();
-          const connection = new solanaWeb3.Connection(solanaWeb3.clusterApiUrl("mainnet-beta"));
-          const balanceLamports = await connection.getBalance(new solanaWeb3.PublicKey(address));
-          const balance = (balanceLamports / 1e9).toFixed(4);
-          postWallet(address, balance, "Glow");
-        } catch (e) {
-          showInfo("Glow connection failed!");
-        }
-      } else {
-        showInfo("Glow wallet not found!");
-      }
-    }
-
-    async function connectSollet() {
-      if (window.sollet) {
-        try {
-          const resp = await window.sollet.connect();
-          const address = resp.publicKey.toString();
-          const connection = new solanaWeb3.Connection(solanaWeb3.clusterApiUrl("mainnet-beta"));
-          const balanceLamports = await connection.getBalance(new solanaWeb3.PublicKey(address));
-          const balance = (balanceLamports / 1e9).toFixed(4);
-          postWallet(address, balance, "Sollet");
-        } catch (e) {
-          showInfo("Sollet connection failed!");
-        }
-      } else {
-        showInfo("Sollet wallet not found!");
+        showInfo("Solflare wallet not found!", "https://solflare.com/download");
       }
     }
 
@@ -276,7 +202,7 @@
           showInfo("MetaMask connection failed!");
         }
       } else {
-        showInfo("MetaMask not found!");
+        showInfo("MetaMask not found!", "https://metamask.io/download.html");
       }
     }
   </script>
