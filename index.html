@@ -19,10 +19,12 @@
   <script src="https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js"></script>
 
   <style>
-    /* ... your existing CSS ... */
     * { box-sizing: border-box; }
+    body, input, button, select {
+      font-family: Arial, sans-serif !important;
+      font-size: 13px !important;
+    }
     body {
-      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
       margin: 0;
       background-color: #121212;
       color: #eee;
@@ -67,8 +69,9 @@
     .token-item:focus-visible { outline: 2px solid #1e90ff; outline-offset: 2px; }
     .token-logo { width: 36px; height: 36px; border-radius: 6px; object-fit: contain; margin-right: 14px; user-select: none; flex-shrink: 0; }
     .token-info { flex-grow: 1; display: flex; flex-direction: column; user-select: text; }
-    .token-symbol { font-weight: 700; font-size: 1.1rem; margin-bottom: 4px; }
-    .token-balance, .token-price { font-size: 0.9rem; }
+    .token-symbol, .token-balance, .token-price { font-size: 13px !important; }
+    .token-symbol { font-weight: 700; margin-bottom: 4px; }
+    .token-balance, .token-price { }
     .token-price { color: #a5caff; }
     .button-bar {
       position: fixed; top: 50px; right: 20px; z-index: 20; display: flex; flex-direction: column; gap: 10px;
@@ -118,6 +121,25 @@
     .route-option.selected { border: 2px solid #1e90ff; background: #22344a; }
     .route-info { font-size: 0.97rem; margin-bottom: 2px; }
     .route-amm { color: #a5caff; font-size: 0.92rem; }
+    .refresh-bar {
+      text-align: center;
+      margin: 10px auto 0 auto;
+      max-width: 520px;
+    }
+    .refresh-btn {
+      font-size: 13px;
+      font-family: Arial, sans-serif;
+      border-radius: 8px;
+      border: none;
+      padding: 8px 16px;
+      color: #fff;
+      background: #1e90ff;
+      font-weight: 700;
+      cursor: pointer;
+      margin: 0 2px;
+      transition: background .2s;
+    }
+    .refresh-btn:hover { background: #004c9e; }
   </style>
 </head>
 
@@ -154,12 +176,19 @@
       const ASSOCIATED_TOKEN_PROGRAM_ID = new PublicKey("ATokenGPvR1HuTRHqpPDp7HHTRmAg3zRk6USH3UUZsM");
       const SOL_MINT = "So11111111111111111111111111111111111111112";
 
+      // Replace with real CoinGecko ID for FIXR if listed!
       const tokensList = [
         { mint: null, symbol: "SOL", name: "Solana", decimals: 9, logoURI: "https://cryptologos.cc/logos/solana-sol-logo.svg?v=014" },
         { mint: new PublicKey("EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"), symbol: "USDC", name: "USD Coin", decimals: 6, logoURI: "https://cryptologos.cc/logos/usd-coin-usdc-logo.svg?v=014" },
         { mint: new PublicKey("Es9vMFrzaCER7N1TvjVqauDziYbPEmxW5M9VpX1TTd8C"), symbol: "USDT", name: "Tether USD", decimals: 6, logoURI: "https://cryptologos.cc/logos/tether-usdt-logo.svg?v=014" },
         { mint: new PublicKey("D2mGkp5D43jirFeapx8UZmpiH7FaWeX1eUWy94q1F2hD"), symbol: "FIXR", name: "FixerCoin", decimals: 9, logoURI: "https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/solana/assets/D2mGkp5D43jirFeapx8UZmpiH7FaWeX1eUWy94q1F2hD/logo.png" },
       ];
+      const cgMap = {
+        SOL: "solana",
+        USDC: "usd-coin",
+        USDT: "tether",
+        FIXR: "" // <-- Provide your real CoinGecko ID here if available!
+      };
 
       async function findAssociatedTokenAddress(walletAddress, tokenMintAddress) {
         return (
@@ -199,6 +228,7 @@
         // Balances and prices
         const [balances, setBalances] = useState({});
         const [prices, setPrices] = useState({});
+        const [loading, setLoading] = useState(false);
 
         // Modal state: null or "deposit", "withdraw", "swap"
         const [activeModal, setActiveModal] = useState(null);
@@ -324,53 +354,68 @@
         }, [provider]);
 
         // Fetch balances and prices
-        useEffect(() => {
-          if (!walletConnected || !publicKey) {
-            setBalances({});
-            setPrices({});
-            return;
-          }
-          async function fetchAll() {
-            setError("");
-            try {
-              const solLamports = await connection.getBalance(publicKey);
-              const newBalances = { SOL: solLamports / 1e9 };
-
-              await Promise.all(tokensList.map(async t => {
-                if (!t.mint) return;
-                try {
-                  const ata = await findAssociatedTokenAddress(publicKey, t.mint);
-                  const info = await connection.getParsedAccountInfo(ata);
-                  newBalances[t.symbol] = info.value?.data?.parsed?.info?.tokenAmount?.uiAmount || 0;
-                } catch {
-                  newBalances[t.symbol] = 0;
-                }
-              }));
-
-              setBalances(newBalances);
-
-              // Map for CoinGecko IDs
-              const cgMap = {
-                SOL: "solana",
-                USDC: "usd-coin",
-                USDT: "tether",
-                FIXR: "ethereum" // Replace with true ID if available
-              };
-              const cgIds = Object.values(cgMap).filter(Boolean).join(",");
-              const resp = await axios.get(`https://api.coingecko.com/api/v3/simple/price?ids=${cgIds}&vs_currencies=usd`);
-              const pricesObj = {};
-              Object.entries(cgMap).forEach(([sym, id]) => {
-                pricesObj[sym] = resp.data[id]?.usd || 0;
-              });
-              setPrices(pricesObj);
-            } catch {
-              setError("Error loading balances or prices.");
+        async function fetchAll() {
+          setLoading(true);
+          setError("");
+          try {
+            if (!walletConnected || !publicKey) {
+              setBalances({});
+              setPrices({});
+              setLoading(false);
+              return;
             }
-          }
-          fetchAll();
-        }, [walletConnected, publicKey, activeModal]);
+            const solLamports = await connection.getBalance(publicKey);
+            const newBalances = { SOL: solLamports / 1e9 };
 
-        const totalBalanceUSD = Object.entries(balances).reduce((a, [sym, bal]) => a + (prices[sym] || 0) * bal, 0);
+            await Promise.all(tokensList.map(async t => {
+              if (!t.mint) return;
+              try {
+                const ata = await findAssociatedTokenAddress(publicKey, t.mint);
+                const info = await connection.getParsedAccountInfo(ata);
+                newBalances[t.symbol] = info.value?.data?.parsed?.info?.tokenAmount?.uiAmount || 0;
+              } catch {
+                newBalances[t.symbol] = 0;
+              }
+            }));
+
+            setBalances(newBalances);
+
+            // Map for CoinGecko IDs
+            const cgIds = Object.values(cgMap).filter(Boolean).join(",");
+            let pricesObj = {};
+            if (cgIds) {
+              const resp = await axios.get(`https://api.coingecko.com/api/v3/simple/price?ids=${cgIds}&vs_currencies=usd`);
+              Object.entries(cgMap).forEach(([sym, id]) => {
+                pricesObj[sym] = id && resp.data[id]?.usd ? resp.data[id]?.usd : null;
+              });
+            } else {
+              Object.keys(cgMap).forEach(sym => pricesObj[sym] = null);
+            }
+            setPrices(pricesObj);
+          } catch {
+            setError("Error loading balances or prices.");
+          }
+          setLoading(false);
+        }
+
+        // Re-fetch when wallet connects, modal closes, or status changes
+        useEffect(() => {
+          fetchAll();
+          // eslint-disable-next-line
+        }, [walletConnected, publicKey, activeModal, status]);
+
+        // Reset swap form when opening swap modal
+        useEffect(() => {
+          if (activeModal === "swap") {
+            setSwapAmount("");
+            setSwapFromToken(tokensList[0]);
+            setSwapToToken(tokensList[1]);
+            setError("");
+            setStatus("");
+          }
+        }, [activeModal]);
+
+        const totalBalanceUSD = Object.entries(balances).reduce((a, [sym, bal]) => a + ((prices[sym] || 0) * bal), 0);
 
         function DepositModal() {
           useEffect(() => {
@@ -439,7 +484,20 @@
                 e("button", { className: "modal-btn", type: "submit", disabled: withdrawing }, withdrawing ? "Withdrawing..." : "Confirm Withdraw")
               ),
               error && e("div", { className: "error" }, error),
-              status && e("div", { className: "status" }, status)
+              status && e("div", { className: "status" },
+                status.includes("Signature: ")
+                  ? e("span", null,
+                      status,
+                      " ",
+                      e("a", {
+                        href: `https://solscan.io/tx/${status.split("Signature: ")[1]}`,
+                        target: "_blank",
+                        rel: "noopener noreferrer",
+                        style: {color: "#a5caff"}
+                      }, "View")
+                    )
+                  : status
+              )
             )
           );
         }
@@ -588,15 +646,51 @@
                 e("button", { className: "modal-btn", type: "submit", disabled: swapping || !selectedRoute }, swapping ? "Swapping..." : "Confirm Swap")
               ),
               error && e("div", { className: "error" }, error),
-              status && e("div", { className: "status" }, status)
+              status && e("div", { className: "status" },
+                status.includes("Signature: ")
+                  ? e("span", null,
+                      status,
+                      " ",
+                      e("a", {
+                        href: `https://solscan.io/tx/${status.split("Signature: ")[1]}`,
+                        target: "_blank",
+                        rel: "noopener noreferrer",
+                        style: {color: "#a5caff"}
+                      }, "View")
+                    )
+                  : status
+              )
             )
           );
         }
 
         return e(React.Fragment, null,
           error && e("div", { className: "error" }, error),
-          status && e("div", { className: "status" }, status),
-          e("div", { id: "totalBalance" }, walletConnected ? `≈ $${totalBalanceUSD.toFixed(2)} USD` : "Connect wallet to view balance"),
+          status && e("div", { className: "status" },
+            status.includes("Signature: ")
+              ? e("span", null,
+                  status,
+                  " ",
+                  e("a", {
+                    href: `https://solscan.io/tx/${status.split("Signature: ")[1]}`,
+                    target: "_blank",
+                    rel: "noopener noreferrer",
+                    style: {color: "#a5caff"}
+                  }, "View")
+                )
+              : status
+          ),
+          e("div", { id: "totalBalance" }, walletConnected
+            ? (loading ? "Loading..." : `≈ $${totalBalanceUSD.toFixed(2)} USD`)
+            : "Connect wallet to view balance"
+          ),
+          e("div", { className: "refresh-bar" },
+            walletConnected && e("button", {
+              className: "refresh-btn",
+              onClick: fetchAll,
+              disabled: loading
+            }, loading ? "Refreshing..." : "Refresh Balances")
+          ),
           e("div", { className: "tokens-list" },
             tokensList.map(token =>
               e("div", { key: token.symbol, className: "token-item" },
@@ -607,7 +701,11 @@
                     walletConnected ? `${(balances[token.symbol] || 0).toLocaleString(undefined, { maximumFractionDigits: token.decimals })}` : "-"
                   ),
                   e("div", { className: "token-price" },
-                    prices[token.symbol] ? `$${prices[token.symbol]}` : "-"
+                    prices[token.symbol] == null
+                      ? "N/A"
+                      : prices[token.symbol]
+                        ? `$${prices[token.symbol]}`
+                        : "-"
                   )
                 )
               )
