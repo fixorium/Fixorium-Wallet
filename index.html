@@ -311,18 +311,7 @@
       }, 900); // 0.9s loader for demo
     }
 
-    // --- POPUP HANDLER ---
-    function openPopup(type, idx) {
-      // type: "connect" OR "token"
-      let url = window.location.href.split('#')[0];
-      if (type === "connect") url += "#connect-wallet";
-      if (type === "token") url += "#token-" + idx;
-      window.open(
-        url,
-        type === "connect" ? "ConnectWalletWindow" : "TokenBuySellWindow"+idx,
-        "width=460,height=500,top=120,left=120,toolbar=no,location=no,status=no,menubar=no,scrollbars=no,resizable=no"
-      );
-    }
+
 
     // --- MAIN PAGE EVENTS ---
     const connectWalletBtn = document.getElementById('connectWalletBtn');
