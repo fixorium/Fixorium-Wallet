@@ -135,25 +135,25 @@
     <div style="margin-bottom:0.5em;">
       <b>Connect via Mobile Wallet App</b>
     </div>
-    <button class="mobile-wallet-btn" onclick="mobilePhantom()">
+    <button class="mobile-wallet-btn" onclick="openMobileWallet('phantom')">
       Connect Phantom Mobile
     </button>
-    <button class="mobile-wallet-btn" onclick="mobileSolflare()">
+    <button class="mobile-wallet-btn" onclick="openMobileWallet('solflare')">
       Connect Solflare Mobile
     </button>
-    <button class="mobile-wallet-btn" onclick="mobileMetaMask()">
-      Connect MetaMask Mobile
+    <button class="mobile-wallet-btn" onclick="openMobileWallet('backpack')">
+      Connect Backpack Mobile
     </button>
     <div style="margin-top:0.5em; color:#b6b8c1;">
-      Tap to open your wallet app or extension. <br>
+      Scan a QR code or use deep-link to connect with your mobile wallet app.<br>
       <span id="mobileWalletInfo"></span>
     </div>
   </div>
 
   <!-- Extension Section -->
   <div class="wallet-list" id="extensionSection">
-    <button class="wallet-btn" onclick="connectPhantom()">
-      <img src="https://cryptologos.cc/logos/solana-sol-logo.png" alt="Phantom" /> Phantom (Solana)
+    <button class="wallet-btn" onclick="connectSolanaWallet()">
+      <img src="https://cryptologos.cc/logos/solana-sol-logo.png" alt="Solana Wallet" /> Phantom / Brave / Backpack / Solflare (Solana)
     </button>
     <button class="wallet-btn" onclick="connectMetaMask()">
       <img src="https://cdn.iconscout.com/icon/free/png-256/metamask-2728406-2261817.png" alt="MetaMask" /> MetaMask (Ethereum)
@@ -165,10 +165,9 @@
   <script>
     // Detect mobile, show appropriate UI
     function isMobile() {
-      return /Android|iPhone|iPad|iPod|Opera Mini|IEMobile|WPDesktop|Mobile|Brave/i.test(navigator.userAgent);
+      return /Android|iPhone|iPad|iPod|Opera Mini|IEMobile|WPDesktop|Mobile/i.test(navigator.userAgent);
     }
     window.addEventListener("DOMContentLoaded", () => {
-      // If Brave browser on mobile or any mobile, show mobile wallet section
       if (isMobile()) {
         document.getElementById("extensionSection").style.display = "none";
         document.getElementById("mobileSection").style.display = "block";
@@ -178,28 +177,27 @@
       }
     });
 
-    // Mobile wallet deep linking (Phantom, Solflare, MetaMask)
-    function mobilePhantom() {
-      // Phantom deep link: opens Phantom mobile app for site authorization
-      const link = "https://phantom.app/ul/browse/" + encodeURIComponent(window.location.origin);
-      window.location.href = link;
+    // Mobile wallet deep linking or QR (simplified for demo)
+    function openMobileWallet(wallet) {
+      let link = "";
+      let info = "";
+      switch(wallet) {
+        case 'phantom':
+          link = "https://phantom.app/ul/browse/" + encodeURIComponent(window.location.origin);
+          info = "If Phantom app is installed, tap to open and authorize connection.";
+          break;
+        case 'solflare':
+          link = "https://solflare.com/app/wallet/?ref=" + encodeURIComponent(window.location.origin);
+          info = "If Solflare app is installed, tap to open and authorize connection.";
+          break;
+        case 'backpack':
+          link = "https://backpack.app/";
+          info = "If Backpack app is installed, tap to open and authorize connection.";
+          break;
+      }
       document.getElementById("mobileWalletInfo").innerHTML =
-        `<a href="${link}" style="color:#19FB9B;text-decoration:underline;">Open Phantom Wallet</a><br>Authorize and return to this page.`;
-    }
-
-    function mobileSolflare() {
-      const link = "https://solflare.com/app/wallet/?ref=" + encodeURIComponent(window.location.origin);
-      window.location.href = link;
-      document.getElementById("mobileWalletInfo").innerHTML =
-        `<a href="${link}" style="color:#19FB9B;text-decoration:underline;">Open Solflare Wallet</a><br>Authorize and return to this page.`;
-    }
-
-    function mobileMetaMask() {
-      // MetaMask deep link: opens MetaMask mobile app for site authorization
-      const link = "https://metamask.app.link/dapp/" + window.location.host;
-      window.location.href = link;
-      document.getElementById("mobileWalletInfo").innerHTML =
-        `<a href="${link}" style="color:#19FB9B;text-decoration:underline;">Open MetaMask Wallet</a><br>Authorize and return to this page.`;
+        `<a href="${link}" target="_blank" style="color:#19FB9B;text-decoration:underline;">Open ${wallet.charAt(0).toUpperCase()+wallet.slice(1)} Wallet</a><br>${info}`;
+      window.open(link, '_blank');
     }
 
     function postWallet(address, balance, walletType) {
@@ -220,21 +218,27 @@
       }
     }
 
-    // Browser Extension Wallet Connect
-    async function connectPhantom() {
-      if (window.solana && window.solana.isPhantom) {
+    // Updated function for Solana Wallet Standard support (Phantom, Brave, Backpack, Solflare, etc.)
+    async function connectSolanaWallet() {
+      if (window.solana) {
         try {
+          let walletType = window.solana.isPhantom ? "Phantom"
+            : window.solana.isBackpack ? "Backpack"
+            : window.solana.isSolflare ? "Solflare"
+            : window.solana.isBrave ? "Brave"
+            : window.solana.walletName ? window.solana.walletName
+            : "Solana Wallet";
           const resp = await window.solana.connect();
           const address = resp.publicKey.toString();
           const connection = new solanaWeb3.Connection(solanaWeb3.clusterApiUrl("mainnet-beta"));
           const balanceLamports = await connection.getBalance(new solanaWeb3.PublicKey(address));
           const balance = (balanceLamports / 1e9).toFixed(4);
-          postWallet(address, balance, "Phantom");
+          postWallet(address, balance, walletType);
         } catch (e) {
-          showInfo("Phantom connection failed!");
+          showInfo("Solana wallet connection failed!");
         }
       } else {
-        showInfo("Phantom wallet not found!", "https://phantom.app/download");
+        showInfo("No Solana wallet detected! Try Phantom, Backpack, Solflare, or Brave Wallet.", "https://phantom.app/download");
       }
     }
 
