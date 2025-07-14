@@ -6,91 +6,16 @@
   <meta name="viewport" content="width=device-width,initial-scale=1.0" />
   <link href="https://fonts.googleapis.com/css?family=Arial:400,500,700&display=swap" rel="stylesheet">
   <style>
-    body {
-      background: #181824;
-      color: #e3e7ed;
-      font-family: Arial, sans-serif;
-      margin: 0;
-      min-height: 100vh;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: flex-start;
-    }
-    .commercial {
-      background: #22222b;
-      color: #19FB9B;
-      border-radius: 12px;
-      padding: 1em 1.2em;
-      margin: 2em 0 1em 0;
-      max-width: 370px;
-      text-align: center;
-      font-size: 0.97em;
-      font-weight: 600;
-      font-family: "Arial", Arial, sans-serif;
-      box-shadow: 0 2px 10px rgba(60,72,88,0.14);
-    }
-    .intro-title {
-      margin-top: 2em;
-      margin-bottom: 0.4em;
-      font-size: 1.2em;
-      font-weight: 700;
-      color: #9945FF;
-      font-family: Arial, sans-serif;
-      text-align: center;
-      letter-spacing: 0.03em;
-    }
-    .wallet-list {
-      width: 90%;
-      max-width: 340px;
-      background: #232339;
-      border-radius: 14px;
-      box-shadow: 0 4px 20px rgba(60,72,88,0.18);
-      padding: 1.2em 1em;
-      margin-bottom: 1em;
-    }
-    .wallet-btn {
-      display: flex;
-      align-items: center;
-      background: #9945FF;
-      color: #fff;
-      border: none;
-      border-radius: 8px;
-      font-weight: 600;
-      font-size: 1rem;
-      padding: 0.6em 1.2em;
-      margin: 0.7em 0;
-      cursor: pointer;
-      transition: background 0.15s;
-      width: 100%;
-      font-family: Arial, sans-serif;
-    }
+    body { background: #181824; color: #e3e7ed; font-family: Arial, sans-serif; margin: 0; min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; }
+    .commercial { background: #22222b; color: #19FB9B; border-radius: 12px; padding: 1em 1.2em; margin: 2em 0 1em 0; max-width: 370px; text-align: center; font-size: 0.97em; font-weight: 600; font-family: "Arial", Arial, sans-serif; box-shadow: 0 2px 10px rgba(60,72,88,0.14);}
+    .intro-title { margin-top: 2em; margin-bottom: 0.4em; font-size: 1.2em; font-weight: 700; color: #9945FF; font-family: Arial, sans-serif; text-align: center; letter-spacing: 0.03em;}
+    .wallet-list { width: 90%; max-width: 340px; background: #232339; border-radius: 14px; box-shadow: 0 4px 20px rgba(60,72,88,0.18); padding: 1.2em 1em; margin-bottom: 1em;}
+    .wallet-btn { display: flex; align-items: center; background: #9945FF; color: #fff; border: none; border-radius: 8px; font-weight: 600; font-size: 1rem; padding: 0.6em 1.2em; margin: 0.7em 0; cursor: pointer; transition: background 0.15s; width: 100%; font-family: Arial, sans-serif;}
     .wallet-btn:hover { filter: brightness(1.1); }
-    .wallet-btn img {
-      margin-right: 0.7em;
-      width: 28px;
-      height: 28px;
-      border-radius: 50%;
-      border: 1px solid #232339;
-      background: #191923;
-    }
-    .info {
-      color: #ff5c91;
-      margin-top: 1em;
-      text-align: center;
-      min-height: 1.4em;
-    }
-    .install-link {
-      color: #19FB9B;
-      text-decoration: underline;
-      font-size: 0.99em;
-      display: block;
-      margin-top: 0.5em;
-    }
-    @media (max-width: 500px) {
-      .commercial, .wallet-list { max-width: 98vw; }
-      .intro-title { font-size: 1em; }
-    }
+    .wallet-btn img { margin-right: 0.7em; width: 28px; height: 28px; border-radius: 50%; border: 1px solid #232339; background: #191923;}
+    .info { color: #ff5c91; margin-top: 1em; text-align: center; min-height: 1.4em;}
+    .install-link { color: #19FB9B; text-decoration: underline; font-size: 0.99em; display: block; margin-top: 0.5em;}
+    @media (max-width: 500px) { .commercial, .wallet-list { max-width: 98vw; } .intro-title { font-size: 1em; } }
   </style>
 </head>
 <body>
@@ -119,6 +44,26 @@
   <script src="https://cdn.jsdelivr.net/npm/@solana/web3.js@1.95.2/lib/index.iife.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"></script>
   <script>
+    // Diagnostics for wallet detection
+    window.addEventListener("DOMContentLoaded", () => {
+      let msg = "";
+      if (window.solana) {
+        msg += `Detected window.solana<br>`;
+        if (window.solana.isPhantom) msg += `Phantom detected<br>`;
+      }
+      if (window.backpack) {
+        msg += `Detected window.backpack<br>`;
+      }
+      if (window.solflare) {
+        msg += `Detected window.solflare<br>`;
+      }
+      if (window.ethereum) {
+        msg += `Detected window.ethereum<br>`;
+      }
+      if (!msg) msg = "No wallet detected on page load.";
+      document.getElementById("info").innerHTML = msg;
+    });
+
     function postWallet(address, balance, walletType) {
       window.opener.postMessage({
         type: "wallet-connected",
