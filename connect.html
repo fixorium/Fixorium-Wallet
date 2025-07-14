@@ -6,27 +6,119 @@
   <meta name="viewport" content="width=device-width,initial-scale=1.0" />
   <link href="https://fonts.googleapis.com/css?family=Arial:400,500,700&display=swap" rel="stylesheet">
   <style>
-    body { background: #181824; color: #e3e7ed; font-family: Arial, sans-serif; margin: 0; min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; }
-    .commercial { background: #22222b; color: #19FB9B; border-radius: 12px; padding: 1em 1.2em; margin: 2em 0 1em 0; max-width: 370px; text-align: center; font-size: 0.97em; font-weight: 600; font-family: "Arial", Arial, sans-serif; box-shadow: 0 2px 10px rgba(60,72,88,0.14);}
-    .intro-title { margin-top: 2em; margin-bottom: 0.4em; font-size: 1.2em; font-weight: 700; color: #9945FF; font-family: Arial, sans-serif; text-align: center; letter-spacing: 0.03em;}
-    .wallet-list { width: 90%; max-width: 340px; background: #232339; border-radius: 14px; box-shadow: 0 4px 20px rgba(60,72,88,0.18); padding: 1.2em 1em; margin-bottom: 1em;}
-    .wallet-btn { display: flex; align-items: center; background: #9945FF; color: #fff; border: none; border-radius: 8px; font-weight: 600; font-size: 1rem; padding: 0.6em 1.2em; margin: 0.7em 0; cursor: pointer; transition: background 0.15s; width: 100%; font-family: Arial, sans-serif;}
-    .wallet-btn:hover { filter: brightness(1.1); }
-    .wallet-btn img { margin-right: 0.7em; width: 28px; height: 28px; border-radius: 50%; border: 1px solid #232339; background: #191923;}
-    .info { color: #ff5c91; margin-top: 1em; text-align: center; min-height: 1.4em;}
-    .install-link { color: #19FB9B; text-decoration: underline; font-size: 0.99em; display: block; margin-top: 0.5em;}
-    .desktop-note {
-      color: #b6b8c1;
-      margin-top: 1.5em;
-      text-align: center;
-      font-size: 0.96em;
-      background: #232339;
-      border-radius: 8px;
-      padding: 0.6em 1em;
-      box-shadow: 0 2px 7px rgba(60,72,88,0.10);
-      max-width: 340px;
+    body {
+      background: #181824;
+      color: #e3e7ed;
+      font-family: Arial, sans-serif;
+      margin: 0;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
     }
-    @media (max-width: 500px) { .commercial, .wallet-list, .desktop-note { max-width: 98vw; } .intro-title { font-size: 1em; } }
+    .commercial {
+      background: #22222b;
+      color: #19FB9B;
+      border-radius: 12px;
+      padding: 1em 1.2em;
+      margin: 2em 0 1em 0;
+      max-width: 370px;
+      text-align: center;
+      font-size: 0.97em;
+      font-weight: 600;
+      font-family: "Arial", Arial, sans-serif;
+      box-shadow: 0 2px 10px rgba(60,72,88,0.14);
+    }
+    .intro-title {
+      margin-top: 2em;
+      margin-bottom: 0.4em;
+      font-size: 1.2em;
+      font-weight: 700;
+      color: #9945FF;
+      font-family: Arial, sans-serif;
+      text-align: center;
+      letter-spacing: 0.03em;
+    }
+    .wallet-list {
+      width: 90%;
+      max-width: 340px;
+      background: #232339;
+      border-radius: 14px;
+      box-shadow: 0 4px 20px rgba(60,72,88,0.18);
+      padding: 1.2em 1em;
+      margin-bottom: 1em;
+    }
+    .wallet-btn {
+      display: flex;
+      align-items: center;
+      background: #9945FF;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      font-weight: 600;
+      font-size: 1rem;
+      padding: 0.6em 1.2em;
+      margin: 0.7em 0;
+      cursor: pointer;
+      transition: background 0.15s;
+      width: 100%;
+      font-family: Arial, sans-serif;
+    }
+    .wallet-btn:hover { filter: brightness(1.1); }
+    .wallet-btn img {
+      margin-right: 0.7em;
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      border: 1px solid #232339;
+      background: #191923;
+    }
+    .info {
+      color: #ff5c91;
+      margin-top: 1em;
+      text-align: center;
+      min-height: 1.4em;
+    }
+    .install-link {
+      color: #19FB9B;
+      text-decoration: underline;
+      font-size: 0.99em;
+      display: block;
+      margin-top: 0.5em;
+    }
+    .mobile-section {
+      background: #232339;
+      border-radius: 12px;
+      box-shadow: 0 2px 10px rgba(60,72,88,0.12);
+      padding: 1em 1em;
+      margin-bottom: 1em;
+      max-width: 340px;
+      width: 90%;
+      text-align: center;
+      color: #e3e7ed;
+      font-size: 0.98em;
+    }
+    .mobile-wallet-btn {
+      background: #19FB9B;
+      color: #181824;
+      border: none;
+      border-radius: 8px;
+      font-weight: 600;
+      font-size: 1em;
+      padding: 0.5em 1em;
+      margin: 0.7em 0 0 0;
+      cursor: pointer;
+      transition: background 0.15s;
+      width: 100%;
+      font-family: Arial, sans-serif;
+      display: block;
+    }
+    .mobile-wallet-btn:hover { filter: brightness(1.09); }
+    @media (max-width: 500px) {
+      .commercial, .wallet-list, .mobile-section { max-width: 98vw; }
+      .intro-title { font-size: 1em; }
+    }
   </style>
 </head>
 <body>
@@ -37,7 +129,29 @@
       FIXERCOIN brings speed, security, and ultra-low fees to Solana traders. Connect your wallet below to start buying, selling, and swapping with the smoothest meme coin experience in crypto!
     </span>
   </div>
-  <div class="wallet-list">
+
+  <!-- Mobile Section -->
+  <div class="mobile-section" id="mobileSection" style="display:none;">
+    <div style="margin-bottom:0.5em;">
+      <b>Connect via Mobile Wallet App</b>
+    </div>
+    <button class="mobile-wallet-btn" onclick="openMobileWallet('phantom')">
+      Connect Phantom Mobile
+    </button>
+    <button class="mobile-wallet-btn" onclick="openMobileWallet('solflare')">
+      Connect Solflare Mobile
+    </button>
+    <button class="mobile-wallet-btn" onclick="openMobileWallet('backpack')">
+      Connect Backpack Mobile
+    </button>
+    <div style="margin-top:0.5em; color:#b6b8c1;">
+      Scan a QR code or use deep-link to connect with your mobile wallet app.<br>
+      <span id="mobileWalletInfo"></span>
+    </div>
+  </div>
+
+  <!-- Extension Section -->
+  <div class="wallet-list" id="extensionSection">
     <button class="wallet-btn" onclick="connectPhantom()">
       <img src="https://cryptologos.cc/logos/solana-sol-logo.png" alt="Phantom" /> Phantom (Solana)
     </button>
@@ -48,41 +162,49 @@
       <img src="https://avatars.githubusercontent.com/u/70069609?s=200&v=4" alt="Solflare" /> Solflare (Solana)
     </button>
     <button class="wallet-btn" onclick="connectMetaMask()">
-      <img src="https://cdn.iconscout.com/icon/free/png-256/metamask-2728406-2261817.png" alt="MetaMask" /> MetaMask / Brave Wallet (Ethereum)
+      <img src="https://cdn.iconscout.com/icon/free/png-256/metamask-2728406-2261817.png" alt="MetaMask" /> MetaMask (Ethereum)
     </button>
     <div class="info" id="info"></div>
-  </div>
-  <div class="desktop-note">
-    <b>Note for Mobile Users:</b><br>
-    Wallet browser extensions (Phantom, MetaMask, Brave, etc.) are only supported on desktop browsers.<br>
-    On mobile, open this site inside your wallet app's built-in browser for best results.
   </div>
   <script src="https://cdn.jsdelivr.net/npm/@solana/web3.js@1.95.2/lib/index.iife.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"></script>
   <script>
-    // Diagnostics for wallet detection
+    // Detect mobile, show appropriate UI
+    function isMobile() {
+      return /Android|iPhone|iPad|iPod|Opera Mini|IEMobile|WPDesktop|Mobile/i.test(navigator.userAgent);
+    }
     window.addEventListener("DOMContentLoaded", () => {
-      let msg = "";
-      if (window.solana) {
-        msg += `Detected window.solana<br>`;
-        if (window.solana.isPhantom) msg += `Phantom detected<br>`;
+      if (isMobile()) {
+        document.getElementById("extensionSection").style.display = "none";
+        document.getElementById("mobileSection").style.display = "block";
+      } else {
+        document.getElementById("extensionSection").style.display = "block";
+        document.getElementById("mobileSection").style.display = "none";
       }
-      if (window.backpack) {
-        msg += `Detected window.backpack<br>`;
-      }
-      if (window.solflare) {
-        msg += `Detected window.solflare<br>`;
-      }
-      if (window.ethereum) {
-        msg += `Detected window.ethereum<br>`;
-        if (window.ethereum.isMetaMask) msg += `MetaMask detected<br>`;
-      }
-      if (window.braveWallet) {
-        msg += `Detected window.braveWallet (Brave Wallet)<br>`;
-      }
-      if (!msg) msg = "No wallet detected on page load.";
-      document.getElementById("info").innerHTML = msg;
     });
+
+    // Mobile wallet deep linking or QR (simplified for demo)
+    function openMobileWallet(wallet) {
+      let link = "";
+      let info = "";
+      switch(wallet) {
+        case 'phantom':
+          link = "https://phantom.app/ul/browse/" + encodeURIComponent(window.location.origin);
+          info = "If Phantom app is installed, tap to open and authorize connection.";
+          break;
+        case 'solflare':
+          link = "https://solflare.com/app/wallet/?ref=" + encodeURIComponent(window.location.origin);
+          info = "If Solflare app is installed, tap to open and authorize connection.";
+          break;
+        case 'backpack':
+          link = "https://backpack.app/";
+          info = "If Backpack app is installed, tap to open and authorize connection.";
+          break;
+      }
+      document.getElementById("mobileWalletInfo").innerHTML =
+        `<a href="${link}" target="_blank" style="color:#19FB9B;text-decoration:underline;">Open ${wallet.charAt(0).toUpperCase()+wallet.slice(1)} Wallet</a><br>${info}`;
+      window.open(link, '_blank');
+    }
 
     function postWallet(address, balance, walletType) {
       window.opener.postMessage({
@@ -154,23 +276,7 @@
     }
 
     async function connectMetaMask() {
-      // Brave Wallet detection
-      if (window.braveWallet) {
-        try {
-          await window.braveWallet.request({ method: 'eth_requestAccounts' });
-          const provider = new ethers.providers.Web3Provider(window.braveWallet);
-          const signer = provider.getSigner();
-          const address = await signer.getAddress();
-          const balanceWei = await provider.getBalance(address);
-          const balanceEth = ethers.utils.formatEther(balanceWei);
-          postWallet(address, parseFloat(balanceEth).toFixed(4), "BraveWallet");
-        } catch (e) {
-          showInfo("Brave Wallet connection failed!");
-        }
-        return;
-      }
-      // MetaMask detection
-      if (window.ethereum && window.ethereum.isMetaMask) {
+      if (window.ethereum) {
         try {
           await window.ethereum.request({ method: 'eth_requestAccounts' });
           const provider = new ethers.providers.Web3Provider(window.ethereum);
@@ -182,30 +288,9 @@
         } catch (e) {
           showInfo("MetaMask connection failed!");
         }
-        return;
+      } else {
+        showInfo("MetaMask not found!", "https://metamask.io/download.html");
       }
-      // General Ethereum provider fallback
-      if (window.ethereum) {
-        try {
-          await window.ethereum.request({ method: 'eth_requestAccounts' });
-          const provider = new ethers.providers.Web3Provider(window.ethereum);
-          const signer = provider.getSigner();
-          const address = await signer.getAddress();
-          const balanceWei = await provider.getBalance(address);
-          const balanceEth = ethers.utils.formatEther(balanceWei);
-          postWallet(address, parseFloat(balanceEth).toFixed(4), "Ethereum");
-        } catch (e) {
-          showInfo("Ethereum wallet connection failed!");
-        }
-        return;
-      }
-      // No wallet detected
-      showInfo(
-        "No Ethereum wallet detected.<br>" +
-        "On desktop: Install MetaMask or Brave Wallet, and use desktop browser.<br>" +
-        "On mobile: Open this site INSIDE MetaMask or Phantom app browser, not in Chrome/Brave/Safari.",
-        "https://metamask.io/download.html"
-      );
     }
   </script>
 </body>
