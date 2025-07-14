@@ -134,6 +134,7 @@
       color: #005ecb;
       font-weight: 600;
       user-select: text;
+      white-space: pre-wrap;
     }
     footer {
       margin-top: 40px;
@@ -195,6 +196,7 @@
       cursor: pointer;
       user-select:none;
       transition: color 0.3s ease;
+      line-height: 1;
     }
     #ad-close-btn:hover {
       color: #ff9999;
@@ -253,6 +255,7 @@
       const [swapping, setSwapping] = useState(false);
       const [txStatus, setTxStatus] = useState(null);
       const [tokenBalances, setTokenBalances] = useState({});
+      const [errorMessage, setErrorMessage] = useState(null);
 
       // Helper to convert amount to base units
       const toBaseUnits = (amountStr, decimals) => {
@@ -267,6 +270,7 @@
 
       // Connect wallet
       const connectWallet = useCallback(async () => {
+        setErrorMessage(null);
         if (window.solana && window.solana.isPhantom) {
           try {
             const resp = await window.solana.connect();
@@ -274,15 +278,16 @@
             setWalletConnected(true);
             setTxStatus(null);
           } catch(e) {
-            alert("Wallet connection failed: " + e.message);
+            setErrorMessage("Wallet connection failed: " + e.message);
           }
         } else {
-          alert("Phantom wallet not found. Please install it from https://phantom.app/");
+          setErrorMessage("Phantom wallet not found. Please install it from https://phantom.app/");
         }
       }, []);
 
       // Disconnect wallet
       const disconnectWallet = useCallback(async () => {
+        setErrorMessage(null);
         try {
           if(window.solana && window.solana.isPhantom) {
             await window.solana.disconnect();
@@ -297,6 +302,7 @@
           }
         } catch(e) {
           console.error("Error disconnecting wallet", e);
+          setErrorMessage("Error disconnecting wallet: " + e.message);
         }
       }, []);
 
@@ -305,6 +311,7 @@
         if(!publicKey) return;
 
         (async () => {
+          setErrorMessage(null);
           try {
             setSolBalance(null);
             const balance = await connection.getBalance(publicKey);
@@ -314,22 +321,25 @@
             for(const token of tokensList){
               try {
                 const mintPubkey = new PublicKey(token.address);
-                const accounts = await connection.getTokenAccountsByOwner(publicKey, {mint: mintPubkey});
-                if(accounts.value.length > 0){
-                  const accInfo = await connection.getParsedAccountInfo(accounts.value[0].pubkey);
-                  const uiAmount = accInfo.value?.data?.parsed?.info?.tokenAmount?.uiAmount || 0;
-                  balances[token.address] = uiAmount;
-                } else {
-                  balances[token.address] = 0;
+                // Use getTokenAccountsByOwner then parse all accounts to find max balance (in case user has multiple ATAs)
+                const accounts = await connection.getTokenAccountsByOwner(publicKey, { mint: mintPubkey });
+                let tokenBalance = 0;
+                for(const acc of accounts.value){
+                  const accInfo = await connection.getParsedAccountInfo(acc.pubkey);
+                  if(accInfo.value && accInfo.value.data && accInfo.value.data.parsed && accInfo.value.data.parsed.info.tokenAmount){
+                    tokenBalance += accInfo.value.data.parsed.info.tokenAmount.uiAmount || 0;
+                  }
                 }
-              } catch {
+                balances[token.address] = tokenBalance;
+              } catch(err) {
+                console.warn(`Failed to fetch token balance for ${token.symbol}`, err);
                 balances[token.address] = 0;
               }
             }
             setTokenBalances(balances);
           } catch(e) {
             console.error("Error fetching balances:", e);
-            alert("Error fetching wallet balances. See console.");
+            setErrorMessage("Error fetching wallet balances. See console for details.");
             setSolBalance(0);
             setTokenBalances({});
           }
@@ -344,6 +354,7 @@
           setPublicKey(new PublicKey(pk.toString()));
           setWalletConnected(true);
           setTxStatus(null);
+          setErrorMessage(null);
         };
 
         const handleDisconnect = () => {
@@ -355,6 +366,7 @@
           setSelectedRoute(null);
           setTxStatus(null);
           setAmount('0');
+          setErrorMessage(null);
         };
 
         window.solana.on('connect', handleConnect);
@@ -363,6 +375,7 @@
         if(window.solana.isConnected){
           setPublicKey(new PublicKey(window.solana.publicKey.toString()));
           setWalletConnected(true);
+          setErrorMessage(null);
         }
 
         return () => {
@@ -375,13 +388,14 @@
 
       // Get swap quotes from Jupiter API
       const getSwapQuotes = async () => {
+        setErrorMessage(null);
         if(!publicKey){
-          alert("Please connect your wallet first");
+          setErrorMessage("Please connect your wallet first.");
           return;
         }
         const parsedAmount = parseFloat(amount);
         if(isNaN(parsedAmount) || parsedAmount <= 0){
-          alert("Please enter a valid positive amount");
+          setErrorMessage("Please enter a valid positive amount.");
           return;
         }
         setLoadingQuotes(true);
@@ -394,12 +408,13 @@
           const outputMint = toToken.symbol === "SOL" ? SOL_MINT : toToken.address;
           const amountInBaseUnits = toBaseUnits(amount, fromToken.decimals);
           if(amountInBaseUnits === 0){
-            alert("Invalid amount after conversion");
+            setErrorMessage("Invalid amount after conversion.");
             setLoadingQuotes(false);
             return;
           }
 
-          // For GET requests axios converts params properly but limit URL length if necessary.
+          // Use POST request if GET gives CORS or length issues
+          // But Jupiter API docs state GET → quote is standard, so we keep GET here:
           const resp = await axios.get(JUPITER_API_BASE + "/quote", {
             params: {
               inputMint,
@@ -413,25 +428,26 @@
             setRoutes(resp.data.data);
             setSelectedRoute(resp.data.data[0]);
           } else {
-            alert("No swap routes found for this token pair and amount.");
+            setErrorMessage("No swap routes found for this token pair and amount.");
             setRoutes([]);
             setSelectedRoute(null);
           }
         }catch(e){
           console.error("Error fetching swap routes:", e);
-          alert("Failed to fetch swap routes. See console.");
+          setErrorMessage("Failed to fetch swap quotes. See console for details.");
         }
         setLoadingQuotes(false);
       };
 
       // Execute swap using Jupiter API
       const executeSwap = async () => {
+        setErrorMessage(null);
         if(!publicKey){
-          alert("Please connect your wallet first");
+          setErrorMessage("Please connect your wallet first.");
           return;
         }
         if(!selectedRoute){
-          alert("No swap route selected");
+          setErrorMessage("No swap route selected.");
           return;
         }
         setSwapping(true);
@@ -444,13 +460,13 @@
           });
 
           if(!resp.data || !resp.data.swapTransactions){
-            alert("Failed to get swap transactions from Jupiter");
+            setErrorMessage("Failed to get swap transactions from Jupiter.");
             setSwapping(false);
             return;
           }
           const swapTxs = resp.data.swapTransactions;
 
-          // If setup tx exists, send it first
+          // Handle setup transaction if any
           if(swapTxs.setupTransaction){
             const setupTx = Transaction.from(Buffer.from(swapTxs.setupTransaction, "base64"));
             setupTx.feePayer = publicKey;
@@ -462,7 +478,7 @@
             await connection.confirmTransaction(setupTxid, "confirmed");
           }
 
-          // Send main swap transaction
+          // Main swap transaction
           const swapTx = Transaction.from(Buffer.from(swapTxs.swapTransaction, "base64"));
           swapTx.feePayer = publicKey;
           const {blockhash} = await connection.getLatestBlockhash();
@@ -473,7 +489,7 @@
           await connection.confirmTransaction(swapTxid, "confirmed");
           setTxStatus("Swap tx confirmed: " + swapTxid);
 
-          // Refresh balances
+          // Refresh balances after swap
           const newSolBalance = await connection.getBalance(publicKey);
           setSolBalance(newSolBalance / 1e9);
 
@@ -482,14 +498,15 @@
             try {
               const mintPubkey = new PublicKey(token.address);
               const tokenAccounts = await connection.getTokenAccountsByOwner(publicKey, {mint: mintPubkey});
-              if(tokenAccounts.value.length > 0){
-                const accountInfo = await connection.getParsedAccountInfo(tokenAccounts.value[0].pubkey);
-                const uiAmount = accountInfo.value?.data?.parsed?.info?.tokenAmount?.uiAmount || 0;
-                balances[token.address] = uiAmount;
-              }else{
-                balances[token.address] = 0;
+              let totalBalance = 0;
+              for(const acc of tokenAccounts.value){
+                const accountInfo = await connection.getParsedAccountInfo(acc.pubkey);
+                if(accountInfo.value && accountInfo.value.data && accountInfo.value.data.parsed && accountInfo.value.data.parsed.info.tokenAmount){
+                  totalBalance += accountInfo.value.data.parsed.info.tokenAmount.uiAmount || 0;
+                }
               }
-            } catch {
+              balances[token.address] = totalBalance;
+            }catch{
               balances[token.address] = 0;
             }
           }
@@ -498,15 +515,15 @@
           setAmount('0');
           setRoutes([]);
           setSelectedRoute(null);
+          setErrorMessage(null);
         } catch(e){
           console.error("Swap failed:", e);
-          alert("Swap failed: " + (e?.message ?? e));
+          setErrorMessage("Swap failed: " + (e?.message ?? e));
         }
-
         setSwapping(false);
       };
 
-      // Display balances safely
+      // Display balances
       const displayBalance = (token) => {
         if(token.symbol === "SOL"){
           return solBalance === null ? "Loading..." : solBalance.toFixed(4);
@@ -515,7 +532,6 @@
         return bal === undefined ? "Loading..." : bal.toFixed(4);
       };
 
-      // Swap from and to token selects
       const swapFromTo = () => {
         const oldFrom = fromToken;
         setFromToken(toToken);
@@ -524,17 +540,19 @@
         setRoutes([]);
         setSelectedRoute(null);
         setTxStatus(null);
+        setErrorMessage(null);
       };
 
-      // Render UI
       return e("div", null,
-        !walletConnected 
+        !walletConnected
           ? e("button", {onClick: connectWallet, type: "button", style: {minWidth: "100%"}, "aria-label":"Connect Phantom Wallet"}, "Connect Phantom Wallet")
           : e("div", {style: {marginBottom: 15}},
             e("p", {style: {wordBreak: "break-word", userSelect:"text"}}, e("b", null, "Wallet: "), publicKey ? publicKey.toBase58() : ""),
             e("p", null, e("b", null, "SOL balance: "), solBalance === null ? "Loading..." : solBalance.toFixed(4) + " SOL"),
             e("button", {onClick:disconnectWallet, type:"button", style:{padding:"6px 12px"}}, "Disconnect")
           ),
+
+        errorMessage ? e("p", {style:{color:"red",whiteSpace:"pre-wrap"}}, errorMessage) : null,
 
         e("fieldset", {disabled: !walletConnected || loadingQuotes || swapping},
           e("legend", null, "Swap"),
@@ -554,6 +572,7 @@
                 setSelectedRoute(null);
                 setAmount('');
                 setTxStatus(null);
+                setErrorMessage(null);
               }
             },
             style: {width: "100%", padding:6, fontSize:"0.9rem", marginTop:4, marginBottom:6}
@@ -577,6 +596,7 @@
                 setSelectedRoute(null);
                 setAmount('');
                 setTxStatus(null);
+                setErrorMessage(null);
               }
             },
             style: {width: "100%", padding:6, fontSize:"0.9rem", marginTop:4, marginBottom:6}
@@ -645,7 +665,6 @@
       );
     }
 
-    // Commercial ad close button functionality
     function setupAdClose() {
       const ad = document.getElementById("commercial-ad");
       const closeBtn = document.getElementById("ad-close-btn");
