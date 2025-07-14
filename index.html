@@ -297,7 +297,7 @@
         TOKENS.forEach((token, idx) => {
           let price = fakePrices[token.symbol] = getRandomPrice(token.symbol);
           const tr = document.createElement("tr");
-          tr.onclick = () => openPopup("token", idx);
+          tr.onclick = () => openTokenPopup(idx);
           tr.innerHTML = `
             <td>${idx+1}</td>
             <td><img class="token-img" src="${token.image}" alt="${token.symbol}" /> ${token.name}</td>
@@ -312,10 +312,9 @@
     }
 
 
-
     // --- MAIN PAGE EVENTS ---
     const connectWalletBtn = document.getElementById('connectWalletBtn');
-    connectWalletBtn.onclick = () => openPopup("connect");
+    connectWalletBtn.onclick = () => openConnectPopup();
 
     // --- INIT ---
     function init() {
@@ -324,208 +323,63 @@
     window.addEventListener("DOMContentLoaded", init);
 
     // --- POPUP WINDOW LOGIC ---
-    // If popup, show only relevant modal
-    function inPopup() {
-      return window.opener && (location.hash.startsWith("#connect-wallet") || location.hash.startsWith("#token-"));
+    function openConnectPopup() {
+      const url = window.location.href + "#connect-wallet";
+      const features = "width=420,height=520,top=120,left=120,toolbar=no,location=no,status=no,menubar=no,scrollbars=no,resizable=no";
+      window.open(url, "ConnectWallet", features);
     }
-    if (inPopup()) {
-      document.body.innerHTML = ""; // Remove main UI
-      const style = document.createElement("style");
-      style.textContent = `
-        body { background: #181824; color: #e3e7ed; font-family: Arial, sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh;}
-        .popup-modal { background: #222; border-radius: 16px; box-shadow: 0 8px 40px #0005; padding: 2.2em 2.1em 1.6em 2.1em; min-width: 290px; max-width: 97vw; }
-        .popup-btn { background: #9945FF; color:#fff; border: none; border-radius:8px; font-weight:600; font-size:1.08em; padding:0.6em 1.2em; margin-bottom:1.1em; width:100%; cursor:pointer;}
-        .popup-btn:hover{ filter:brightness(1.08);}
-        .popup-close { background: #eee; color:#222; border-radius:8px; border:none; padding:0.4em 1.2em; font-weight:600; cursor:pointer; margin-top:1.1em;}
-        .fee-note { color: #9945FF; margin:0.6em 0 0.7em 0; font-size:0.97em;}
-      `;
-      document.head.appendChild(style);
 
-      // --- Wallet Connect Popup ---
-      if (location.hash.startsWith("#connect-wallet")) {
-        document.body.innerHTML = `
-          <div class="popup-modal">
-            <div style="font-weight:700; font-size:1.12em; margin-bottom:1em;">Connect Wallet</div>
-            <button id="popupPhantomConnect" class="popup-btn">Phantom (Solana)</button>
-            <button id="popupBackpackConnect" class="popup-btn" style="background:#2c2c40;">Backpack (Solana)</button>
-            <button id="popupMetamaskConnect" class="popup-btn" style="background:#232339;">MetaMask (Sol/ETH)</button>
-            <button id="popupCloseWallet" class="popup-close">Cancel</button>
-            <div id="popupMsg" class="fee-note"></div>
-          </div>
-        `;
-        document.getElementById("popupPhantomConnect").onclick = async () => {
-          try {
-            let solana = window.solana;
-            if (window.phantom?.solana && window.phantom.solana.isPhantom) {
-              solana = window.phantom.solana;
-            }
-            if (!solana || !solana.isPhantom) {
-              showPopupMsg("Phantom Wallet not found!");
-              return;
-            }
-            const resp = await solana.connect();
-            window.opener.postMessage({
-              walletType: "phantom",
-              publicKey: resp.publicKey.toBase58()
-            }, "*");
-            showPopupMsg("Phantom connected! You may close this window.");
-          } catch (e) {
-            showPopupMsg("Phantom connection error.");
-          }
-        };
-        document.getElementById("popupBackpackConnect").onclick = async () => {
-          try {
-            if (window.backpack && window.backpack.isBackpack) {
-              const resp = await window.backpack.connect();
-              window.opener.postMessage({
-                walletType: "backpack",
-                publicKey: resp.publicKey
-              }, "*");
-              showPopupMsg("Backpack connected! You may close this window.");
-            } else {
-              showPopupMsg("Backpack Wallet not found!");
-            }
-          } catch (e) {
-            showPopupMsg("Backpack connection error.");
-          }
-        };
-        document.getElementById("popupMetamaskConnect").onclick = async () => {
-          try {
-            if (!window.ethereum || !window.ethereum.isMetaMask) {
-              showPopupMsg("MetaMask extension not found!");
-              return;
-            }
-            const provider = new ethers.providers.Web3Provider(window.ethereum, "any");
-            await provider.send("eth_requestAccounts", []);
-            const signer = provider.getSigner();
-            const ethAddr = await signer.getAddress();
-            window.opener.postMessage({
-              walletType: "metamask",
-              publicKey: ethAddr
-            }, "*");
-            showPopupMsg("MetaMask connected! (Demo)");
-          } catch (e) {
-            showPopupMsg("MetaMask connection error.");
-          }
-        };
-        document.getElementById("popupCloseWallet").onclick = () => window.close();
-        function showPopupMsg(msg) {
-          document.getElementById("popupMsg").textContent = msg;
-        }
-      }
+    function openTokenPopup(idx) {
+      const url = window.location.href.split('#')[0] + "#token-" + idx;
+      const features = "width=480,height=620,top=120,left=120,toolbar=no,location=no,status=no,menubar=no,scrollbars=no,resizable=no";
+      window.open(url, "TokenBuySell" + idx, features);
+    }
 
-      // --- Buy/Sell Popup ---
-      if (location.hash.startsWith("#token-")) {
-        const idx = parseInt(location.hash.replace("#token-", ""));
-        const token = TOKENS[idx];
-        if (!token) {
-          document.body.innerHTML = `<div class="popup-modal">Token not found.</div>`;
-        } else {
-          let fakePrice = getRandomPrice(token.symbol);
-          let fakeBalance = (Math.random()*1000).toFixed(2);
-          document.body.innerHTML = `
-            <div class="popup-modal">
-              <img src="${token.image}" style="width:48px;height:48px;border-radius:50%;margin-bottom:0.7em;">
-              <div style="font-weight:700;font-size:1.08em;">${token.name} (${token.symbol})</div>
-              <div style="color:#19FB9B;font-weight:600;margin-bottom:0.8em;">Price: $${formatPrice(fakePrice)}</div>
-              <div style="font-size:0.98em;margin-bottom:1em;">Balance: <span id="popupTokenBal">${fakeBalance}</span> ${token.symbol}</div>
-              <button id="popupBuyBtn" class="popup-btn">Buy</button>
-              <button id="popupSellBtn" class="popup-btn" style="background:#ff5c91;">Sell</button>
-              <button id="popupCloseToken" class="popup-close">Cancel</button>
-              <div id="popupSwapMsg" class="fee-note"></div>
-            </div>
-          `;
-          function openSwapForm(mode) {
-            document.body.innerHTML = `
-              <div class="popup-modal">
-                <img src="${token.image}" style="width:42px;height:42px;border-radius:50%;margin-bottom:0.5em;">
-                <div style="font-weight:700;font-size:1.08em;">${mode} ${token.name} (${token.symbol})</div>
-                <input id="popupSwapAmount" type="number" min="0" step="any" placeholder="Amount" style="width:100%;font-size:1.09em;padding:0.6em 1em;border-radius:8px;border:1px solid #222;background:#191923;color:#fff;margin:0.8em 0 0.4em 0;">
-                <div class="fee-note">0.03% service fee will be charged</div>
-                <button id="popupSwapConfirm" class="popup-btn">${mode}</button>
-                <button id="popupCloseSwap" class="popup-close">Cancel</button>
-                <div id="popupSwapMsg" class="fee-note"></div>
-              </div>
-            `;
-            document.getElementById("popupSwapConfirm").onclick = async () => {
-              const amt = parseFloat(document.getElementById("popupSwapAmount").value);
-              if (!amt || amt <= 0) {
-                document.getElementById("popupSwapMsg").textContent = "Enter a valid amount.";
-                return;
-              }
-              try {
-                // --- Jupiter DEX Integration ---
-                // For demo, using SOL as fromMint for buy, token.mint as toMint
-                // For sell, reverse
-                const userKey = await getPhantomPublicKey();
-                if (!userKey) {
-                  document.getElementById("popupSwapMsg").textContent = "Please connect Phantom (popup main page).";
-                  return;
-                }
-                let fromMint, toMint, decimals;
-                if (mode === "Buy") {
-                  fromMint = TOKENS[0].mint; // SOL
-                  toMint = token.mint;
-                  decimals = token.decimals;
-                } else {
-                  fromMint = token.mint;
-                  toMint = TOKENS[0].mint; // SOL
-                  decimals = token.decimals;
-                }
-                const amountLamports = Math.floor(amt * Math.pow(10, decimals));
-                const txid = await swapViaJupiterPopup({fromMint, toMint, amount: amountLamports, publicKey: userKey, feeAccount: "4w3kGzZ2ki2r6CwM5ZjiF9zv3B5r1xCw7f7dF9vF6x4x"});
-                document.getElementById("popupSwapMsg").textContent = `${mode} successful! Tx: ${txid.slice(0,8)}...`;
-              } catch(e) {
-                document.getElementById("popupSwapMsg").textContent = (e.message || e);
-              }
-            };
-            document.getElementById("popupCloseSwap").onclick = () => window.close();
-          }
-          document.getElementById("popupBuyBtn").onclick = () => openSwapForm("Buy");
-          document.getElementById("popupSellBtn").onclick = () => openSwapForm("Sell");
-          document.getElementById("popupCloseToken").onclick = () => window.close();
-        }
-      }
+    // Check if this is a popup window
+    if (window.opener && window.location.hash.startsWith("#connect-wallet")) {
+      // Render wallet connect UI
+      console.log("Render wallet connect UI");
 
-      // Helper: Phantom connect in popup
-      async function getPhantomPublicKey() {
-        if (window.solana && window.solana.isPhantom) {
-          if (!window.solana.publicKey) {
-            await window.solana.connect();
-          }
-          return window.solana.publicKey;
-        }
-        return null;
-      }
+      // Simulate wallet connection success
+      const walletType = "MetaMask";
+      const publicKey = "0x1234567890abcdef";
+      window.opener.postMessage({ walletType, publicKey }, "*");
+      // window.close();
+    }
 
-      // --- Jupiter DEX Swap in Popup ---
-      async function swapViaJupiterPopup({fromMint, toMint, amount, publicKey, feeAccount}) {
-        const JUP_API = "https://quote-api.jup.ag/v6";
-        const quoteRes = await fetch(`${JUP_API}/quote?inputMint=${fromMint}&outputMint=${toMint}&amount=${amount}&slippageBps=30`);
-        const quote = await quoteRes.json();
-        if (!quote.routePlan) throw new Error("No route found via Jupiter.");
-        const swapRes = await fetch(`${JUP_API}/swap`, {
-          method: "POST",
-          headers: {"Content-Type": "application/json"},
-          body: JSON.stringify({
-            route: quote,
-            userPublicKey: publicKey.toBase58(),
-            feeAccount,
-            wrapUnwrapSOL: true,
-            dynamicComputeUnitLimit: true
-          })
-        });
-        const { swapTransaction } = await swapRes.json();
-        if (!swapTransaction) throw new Error("Failed to build Jupiter transaction.");
-        const connection = new solanaWeb3.Connection(solanaWeb3.clusterApiUrl("mainnet-beta"));
-        const tx = solanaWeb3.Transaction.from(Buffer.from(swapTransaction, "base64"));
-        tx.feePayer = publicKey;
-        tx.recentBlockhash = (await connection.getRecentBlockhash()).blockhash;
-        const signedTx = await window.solana.signTransaction(tx);
-        const txid = await connection.sendRawTransaction(signedTx.serialize());
-        await connection.confirmTransaction(txid, "finalized");
-        return txid;
-      }
+    if (window.opener && window.location.hash.startsWith("#token-")) {
+      // Get token index from URL hash
+      const tokenIndex = window.location.hash.split('-')[1];
+      console.log(`Render buy/sell UI for token ${tokenIndex}`);
+    }
+
+    // --- DEX SWAP INTEGRATION ---
+    async function swapViaJupiterPopup({fromMint, toMint, amount, publicKey, feeAccount}) {
+      const JUP_API = "https://quote-api.jup.ag/v6";
+      const quoteRes = await fetch(`${JUP_API}/quote?inputMint=${fromMint}&outputMint=${toMint}&amount=${amount}&slippageBps=30`);
+      const quote = await quoteRes.json();
+      if (!quote.routePlan) throw new Error("No route found via Jupiter.");
+      const swapRes = await fetch(`${JUP_API}/swap`, {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({
+          route: quote,
+          userPublicKey: publicKey.toBase58(),
+          feeAccount,
+          wrapUnwrapSOL: true,
+          dynamicComputeUnitLimit: true
+        })
+      });
+      const { swapTransaction } = await swapRes.json();
+      if (!swapTransaction) throw new Error("Failed to build Jupiter transaction.");
+      const connection = new solanaWeb3.Connection(solanaWeb3.clusterApiUrl("mainnet-beta"));
+      const tx = solanaWeb3.Transaction.from(Buffer.from(swapTransaction, "base64"));
+      tx.feePayer = publicKey;
+      tx.recentBlockhash = (await connection.getRecentBlockhash()).blockhash;
+      const signedTx = await window.solana.signTransaction(tx);
+      const txid = await connection.sendRawTransaction(signedTx.serialize());
+      await connection.confirmTransaction(txid, "finalized");
+      return txid;
     }
 
     // --- Listen to popup wallet connect (main window only) ---
@@ -561,43 +415,6 @@
       document.getElementById('errorMsg').style.display = 'none';
       document.getElementById('successMsg').style.display = 'none';
     }
-   // Function to open connect wallet popup
-document.getElementById('connectWalletBtn').onclick = function() {
-  const url = window.location.href + "#connect-wallet";
-  const features = "width=420,height=520,top=120,left=120,toolbar=no,location=no,status=no,menubar=no,scrollbars=no,resizable=no";
-  window.open(url, "ConnectWallet", features);
-};
-
-// Function to open token popup
-function openTokenPopup(idx) {
-  const url = window.location.href.split('#')[0] + "#token-" + idx;
-  const features = "width=480,height=620,top=120,left=120,toolbar=no,location=no,status=no,menubar=no,scrollbars=no,resizable=no";
-  window.open(url, "TokenBuySell" + idx, features);
-}
-
-// Set onclick event for token elements
-const tokens = document.querySelectorAll('tr');
-tokens.forEach((tr, idx) => {
-  tr.onclick = () => openTokenPopup(idx);
-});
-
-// Check if this is a popup window
-if (window.opener && window.location.hash.startsWith("#connect-wallet")) {
-  // Render wallet connect UI
-  console.log("Render wallet connect UI");
-
-  // Simulate wallet connection success
-  const walletType = "MetaMask";
-  const publicKey = "0x1234567890abcdef";
-  window.opener.postMessage({ walletType, publicKey }, "*");
-  // window.close();
-}
-
-if (window.opener && window.location.hash.startsWith("#token-")) {
-  // Get token index from URL hash
-  const tokenIndex = window.location.hash.split('-')[1];
-  console.log(`Render buy/sell UI for token ${tokenIndex}`);
-   }
   </script>
 </body>
 </html>
