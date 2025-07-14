@@ -13,203 +13,37 @@
 <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
 
 <!-- solana-web3.js -->
-<script src="https://cdn.jsdelivr.net/npm/@solana/web3.js@1.75.0/lib/index.iife.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@solana/web3.js@1.95.2/lib/index.iife.min.js"></script>
 <!-- solana-spl-token -->
 <script src="https://cdn.jsdelivr.net/npm/@solana/spl-token@0.3.5/lib/index.iife.min.js"></script>
 
 <style>
-  body {
-    font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
-    max-width: 480px;
-    margin: 30px auto 70px auto;
-    font-size: 14px;
-    background: #f9f9f9;
-    color: #222;
-    padding: 0 15px 0 15px;
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
-    user-select: none;
-    position: relative;
-    min-height: 100vh;
-  }
-  h1 {
-    font-weight: 900;
-    text-align: center;
-    margin-bottom: 10px;
-    font-size: 2rem;
-    color: #007aff;
-    user-select: text;
-  }
-  button {
-    cursor: pointer;
-    background-color: #007aff;
-    color: white;
-    border: none;
-    border-radius: 5px;
-    font-size: 0.9rem;
-    padding: 8px 16px;
-    transition: background-color 0.3s ease;
-    user-select: none;
-  }
-  button:hover:not([disabled]){
-    background-color: #005ecb;
-  }
-  button[disabled] {
-    background-color: #a0a0a0;
-    cursor: not-allowed;
-  }
-  fieldset {
-    border: 1px solid #ccc;
-    border-radius: 8px;
-    padding: 15px;
-    margin-top: 12px;
-    background: white;
-  }
-  legend {
-    font-weight: 700;
-    font-size: 1.1rem;
-    padding: 0 8px;
-  }
-  label {
-    font-weight: 600;
-    font-size: 0.85rem;
-    margin-bottom: 4px;
-    display: block;
-  }
-  select, input[type=number] {
-    width: 100%;
-    padding: 6px 8px;
-    font-size: 0.9rem;
-    border: 1px solid #bbb;
-    border-radius: 5px;
-    box-sizing: border-box;
-    margin-top: 4px;
-    margin-bottom: 6px;
-    transition: border-color 0.2s ease;
-  }
-  select:focus, input[type=number]:focus {
-    outline: none;
-    border-color: #007aff;
-    box-shadow: 0 0 3px #007aff66;
-  }
-  small {
-    color: #555;
-    display: block;
-    margin-top: -4px;
-    margin-bottom: 12px;
-    font-size: 0.75rem;
-    user-select: text;
-    word-break: break-all;
-  }
-  .btn-swap {
-    margin: 10px auto;
-    display: block;
-    font-weight: 600;
-    font-size: 1rem;
-    user-select: none;
-  }
-  .route-box {
-    border: 1px solid #ccc;
-    border-radius: 6px;
-    padding: 10px;
-    margin-bottom: 6px;
-    cursor: pointer;
-    font-size: 0.875rem;
-    background: white;
-    transition: border-color 0.25s ease, background-color 0.25s ease;
-    user-select: none;
-  }
-  .route-box:hover {
-    border-color: #007aff;
-    background-color: #f0f8ff;
-  }
-  .route-box.selected {
-    border-color: #007aff;
-    background-color: #e2f0ff;
-  }
-  p.status {
-    margin-top: 20px;
-    word-wrap: break-word;
-    font-size: 0.85rem;
-    color: #005ecb;
-    font-weight: 600;
-    user-select: text;
-    white-space: pre-wrap;
-  }
-  p.error {
-    margin-top: 12px;
-    word-wrap: break-word;
-    font-size: 0.85rem;
-    color: #cc0000;
-    font-weight: 600;
-    user-select: text;
-    white-space: pre-wrap;
-  }
-  footer {
-    margin-top: 40px;
-    font-size: 0.75rem;
-    color: #666;
-    text-align: center;
-    user-select:none;
-  }
-  a {
-    color: #007aff;
-    text-decoration: underline;
-    user-select: text;
-  }
-  .logo-inline {
-    vertical-align: middle;
-    width: 16px;
-    height: 16px;
-    margin-right: 6px;
-    border-radius: 3px;
-    object-fit: contain;
-    user-select:none;
-  }
-  /* Commercial Ad box */
-  #commercial-ad {
-    position: fixed;
-    bottom: 0;
-    left: 0;
-    width: 100%;
-    background: #007aff;
-    color: white;
-    font-weight: 700;
-    font-size: 14px;
-    padding: 12px 20px;
-    box-shadow: 0 -2px 6px rgba(0,0,0,0.2);
-    user-select: none;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    z-index: 1000;
-    cursor: pointer;
-    transition: background-color 0.3s ease;
-  }
-  #commercial-ad:hover {
-    background-color: #005ecb;
-  }
-  #commercial-ad img {
-    height: 24px;
-    margin-right: 12px;
-    border-radius: 50%;
-    user-select:none;
-  }
-  #ad-close-btn {
-    margin-left: 20px;
-    font-size: 20px;
-    font-weight: normal;
-    color: white;
-    background: transparent;
-    border: none;
-    cursor: pointer;
-    user-select:none;
-    transition: color 0.3s ease;
-    line-height: 1;
-  }
-  #ad-close-btn:hover {
-    color: #ff9999;
-  }
+  /* (styles unchanged for brevity, keep your previous CSS) */
+  body { font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif; max-width: 480px; margin: 30px auto 70px auto; font-size: 14px; background: #f9f9f9; color: #222; padding: 0 15px 0 15px; -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; user-select: none; position: relative; min-height: 100vh; }
+  h1 { font-weight: 900; text-align: center; margin-bottom: 10px; font-size: 2rem; color: #007aff; user-select: text; }
+  button { cursor: pointer; background-color: #007aff; color: white; border: none; border-radius: 5px; font-size: 0.9rem; padding: 8px 16px; transition: background-color 0.3s ease; user-select: none; }
+  button:hover:not([disabled]){ background-color: #005ecb; }
+  button[disabled] { background-color: #a0a0a0; cursor: not-allowed; }
+  fieldset { border: 1px solid #ccc; border-radius: 8px; padding: 15px; margin-top: 12px; background: white; }
+  legend { font-weight: 700; font-size: 1.1rem; padding: 0 8px; }
+  label { font-weight: 600; font-size: 0.85rem; margin-bottom: 4px; display: block; }
+  select, input[type=number] { width: 100%; padding: 6px 8px; font-size: 0.9rem; border: 1px solid #bbb; border-radius: 5px; box-sizing: border-box; margin-top: 4px; margin-bottom: 6px; transition: border-color 0.2s ease; }
+  select:focus, input[type=number]:focus { outline: none; border-color: #007aff; box-shadow: 0 0 3px #007aff66; }
+  small { color: #555; display: block; margin-top: -4px; margin-bottom: 12px; font-size: 0.75rem; user-select: text; word-break: break-all; }
+  .btn-swap { margin: 10px auto; display: block; font-weight: 600; font-size: 1rem; user-select: none; }
+  .route-box { border: 1px solid #ccc; border-radius: 6px; padding: 10px; margin-bottom: 6px; cursor: pointer; font-size: 0.875rem; background: white; transition: border-color 0.25s ease, background-color 0.25s ease; user-select: none; }
+  .route-box:hover { border-color: #007aff; background-color: #f0f8ff; }
+  .route-box.selected { border-color: #007aff; background-color: #e2f0ff; }
+  p.status { margin-top: 20px; word-wrap: break-word; font-size: 0.85rem; color: #005ecb; font-weight: 600; user-select: text; white-space: pre-wrap; }
+  p.error { margin-top: 12px; word-wrap: break-word; font-size: 0.85rem; color: #cc0000; font-weight: 600; user-select: text; white-space: pre-wrap; }
+  footer { margin-top: 40px; font-size: 0.75rem; color: #666; text-align: center; user-select:none; }
+  a { color: #007aff; text-decoration: underline; user-select: text; }
+  .logo-inline { vertical-align: middle; width: 16px; height: 16px; margin-right: 6px; border-radius: 3px; object-fit: contain; user-select:none; }
+  #commercial-ad { position: fixed; bottom: 0; left: 0; width: 100%; background: #007aff; color: white; font-weight: 700; font-size: 14px; padding: 12px 20px; box-shadow: 0 -2px 6px rgba(0,0,0,0.2); user-select: none; display: flex; align-items: center; justify-content: center; z-index: 1000; cursor: pointer; transition: background-color 0.3s ease; }
+  #commercial-ad:hover { background-color: #005ecb; }
+  #commercial-ad img { height: 24px; margin-right: 12px; border-radius: 50%; user-select:none; }
+  #ad-close-btn { margin-left: 20px; font-size: 20px; font-weight: normal; color: white; background: transparent; border: none; cursor: pointer; user-select:none; transition: color 0.3s ease; line-height: 1; }
+  #ad-close-btn:hover { color: #ff9999; }
 </style>
 </head>
 <body>
@@ -229,7 +63,7 @@
   const { Connection, PublicKey, clusterApiUrl, Transaction } = solanaWeb3;
 
   const SOL_MINT = 'So11111111111111111111111111111111111111112';
-  const JUPITER_API_BASE = 'https://quote-api.jup.ag/v4';
+  const JUPITER_API_BASE = 'https://quote-api.jup.ag/v6';
   const connection = new Connection(clusterApiUrl('mainnet-beta'), 'confirmed');
 
   const tokensList = [
@@ -249,13 +83,8 @@
     const [walletConnected, setWalletConnected] = useState(false);
     const [publicKey, setPublicKey] = useState(null);
     const [solBalance, setSolBalance] = useState(null);
-    const [fromToken, setFromToken] = useState({
-      address: SOL_MINT,
-      symbol: 'SOL',
-      name: 'SOL',
-      decimals: 9,
-      logoURI: 'https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/solana/info/logo.png',
-    });
+    const [tokenBalances, setTokenBalances] = useState({});
+    const [fromToken, setFromToken] = useState({ address: SOL_MINT, symbol: 'SOL', name: 'SOL', decimals: 9, logoURI: 'https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/solana/info/logo.png' });
     const [toToken, setToToken] = useState(tokensList[0]);
     const [amount, setAmount] = useState('');
     const [routes, setRoutes] = useState([]);
@@ -263,34 +92,22 @@
     const [loadingQuotes, setLoadingQuotes] = useState(false);
     const [swapping, setSwapping] = useState(false);
     const [txStatus, setTxStatus] = useState(null);
-    const [tokenBalances, setTokenBalances] = useState({});
     const [errorMessage, setErrorMessage] = useState(null);
 
-    // Helper: convert amount to base units
-    const toBaseUnits = (amountStr, decimals) => {
-      try {
-        const floatVal = parseFloat(amountStr);
-        if (isNaN(floatVal) || floatVal <= 0) return 0;
-        return Math.round(floatVal * 10 ** decimals);
-      } catch(e) {
-        return 0;
-      }
-    };
-
-    // Phantom detection for desktop and mobile (phantom.solana on mobile)
+    // Phantom detection for desktop/mobile
     const getPhantomProvider = () => {
       if(window.solana && window.solana.isPhantom) return window.solana;
       if(window.phantom && window.phantom.solana && window.phantom.solana.isPhantom) return window.phantom.solana;
       return null;
     };
 
-    // Connect Wallet triggered by user click (no auto connect)
+    // Connect Phantom Wallet
     const connectWallet = useCallback(async () => {
       setErrorMessage(null);
       const provider = getPhantomProvider();
       if(!provider){
-        alert("Phantom Wallet not found. Please install Phantom on desktop or open this dApp inside Phantom Mobile Browser.");
-        setErrorMessage("Phantom Wallet not found. Please install Phantom on desktop or open this dApp inside Phantom Mobile Browser.");
+        alert("Phantom Wallet not found. Please install Phantom or use Phantom Mobile Browser.");
+        setErrorMessage("Phantom Wallet not found. Please install Phantom or use Phantom Mobile Browser.");
         return;
       }
       try {
@@ -303,6 +120,7 @@
       }
     },[]);
 
+    // Disconnect Phantom Wallet
     const disconnectWallet = useCallback(async () => {
       setErrorMessage(null);
       const provider = getPhantomProvider();
@@ -310,11 +128,8 @@
         setErrorMessage("Phantom wallet not available for disconnect.");
         return;
       }
-      try {
-        await provider.disconnect();
-      } catch(e) {
-        console.warn("Error disconnecting phantom wallet", e);
-      }
+      try { await provider.disconnect(); }
+      catch(e) { /* ignore */ }
       setWalletConnected(false);
       setPublicKey(null);
       setSolBalance(null);
@@ -325,17 +140,17 @@
       setAmount('');
     }, []);
 
-    // Balance fetch on publicKey change
+    // Fetch wallet balances (SOL & tokens) whenever publicKey changes
     useEffect(() => {
       if(!publicKey) return;
       (async () => {
         setErrorMessage(null);
         try {
-          setSolBalance(null);
+          // Fetch SOL balance
           const balanceLamports = await connection.getBalance(publicKey);
           setSolBalance(balanceLamports / 1e9);
 
-          // Gather balances for tokensList
+          // Fetch SPL token balances
           const balances = {};
           for(const token of tokensList){
             try {
@@ -344,19 +159,16 @@
               let total = 0;
               for(const acc of tokenAccounts.value){
                 const parsed = await connection.getParsedAccountInfo(acc.pubkey);
-                if(parsed.value && parsed.value.data && parsed.value.data.parsed && parsed.value.data.parsed.info && parsed.value.data.parsed.info.tokenAmount){
-                  total += parsed.value.data.parsed.info.tokenAmount.uiAmount || 0;
-                }
+                const uiAmount = parsed.value?.data?.parsed?.info?.tokenAmount?.uiAmount ?? 0;
+                total += uiAmount;
               }
               balances[token.address] = total;
             } catch(e){
-              console.warn("Failed fetching token balance for", token.symbol, e);
               balances[token.address] = 0;
             }
           }
           setTokenBalances(balances);
         } catch(e){
-          console.error("Wallet balance fetch error", e);
           setErrorMessage("Failed fetching wallet balance. Please ensure Phantom wallet is connected and network is stable.");
           setSolBalance(0);
           setTokenBalances({});
@@ -364,7 +176,7 @@
       })();
     }, [publicKey]);
 
-    // Wallet events connect/disconnect
+    // Phantom wallet event listeners
     useEffect(() => {
       const provider = getPhantomProvider();
       if(!provider) return;
@@ -401,7 +213,18 @@
       };
     }, []);
 
-    // Fetch swap quotes from Jupiter
+    // Convert amount string to base units
+    const toBaseUnits = (amountStr, decimals) => {
+      try {
+        const floatVal = parseFloat(amountStr);
+        if (isNaN(floatVal) || floatVal <= 0) return 0;
+        return Math.round(floatVal * 10 ** decimals);
+      } catch(e) {
+        return 0;
+      }
+    };
+
+    // Fetch swap quotes via Jupiter
     const getSwapQuotes = async () => {
       setErrorMessage(null);
       if(!publicKey){
@@ -427,7 +250,6 @@
           setLoadingQuotes(false);
           return;
         }
-        // Request with CORS and fallback to POST if needed
         const response = await axios.get(JUPITER_API_BASE+'/quote', {
           params:{
             inputMint,
@@ -437,22 +259,22 @@
             swapMode: 'ExactIn',
           }
         });
-        if(response.data && Array.isArray(response.data.data) && response.data.data.length>0){
-          setRoutes(response.data.data);
-          setSelectedRoute(response.data.data[0]);
+        // Jupiter v6 returns .routes
+        if(response.data && Array.isArray(response.data.routes) && response.data.routes.length>0){
+          setRoutes(response.data.routes);
+          setSelectedRoute(response.data.routes[0]);
         }else{
           setErrorMessage("No swap routes found.");
           setRoutes([]);
           setSelectedRoute(null);
         }
       } catch(e) {
-        console.error("Swap routes fetch error", e);
         setErrorMessage("Failed to fetch swap quotes. Check network and console.");
       }
       setLoadingQuotes(false);
     };
 
-    // Execute Swap
+    // Execute swap
     const executeSwap = async () => {
       setErrorMessage(null);
       if(!publicKey){
@@ -477,17 +299,19 @@
         const resp = await axios.post(JUPITER_API_BASE+'/swap',{
           route: selectedRoute,
           userPublicKey: publicKey.toBase58(),
+          wrapUnwrapSOL: true,
+          dynamicComputeUnitLimit: true,
         });
 
-        if(!resp.data || !resp.data.swapTransactions){
-          setErrorMessage("Failed getting swap transactions from Jupiter.");
+        if(!resp.data || !resp.data.swapTransaction){
+          setErrorMessage("Failed getting swap transaction from Jupiter.");
           setSwapping(false);
           return;
         }
-        const { setupTransaction, swapTransaction } = resp.data.swapTransactions;
 
-        if(setupTransaction){
-          const setupTx = Transaction.from(Buffer.from(setupTransaction,'base64'));
+        // Setup transaction (if needed)
+        if(resp.data.setupTransaction){
+          const setupTx = Transaction.from(Buffer.from(resp.data.setupTransaction,'base64'));
           setupTx.feePayer = publicKey;
           const latest = await connection.getLatestBlockhash();
           setupTx.recentBlockhash = latest.blockhash;
@@ -497,7 +321,8 @@
           await connection.confirmTransaction(setupTxid, 'confirmed');
         }
 
-        const swapTx = Transaction.from(Buffer.from(swapTransaction,'base64'));
+        // Swap transaction
+        const swapTx = Transaction.from(Buffer.from(resp.data.swapTransaction,'base64'));
         swapTx.feePayer = publicKey;
         const latest = await connection.getLatestBlockhash();
         swapTx.recentBlockhash = latest.blockhash;
@@ -509,22 +334,21 @@
         setTxStatus(`Swap tx confirmed: ${swapTxid}`);
 
         // Refresh balances after swap
-        const solBal = await connection.getBalance(publicKey);
-        setSolBalance(solBal/1e9);
-        
+        const balanceLamports = await connection.getBalance(publicKey);
+        setSolBalance(balanceLamports / 1e9);
+
         const balances = {};
         for(const token of tokensList){
           try {
             const mintPubkey = new PublicKey(token.address);
             const tokenAccounts = await connection.getTokenAccountsByOwner(publicKey, { mint: mintPubkey });
-            let totalBal = 0;
+            let total = 0;
             for(const acc of tokenAccounts.value){
-              const accInfo = await connection.getParsedAccountInfo(acc.pubkey);
-              if(accInfo.value?.data?.parsed?.info?.tokenAmount){
-                totalBal += accInfo.value.data.parsed.info.tokenAmount.uiAmount || 0;
-              }
+              const parsed = await connection.getParsedAccountInfo(acc.pubkey);
+              const uiAmount = parsed.value?.data?.parsed?.info?.tokenAmount?.uiAmount ?? 0;
+              total += uiAmount;
             }
-            balances[token.address] = totalBal;
+            balances[token.address] = total;
           }catch{
             balances[token.address] = 0;
           }
@@ -537,7 +361,6 @@
         setErrorMessage(null);
 
       } catch(e){
-        console.error("Swap failed:", e);
         setErrorMessage("Swap failed: "+(e?.message||e.toString()));
       }
       setSwapping(false);
@@ -574,7 +397,6 @@
 
       e('fieldset',{disabled: !walletConnected || loadingQuotes || swapping},
         e('legend', null, 'Swap'),
-
         e('label',{htmlFor:'fromSelect'}, 'From:'),
         e('select',{
           id:'fromSelect',
@@ -582,17 +404,16 @@
           onChange: e => {
             const val = e.target.value;
             const sel = tokensList.find(t => t.address === val) || (val === SOL_MINT ? {
-              address: SOL_MINT, symbol: 'SOL', name:'SOL', decimals:9, logoURI:''
+              address: SOL_MINT, symbol: 'SOL', name:'SOL', decimals:9, logoURI:'https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/solana/info/logo.png'
             } : null);
             if(sel) {
               setFromToken(sel); setRoutes([]); setSelectedRoute(null); setAmount(''); setTxStatus(null); setErrorMessage(null);
             }
-          },
-          style:{width:'100%', padding:6, fontSize:'0.9rem', marginTop:4, marginBottom:6}
+          }
         }, [e('option',{key:SOL_MINT,value:SOL_MINT},'SOL')].concat(tokensList.map(t => e('option',{key:t.address,value:t.address},t.symbol)))),
         e('small', null, "Balance: "+displayBalance(fromToken)),
 
-        e('button',{className:'btn-swap',onClick:swapFromTo,type:'button',disabled:!walletConnected || swapping || loadingQuotes,style:{margin:'10px auto',display:'block'}}, '⇅ Swap from/to'),
+        e('button',{className:'btn-swap',onClick:swapFromTo,type:'button',disabled:!walletConnected || swapping || loadingQuotes}, '⇅ Swap from/to'),
 
         e('label',{htmlFor:'toSelect'}, 'To:'),
         e('select',{
@@ -601,13 +422,12 @@
           onChange: e => {
             const val = e.target.value;
             const sel = tokensList.find(t => t.address === val) || (val === SOL_MINT ? {
-              address: SOL_MINT, symbol: 'SOL', name:'SOL', decimals:9, logoURI:''
+              address: SOL_MINT, symbol: 'SOL', name:'SOL', decimals:9, logoURI:'https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/solana/info/logo.png'
             } : null);
             if(sel) {
               setToToken(sel); setRoutes([]); setSelectedRoute(null); setAmount(''); setTxStatus(null); setErrorMessage(null);
             }
-          },
-          style:{width:'100%', padding:6, fontSize:'0.9rem', marginTop:4, marginBottom:6}
+          }
         }, [e('option',{key:SOL_MINT,value:SOL_MINT},'SOL')].concat(tokensList.map(t => e('option',{key:t.address,value:t.address},t.symbol)))),
         e('small', null, "Balance: "+displayBalance(toToken)),
 
@@ -622,16 +442,14 @@
           min:'0',
           step:'any',
           spellCheck:false,
-          inputMode:'decimal',
-          style:{width:'100%',padding:6,fontSize:'0.9rem',marginTop:4,marginBottom:6}
+          inputMode:'decimal'
         }),
 
         e('button', {
           onClick:getSwapQuotes,
           disabled: loadingQuotes || !amount || parseFloat(amount)<=0,
-          style:{minWidth:'100%'},
           type:'button'
-        }, loadingQuotes ? 'Loading quotes...' : 'Get Swap Quote'),
+        }, loadingQuotes ? 'Loading quotes...' : 'Get Swap Quote')
       ),
 
       (routes.length>0 && !loadingQuotes) ? (
