@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>FIXORIUM - Solana SPL Token Swap dApp</title>
+  <title>FIXORIUM - Solana SPL Token Swap dApp (Desktop & Mobile Phantom Wallet)</title>
 
   <!-- React and ReactDOM -->
   <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
@@ -136,6 +136,15 @@
       user-select: text;
       white-space: pre-wrap;
     }
+    p.error {
+      margin-top: 12px;
+      word-wrap: break-word;
+      font-size: 0.85rem;
+      color: #cc0000;
+      font-weight: 600;
+      user-select: text;
+      white-space: pre-wrap;
+    }
     footer {
       margin-top: 40px;
       font-size: 0.75rem;
@@ -223,6 +232,7 @@
     const JUPITER_API_BASE = 'https://quote-api.jup.ag/v4';
     const connection = new Connection(clusterApiUrl('mainnet-beta'), 'confirmed');
 
+    /* Token List */
     const tokensList = [
       { address: 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v', symbol: 'USDC', name: 'USD Coin', decimals: 6, logoURI: 'https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/solana/assets/EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v/logo.png' },
       { address: 'Es9vMFrzaCER7N1TvjVqauDziYbPEmxW5M9VpX1TTd8C', symbol: 'USDT', name: 'Tether USD', decimals: 6, logoURI: 'https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/solana/assets/Es9vMFrzaCER7N1TvjVqauDziYbPEmxW5M9VpX1TTd8C/logo.png' },
@@ -257,7 +267,19 @@
       const [tokenBalances, setTokenBalances] = useState({});
       const [errorMessage, setErrorMessage] = useState(null);
 
-      // Helper to convert amount to base units
+      // Function to detect Phantom on mobile and desktop:
+      const isPhantomAvailable = () => {
+        // On mobile, Phantom injects solana object only after connect attempt; we try to detect anyway
+        if (window.solana && window.solana.isPhantom) return true;
+        // On some mobile browsers Phantom appears on window.phantom
+        if(window.phantom && window.phantom.solana && window.phantom.solana.isPhantom) return true;
+        return false;
+      };
+
+      // For mobile wallet connect, we use window.solana.connect with param only if on mobile
+      // Phantom supports phantom:// protocol for deep linking on mobile so recommended to trigger window.solana.connect() on user gesture.
+
+      // Helper: convert amount to base units
       const toBaseUnits = (amountStr, decimals) => {
         try {
           const floatVal = parseFloat(amountStr);
@@ -268,41 +290,46 @@
         }
       };
 
-      // Connect wallet
+      // Connect Wallet for Desktop & Mobile Phantom, fallback alert if no Phantom
       const connectWallet = useCallback(async () => {
         setErrorMessage(null);
-        if (window.solana && window.solana.isPhantom) {
-          try {
-            const resp = await window.solana.connect();
-            setPublicKey(new PublicKey(resp.publicKey.toString()));
-            setWalletConnected(true);
-            setTxStatus(null);
-          } catch(e) {
-            setErrorMessage("Wallet connection failed: " + e.message);
+        try {
+          if (!isPhantomAvailable()) {
+            alert("Phantom Wallet not detected. Please install Phantom or open this app via Phantom Browser on mobile.");
+            setErrorMessage("Phantom Wallet not detected. Please install Phantom or open via Phantom Browser.");
+            return;
           }
-        } else {
-          setErrorMessage("Phantom wallet not found. Please install it from https://phantom.app/");
+          // Wallet connect options for mobile support
+          const connectOptions = (navigator.userAgent.match(/Android|iPhone|iPad|iPod/i)) ? { onlyIfTrusted: false } : undefined;
+          const resp = await (window.solana ? window.solana.connect(connectOptions) : window.phantom.solana.connect(connectOptions));
+          setPublicKey(new PublicKey(resp.publicKey.toString()));
+          setWalletConnected(true);
+          setTxStatus(null);
+        } catch(e) {
+          console.error("Wallet connection failed:", e);
+          setErrorMessage("Wallet connection failed: " + (e?.message || e.toString()));
         }
       }, []);
 
-      // Disconnect wallet
       const disconnectWallet = useCallback(async () => {
         setErrorMessage(null);
         try {
-          if(window.solana && window.solana.isPhantom) {
+          if(window.solana && window.solana.isPhantom){
             await window.solana.disconnect();
-            setWalletConnected(false);
-            setPublicKey(null);
-            setSolBalance(null);
-            setTokenBalances({});
-            setRoutes([]);
-            setSelectedRoute(null);
-            setTxStatus(null);
-            setAmount('0');
+          } else if(window.phantom && window.phantom.solana && window.phantom.solana.isPhantom){
+            await window.phantom.solana.disconnect();
           }
-        } catch(e) {
+          setWalletConnected(false);
+          setPublicKey(null);
+          setSolBalance(null);
+          setTokenBalances({});
+          setRoutes([]);
+          setSelectedRoute(null);
+          setTxStatus(null);
+          setAmount("0");
+        } catch(e){
           console.error("Error disconnecting wallet", e);
-          setErrorMessage("Error disconnecting wallet: " + e.message);
+          setErrorMessage("Error disconnecting wallet: " + (e?.message || e.toString()));
         }
       }, []);
 
@@ -321,7 +348,6 @@
             for(const token of tokensList){
               try {
                 const mintPubkey = new PublicKey(token.address);
-                // Use getTokenAccountsByOwner then parse all accounts to find max balance (in case user has multiple ATAs)
                 const accounts = await connection.getTokenAccountsByOwner(publicKey, { mint: mintPubkey });
                 let tokenBalance = 0;
                 for(const acc of accounts.value){
@@ -339,51 +365,60 @@
             setTokenBalances(balances);
           } catch(e) {
             console.error("Error fetching balances:", e);
-            setErrorMessage("Error fetching wallet balances. See console for details.");
+            setErrorMessage("Error fetching wallet balances. Check console for details.");
             setSolBalance(0);
             setTokenBalances({});
           }
         })();
       }, [publicKey]);
 
-      // Phantom wallet event listeners
+      // Phantom wallet event listeners for both desktop/mobile injection
       useEffect(() => {
-        if(!(window.solana && window.solana.isPhantom)) return;
-
-        const handleConnect = (pk) => {
-          setPublicKey(new PublicKey(pk.toString()));
-          setWalletConnected(true);
-          setTxStatus(null);
-          setErrorMessage(null);
-        };
-
-        const handleDisconnect = () => {
-          setWalletConnected(false);
-          setPublicKey(null);
-          setSolBalance(null);
-          setTokenBalances({});
-          setRoutes([]);
-          setSelectedRoute(null);
-          setTxStatus(null);
-          setAmount('0');
-          setErrorMessage(null);
-        };
-
-        window.solana.on('connect', handleConnect);
-        window.solana.on('disconnect', handleDisconnect);
-
-        if(window.solana.isConnected){
-          setPublicKey(new PublicKey(window.solana.publicKey.toString()));
-          setWalletConnected(true);
-          setErrorMessage(null);
+        if(window.solana && window.solana.isPhantom){
+          const onConnect = pk => {setPublicKey(new PublicKey(pk.toString())); setWalletConnected(true); setTxStatus(null); setErrorMessage(null);};
+          const onDisconnect = () => {
+            setWalletConnected(false);
+            setPublicKey(null);
+            setSolBalance(null);
+            setTokenBalances({});
+            setRoutes([]);
+            setSelectedRoute(null);
+            setTxStatus(null);
+            setAmount('0');
+            setErrorMessage(null);
+          };
+          window.solana.on("connect", onConnect);
+          window.solana.on("disconnect", onDisconnect);
+          if(window.solana.isConnected) onConnect(window.solana.publicKey);
+          return () => {
+            if(window.solana.removeListener){
+              window.solana.removeListener("connect", onConnect);
+              window.solana.removeListener("disconnect", onDisconnect);
+            }
+          };
+        } else if(window.phantom && window.phantom.solana && window.phantom.solana.isPhantom){
+          const onConnect = pk => {setPublicKey(new PublicKey(pk.toString())); setWalletConnected(true); setTxStatus(null); setErrorMessage(null);};
+          const onDisconnect = () => {
+            setWalletConnected(false);
+            setPublicKey(null);
+            setSolBalance(null);
+            setTokenBalances({});
+            setRoutes([]);
+            setSelectedRoute(null);
+            setTxStatus(null);
+            setAmount('0');
+            setErrorMessage(null);
+          };
+          window.phantom.solana.on("connect", onConnect);
+          window.phantom.solana.on("disconnect", onDisconnect);
+          if(window.phantom.solana.isConnected) onConnect(window.phantom.solana.publicKey);
+          return () => {
+            if(window.phantom.solana.removeListener){
+              window.phantom.solana.removeListener("connect", onConnect);
+              window.phantom.solana.removeListener("disconnect", onDisconnect);
+            }
+          };
         }
-
-        return () => {
-          if(window.solana.removeListener){
-            window.solana.removeListener('connect', handleConnect);
-            window.solana.removeListener('disconnect', handleDisconnect);
-          }
-        };
       }, []);
 
       // Get swap quotes from Jupiter API
@@ -407,14 +442,14 @@
           const inputMint = fromToken.symbol === "SOL" ? SOL_MINT : fromToken.address;
           const outputMint = toToken.symbol === "SOL" ? SOL_MINT : toToken.address;
           const amountInBaseUnits = toBaseUnits(amount, fromToken.decimals);
+
           if(amountInBaseUnits === 0){
             setErrorMessage("Invalid amount after conversion.");
             setLoadingQuotes(false);
             return;
           }
 
-          // Use POST request if GET gives CORS or length issues
-          // But Jupiter API docs state GET → quote is standard, so we keep GET here:
+          // Axios GET with params, handle CORS/performance
           const resp = await axios.get(JUPITER_API_BASE + "/quote", {
             params: {
               inputMint,
@@ -432,14 +467,14 @@
             setRoutes([]);
             setSelectedRoute(null);
           }
-        }catch(e){
+        } catch(e) {
           console.error("Error fetching swap routes:", e);
-          setErrorMessage("Failed to fetch swap quotes. See console for details.");
+          setErrorMessage("Failed to fetch swap quotes. Check console for details.");
         }
         setLoadingQuotes(false);
       };
 
-      // Execute swap using Jupiter API
+      // Execute swap via Jupiter swap endpoint:
       const executeSwap = async () => {
         setErrorMessage(null);
         if(!publicKey){
@@ -466,49 +501,44 @@
           }
           const swapTxs = resp.data.swapTransactions;
 
-          // Handle setup transaction if any
           if(swapTxs.setupTransaction){
             const setupTx = Transaction.from(Buffer.from(swapTxs.setupTransaction, "base64"));
             setupTx.feePayer = publicKey;
             const {blockhash} = await connection.getLatestBlockhash();
             setupTx.recentBlockhash = blockhash;
-            const signedSetupTx = await window.solana.signTransaction(setupTx);
+            const signedSetupTx = await (window.solana?.signTransaction ? window.solana.signTransaction(setupTx) : window.phantom.solana.signTransaction(setupTx));
             const setupTxid = await connection.sendRawTransaction(signedSetupTx.serialize());
             setTxStatus("Setup tx sent: " + setupTxid);
             await connection.confirmTransaction(setupTxid, "confirmed");
           }
 
-          // Main swap transaction
           const swapTx = Transaction.from(Buffer.from(swapTxs.swapTransaction, "base64"));
           swapTx.feePayer = publicKey;
           const {blockhash} = await connection.getLatestBlockhash();
           swapTx.recentBlockhash = blockhash;
-          const signedSwapTx = await window.solana.signTransaction(swapTx);
+          const signedSwapTx = await (window.solana?.signTransaction ? window.solana.signTransaction(swapTx) : window.phantom.solana.signTransaction(swapTx));
           const swapTxid = await connection.sendRawTransaction(signedSwapTx.serialize());
           setTxStatus("Swap tx submitted: " + swapTxid);
           await connection.confirmTransaction(swapTxid, "confirmed");
           setTxStatus("Swap tx confirmed: " + swapTxid);
 
-          // Refresh balances after swap
-          const newSolBalance = await connection.getBalance(publicKey);
-          setSolBalance(newSolBalance / 1e9);
+          const newSolBal = await connection.getBalance(publicKey);
+          setSolBalance(newSolBal / 1e9);
 
           let balances = {};
           for(const token of tokensList){
             try {
               const mintPubkey = new PublicKey(token.address);
               const tokenAccounts = await connection.getTokenAccountsByOwner(publicKey, {mint: mintPubkey});
-              let totalBalance = 0;
+              let totalBal = 0;
               for(const acc of tokenAccounts.value){
-                const accountInfo = await connection.getParsedAccountInfo(acc.pubkey);
-                if(accountInfo.value && accountInfo.value.data && accountInfo.value.data.parsed && accountInfo.value.data.parsed.info.tokenAmount){
-                  totalBalance += accountInfo.value.data.parsed.info.tokenAmount.uiAmount || 0;
+                const accInfo = await connection.getParsedAccountInfo(acc.pubkey);
+                if(accInfo.value?.data?.parsed?.info?.tokenAmount){
+                  totalBal += accInfo.value.data.parsed.info.tokenAmount.uiAmount || 0;
                 }
               }
-              balances[token.address] = totalBalance;
-            }catch{
-              balances[token.address] = 0;
-            }
+              balances[token.address] = totalBal;
+            }catch{return balances[token.address] = 0;}
           }
           setTokenBalances(balances);
 
@@ -516,14 +546,13 @@
           setRoutes([]);
           setSelectedRoute(null);
           setErrorMessage(null);
-        } catch(e){
+        } catch(e) {
           console.error("Swap failed:", e);
           setErrorMessage("Swap failed: " + (e?.message ?? e));
         }
         setSwapping(false);
       };
 
-      // Display balances
       const displayBalance = (token) => {
         if(token.symbol === "SOL"){
           return solBalance === null ? "Loading..." : solBalance.toFixed(4);
@@ -545,27 +574,25 @@
 
       return e("div", null,
         !walletConnected
-          ? e("button", {onClick: connectWallet, type: "button", style: {minWidth: "100%"}, "aria-label":"Connect Phantom Wallet"}, "Connect Phantom Wallet")
+          ? e("button", {onClick: connectWallet, type: "button", style: {minWidth:"100%"}, "aria-label":"Connect Phantom Wallet"}, "Connect Phantom Wallet")
           : e("div", {style: {marginBottom: 15}},
-            e("p", {style: {wordBreak: "break-word", userSelect:"text"}}, e("b", null, "Wallet: "), publicKey ? publicKey.toBase58() : ""),
+            e("p", {style: {wordBreak:"break-word", userSelect:"text"}}, e("b", null, "Wallet: "), publicKey ? publicKey.toBase58() : ""),
             e("p", null, e("b", null, "SOL balance: "), solBalance === null ? "Loading..." : solBalance.toFixed(4) + " SOL"),
-            e("button", {onClick:disconnectWallet, type:"button", style:{padding:"6px 12px"}}, "Disconnect")
+            e("button", {onClick: disconnectWallet, type:"button", style: {padding:"6px 12px"}}, "Disconnect")
           ),
 
-        errorMessage ? e("p", {style:{color:"red",whiteSpace:"pre-wrap"}}, errorMessage) : null,
+        errorMessage ? e("p", {className:"error", role:"alert"}, errorMessage) : null,
 
         e("fieldset", {disabled: !walletConnected || loadingQuotes || swapping},
           e("legend", null, "Swap"),
 
-          e("label", {htmlFor: "fromSelect"}, "From:"),
+          e("label", {htmlFor:"fromSelect"}, "From:"),
           e("select", {
             id: "fromSelect",
             value: fromToken.address,
             onChange: e => {
               const val = e.target.value;
-              const sel = tokensList.find(t => t.address === val) || (val === SOL_MINT ? {
-                address: SOL_MINT, symbol: "SOL", name:"SOL", decimals: 9, logoURI: ''
-              } : null);
+              const sel = tokensList.find(t => t.address === val) || (val === SOL_MINT ? { address: SOL_MINT, symbol: "SOL", name: "SOL", decimals: 9, logoURI: '' } : null);
               if(sel){
                 setFromToken(sel);
                 setRoutes([]);
@@ -575,21 +602,19 @@
                 setErrorMessage(null);
               }
             },
-            style: {width: "100%", padding:6, fontSize:"0.9rem", marginTop:4, marginBottom:6}
+            style: {width:"100%", padding:6, fontSize:"0.9rem", marginTop:4, marginBottom:6}
           }, [e("option", {key: SOL_MINT, value: SOL_MINT}, "SOL")].concat(tokensList.map(t => e("option", {key: t.address, value: t.address}, t.symbol)))),
           e("small", null, "Balance: " + displayBalance(fromToken)),
 
-          e("button", { className: "btn-swap", onClick: swapFromTo, type:"button", disabled: !walletConnected || swapping || loadingQuotes, style: {margin:"10px auto", display:"block"} }, "⇅ Swap from/to"),
+          e("button", {className:"btn-swap", onClick: swapFromTo, type:"button", disabled: !walletConnected || swapping || loadingQuotes, style:{margin:"10px auto", display:"block"}}, "⇅ Swap from/to"),
 
-          e("label", {htmlFor: "toSelect"}, "To:"),
+          e("label", {htmlFor:"toSelect"}, "To:"),
           e("select", {
             id: "toSelect",
             value: toToken.address,
             onChange: e => {
               const val = e.target.value;
-              const sel = tokensList.find(t => t.address === val) || (val === SOL_MINT ? {
-                address: SOL_MINT, symbol: "SOL", name: "SOL", decimals: 9, logoURI: ''
-              } : null);
+              const sel = tokensList.find(t => t.address === val) || (val === SOL_MINT ? { address: SOL_MINT, symbol: "SOL", name: "SOL", decimals: 9, logoURI: '' } : null);
               if(sel){
                 setToToken(sel);
                 setRoutes([]);
@@ -599,14 +624,14 @@
                 setErrorMessage(null);
               }
             },
-            style: {width: "100%", padding:6, fontSize:"0.9rem", marginTop:4, marginBottom:6}
+            style: {width:"100%", padding:6, fontSize:"0.9rem", marginTop:4, marginBottom:6}
           }, [e("option", {key: SOL_MINT, value: SOL_MINT}, "SOL")].concat(tokensList.map(t => e("option", {key: t.address, value: t.address}, t.symbol)))),
           e("small", null, "Balance: " + displayBalance(toToken)),
 
           e("label", {htmlFor:"amountInput"}, "Amount (" + fromToken.symbol + "):"),
           e("input", {
-            type: "number",
-            id: "amountInput",
+            type:"number",
+            id:"amountInput",
             value: amount,
             onChange: e => setAmount(e.target.value),
             placeholder: "0",
@@ -620,7 +645,7 @@
           e("button", {
             onClick: getSwapQuotes,
             disabled: loadingQuotes || !amount || parseFloat(amount) <= 0,
-            style: {minWidth: "100%"},
+            style: {minWidth:"100%"},
             type: "button"
           }, loadingQuotes ? "Loading quotes..." : "Get Swap Quote")
         ),
@@ -628,7 +653,7 @@
         routes.length > 0 && !loadingQuotes
           ? e("fieldset", null,
             e("legend", null, "Quotes"),
-            e("div", {style: {maxHeight: 250, overflowY: "auto"}},
+            e("div", {style:{maxHeight:250, overflowY:"auto"}},
               routes.map(route => {
                 const expectedOut = (parseInt(route.outAmount)/10**toToken.decimals).toFixed(6);
                 const priceImpactPct = (route.priceImpactPct*100).toFixed(3);
@@ -656,11 +681,11 @@
           )
           : null,
 
-        txStatus ? e("p", {className: "status", "aria-live": "polite", "aria-atomic": "true"}, txStatus) : null,
+        txStatus ? e("p", {className:"status", "aria-live": "polite", "aria-atomic": "true"}, txStatus) : null,
 
         e("footer", null,
           "Powered by Solana, Phantom \u0026 ",
-          e("a", {href: "https://jup.ag/", target: "_blank", rel: "noopener noreferrer"}, "Jupiter Aggregator")
+          e("a", {href:"https://jup.ag/", target:"_blank", rel:"noopener noreferrer"}, "Jupiter Aggregator")
         )
       );
     }
