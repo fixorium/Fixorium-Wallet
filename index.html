@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>FIXORIUM Wallet - Final with Phantom Mobile & Extension, WalletConnect EVM & Solana, Live Token Prices</title>
+  <title>FIXORIUM Wallet - Solana Only (Phantom, MetaMask, Brave, Bitget, OKX, Fixorium)</title>
   <meta name="viewport" content="width=device-width,initial-scale=1.0" />
   <link href="https://fonts.googleapis.com/css?family=Arial:400,500,700&display=swap" rel="stylesheet">
   <style>
@@ -203,22 +203,6 @@
       margin: 1em auto 0 auto;
       text-align: center;
     }
-    .deep-link-btn {
-      margin: 0.5em 0;
-      background: linear-gradient(90deg, #9945FF, #19FB9B);
-      color: #181824;
-      border: none;
-      border-radius: 8px;
-      font-weight: 600;
-      font-size: 1em;
-      padding: 0.5em 1em;
-      cursor: pointer;
-      box-shadow: 0 2px 12px #9945ff2b;
-      transition: background 0.15s;
-      width: 100%;
-      display: block;
-    }
-    .deep-link-btn:hover { filter: brightness(1.09); }
     .powered {
       text-align: center;
       color: #b6b8c1;
@@ -236,62 +220,59 @@
 <body>
   <div class="header">
     <img class="logo" src="https://cryptologos.cc/logos/solana-sol-logo.png?v=024" alt="Fixorium Logo"/>
-    FIXORIUM Wallet
+    FIXORIUM Wallet (Solana Only)
   </div>
-  <button class="connect-btn" id="connectPhantomBtn">Connect Wallet by Phantom Wallet App</button>
-  <button class="connect-btn" id="connectMetaMaskBtn">Connect Wallet by MetaMask Extension</button>
+  <button class="connect-btn" id="connectBtn">Connect Wallet</button>
   <div class="wallet-info" id="walletInfo"></div>
   <div class="token-list" id="tokenList"></div>
   <div class="powered">
-    Powered by <a href="https://jup.ag/" target="_blank" style="color:#9945FF;">Jupiter</a> (Solana) & <a href="https://www.1inch.io/" target="_blank" style="color:#19FB9B;">1inch</a> (EVM)
+    Powered by <a href="https://jup.ag/" target="_blank" style="color:#9945FF;">Jupiter</a> & <a href="https://www.coingecko.com/" target="_blank" style="color:#19FB9B;">CoinGecko</a>
   </div>
   <div id="popupRoot"></div>
   
   <!-- Dependencies -->
-  <script src="https://cdn.jsdelivr.net/npm/web3@1.7.5/dist/web3.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@walletconnect/web3-provider@1.8.0/dist/umd/index.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@solana/web3.js@1.95.2/lib/index.iife.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@walletconnect/solana-provider@0.0.6/dist/umd/index.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js"></script>
   <script>
-    // Demo token list: add coingecko id for price fetch
+    // Solana token list with CoinGecko IDs for price
     const TOKENS = [
       { symbol: "SOL", name: "Solana", mint: "So11111111111111111111111111111111111111112", decimals: 9, image: "https://cryptologos.cc/logos/solana-sol-logo.png", cgId: "solana" },
       { symbol: "BONK", name: "Bonk", mint: "DezX1xQ6ZhhXPb9D5e8C2J9pYc3i8c1a6h8VfmYbZ3Qh", decimals: 5, image: "https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/DezX1xQ6ZhhXPb9D5e8C2J9pYc3i8c1a6h8VfmYbZ3Qh/logo.png", cgId: "bonk" },
-      { symbol: "MEW", name: "cat in a dogs world", mint: "6cA7QVY6L9Dn7dEyEfrXzQK6pQ6TjA2R8fLJwNr1cCzN", decimals: 6, image: "https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/6cA7QVY6L9Dn7dEyEfrXzQK6pQ6TjA2R8fLJwNr1cCzN/logo.png", cgId: "cat-in-a-dogs-world" },
-      { symbol: "ETH", name: "Ethereum", address: "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE", decimals: 18, isEvm: true, image: "https://cryptologos.cc/logos/ethereum-eth-logo.png", cgId: "ethereum" },
-      { symbol: "USDC", name: "USD Coin", address: "0xA0b86991c6218b36c1d19d4a2e9eb0ce3606eb48", decimals: 6, isEvm: true, image: "https://cryptologos.cc/logos/usd-coin-usdc-logo.png", cgId: "usd-coin" }
+      { symbol: "MEW", name: "cat in a dogs world", mint: "6cA7QVY6L9Dn7dEyEfrXzQK6pQ6TjA2R8fLJwNr1cCzN", decimals: 6, image: "https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/6cA7QVY6L9Dn7dEyEfrXzQK6pQ6TjA2R8fLJwNr1cCzN/logo.png", cgId: "cat-in-a-dogs-world" }
     ];
 
-    let wallet = null; // { address, balance, type, chain }
-    let evmProvider = null; // ethers.js provider
-    let wcProvider = null; // EVM WalletConnect provider
-    let wcSolProvider = null; // Solana WalletConnect provider
-    let tokenPrices = {}; // { symbol: price }
+    // Supported wallets for Solana
+    const WALLET_OPTIONS = [
+      { name: "Phantom", check: () => window.solana && window.solana.isPhantom, icon: "https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/phantom/logo.png", url: "https://phantom.app/download" },
+      { name: "MetaMask (Solana)", check: () => window.solana && window.solana.isMetaMask, icon: "https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/metamask/logo.png", url: "https://metamask.io/download.html" },
+      { name: "Brave Wallet", check: () => window.solana && window.solana.isBrave, icon: "https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/brave/logo.png", url: "https://brave.com/wallet/" },
+      { name: "Bitget Wallet", check: () => window.solana && window.solana.isBitget, icon: "https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/bitget/logo.png", url: "https://web3.bitget.com/en/wallet-download" },
+      { name: "OKX Wallet", check: () => window.solana && window.solana.isOKX, icon: "https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/okx/logo.png", url: "https://www.okx.com/web3" },
+      { name: "Fixorium Wallet", check: () => window.solana && window.solana.isFixorium, icon: "https://cryptologos.cc/logos/solana-sol-logo.png", url: "#" }
+    ];
+
+    let wallet = null; // {address, balance, type, provider}
+    let tokenPrices = {};
     let tokenPriceFetchError = false;
 
-    // Price fetch from CoinGecko
+    // Fetch token prices from CoinGecko
     async function fetchTokenPrices() {
       try {
-        // Get all CoinGecko IDs
-        const ids = TOKENS.map(t => t.cgId).filter(Boolean).join(",");
+        const ids = TOKENS.map(t => t.cgId).join(",");
         const url = `https://api.coingecko.com/api/v3/simple/price?ids=${ids}&vs_currencies=usd`;
         const res = await fetch(url);
         if (!res.ok) throw new Error("Price API Error");
         const data = await res.json();
         tokenPrices = {};
         TOKENS.forEach(t => {
-          if (t.cgId && data[t.cgId] && data[t.cgId].usd) {
+          if (t.cgId && data[t.cgId] && data[t.cgId].usd)
             tokenPrices[t.symbol] = data[t.cgId].usd;
-          } else {
+          else
             tokenPrices[t.symbol] = null;
-          }
         });
         tokenPriceFetchError = false;
       } catch (e) {
         tokenPriceFetchError = true;
-        // fallback: set all prices to null
         TOKENS.forEach(t => { tokenPrices[t.symbol] = null; });
       }
       renderTokens();
@@ -299,7 +280,7 @@
 
     // Popup utilities
     function showPopup(html) {
-      document.getElementById("popupRoot").innerHTML = `<div class=\"popup-bg\"><div class=\"popup-box\">${html}</div></div>`;
+      document.getElementById("popupRoot").innerHTML = `<div class="popup-bg"><div class="popup-box">${html}</div></div>`;
     }
     function closePopup() {
       document.getElementById("popupRoot").innerHTML = '';
@@ -307,57 +288,66 @@
 
     // Connect wallet popup
     function showConnectPopup() {
-      showPopup(`
-        <div class=\"popup-title\">Connect Your Wallet</div>
-        <button class=\"popup-btn\" onclick=\"window.connectPhantom()\">Phantom Extension (Solana Desktop)</button>
-        <button class=\"popup-btn\" onclick=\"window.connectMetaMaskOrBrave()\">MetaMask/Brave Extension (EVM Desktop)</button>
-        <div class=\"popup-close\" onclick=\"closePopup()\">Cancel</div>
-      `);
+      let html = `<div class="popup-title">Connect Your Solana Wallet</div>`;
+      WALLET_OPTIONS.forEach(opt => {
+        html += `
+          <button class="popup-btn" onclick="window.connectSolWallet('${opt.name}')">
+            <img src="${opt.icon}" alt="" style="width:20px;vertical-align:middle;margin-right:6px;"> ${opt.name}
+          </button>
+        `;
+      });
+      html += `<div class="popup-status" id="connectStatus"></div>
+        <div style="margin-top:1em;font-size:0.94em;">
+          If not installed, <a href="https://phantom.app/download" target="_blank" style="color:#19FB9B;">Get Phantom</a> /
+          <a href="https://metamask.io/download.html" target="_blank" style="color:#9945FF;">Get MetaMask Solana</a> /
+          <a href="https://brave.com/wallet/" target="_blank" style="color:#ffdc5c;">Get Brave Wallet</a> /
+          <a href="https://web3.bitget.com/en/wallet-download" target="_blank" style="color:#ffdc5c;">Get Bitget</a> /
+          <a href="https://www.okx.com/web3" target="_blank" style="color:#19FB9B;">Get OKX</a>
+        </div>
+        <div class="popup-close" onclick="closePopup()">Cancel</div>`;
+      showPopup(html);
     }
 
-    // Phantom connect
-    window.connectPhantom = async function() {
-      const statusEl = document.getElementById("walletInfo");
-      if (window.solana && window.solana.isPhantom) {
-        try {
-          const resp = await window.solana.connect({ onlyIfTrusted: false });
-          const address = resp.publicKey.toString();
-          const conn = new solanaWeb3.Connection(solanaWeb3.clusterApiUrl("mainnet-beta"));
-          const balanceLamports = await conn.getBalance(new solanaWeb3.PublicKey(address));
-          const balanceSol = (balanceLamports / 1e9).toFixed(4);
-          wallet = { address, balance: balanceSol, type: "Phantom (Solana Extension)", chain: "solana" };
-          evmProvider = null; wcProvider = null; wcSolProvider = null;
-          updateWalletInfo();
-          closePopup();
-        } catch (e) {
-          statusEl.textContent = "Phantom connection failed!";
-        }
-      } else {
-        statusEl.innerHTML = `Phantom extension not found! <a href=\"https://phantom.app/download\" target=\"_blank\" style=\"color:#19FB9B\">Install Here</a>`;
+    // Solana wallet connectors
+    window.connectSolWallet = async function(walletName) {
+      const statusEl = document.getElementById("connectStatus");
+      let solProvider = null, type = walletName;
+      switch(walletName) {
+        case "Phantom":
+          solProvider = window.solana && window.solana.isPhantom ? window.solana : null;
+          break;
+        case "MetaMask (Solana)":
+          solProvider = window.solana && window.solana.isMetaMask ? window.solana : null;
+          break;
+        case "Brave Wallet":
+          solProvider = window.solana && window.solana.isBrave ? window.solana : null;
+          break;
+        case "Bitget Wallet":
+          solProvider = window.solana && window.solana.isBitget ? window.solana : null;
+          break;
+        case "OKX Wallet":
+          solProvider = window.solana && window.solana.isOKX ? window.solana : null;
+          break;
+        case "Fixorium Wallet":
+          solProvider = window.solana && window.solana.isFixorium ? window.solana : null;
+          break;
       }
-    };
-
-    // MetaMask/Brave connect
-    window.connectMetaMaskOrBrave = async function() {
-      const statusEl = document.getElementById("walletInfo");
-      if (window.ethereum) {
-        try {
-          await window.ethereum.request({ method: 'eth_requestAccounts' });
-          const provider = new ethers.providers.Web3Provider(window.ethereum);
-          const signer = provider.getSigner();
-          const address = await signer.getAddress();
-          const balanceWei = await provider.getBalance(address);
-          const balanceEth = ethers.utils.formatEther(balanceWei);
-          wallet = { address, balance: parseFloat(balanceEth).toFixed(4), type: "MetaMask (EVM Extension)", chain: "evm" };
-          evmProvider = provider;
-          wcProvider = null; wcSolProvider = null;
-          updateWalletInfo();
-          closePopup();
-        } catch (e) {
-          statusEl.textContent = "Browser wallet connection failed!";
-        }
-      } else {
-        statusEl.innerHTML = `No browser wallet detected! <a href=\"https://metamask.io/download.html\" target=\"_blank\" style=\"color:#19FB9B\">Install MetaMask</a>`;
+      if (!solProvider) {
+        statusEl.innerHTML = `${walletName} extension not found! <a href="${WALLET_OPTIONS.find(w=>w.name===walletName).url}" target="_blank" style="color:#19FB9B">Install Here</a>`;
+        return;
+      }
+      statusEl.textContent = `Connecting to ${walletName}...`;
+      try {
+        const resp = await solProvider.connect({ onlyIfTrusted: false });
+        const address = resp.publicKey.toString();
+        const conn = new solanaWeb3.Connection(solanaWeb3.clusterApiUrl("mainnet-beta"));
+        const balanceLamports = await conn.getBalance(new solanaWeb3.PublicKey(address));
+        const balanceSol = (balanceLamports / 1e9).toFixed(4);
+        wallet = { address, balance: balanceSol, type, provider: solProvider };
+        updateWalletInfo();
+        closePopup();
+      } catch (e) {
+        statusEl.textContent = `${walletName} connection failed!`;
       }
     };
 
@@ -366,17 +356,123 @@
       const el = document.getElementById("walletInfo");
       if (wallet) {
         el.innerHTML = `
-          <div>Connected: <span style=\"color:#19FB9B;\">${wallet.address}</span></div>
-          <div>Balance: <span style=\"color:#19FB9B;\">${wallet.balance}</span> (${wallet.chain === "solana"?"SOL":"ETH"})</div>
-          <div style=\"margin-top:0.3em;color:#9945FF;font-size:0.98em;\">Wallet: ${wallet.type}</div>
+          <div>Connected: <span style="color:#19FB9B;">${wallet.address}</span></div>
+          <div>Balance: <span style="color:#19FB9B;">${wallet.balance}</span> SOL</div>
+          <div style="margin-top:0.3em;color:#9945FF;font-size:0.98em;">Wallet: ${wallet.type}</div>
         `;
       } else {
         el.textContent = "";
       }
     }
 
-    document.getElementById("connectPhantomBtn").onclick = window.connectPhantom;
-    document.getElementById("connectMetaMaskBtn").onclick = window.connectMetaMaskOrBrave;
+    // Render token table
+    function renderTokens() {
+      let html = '';
+      TOKENS.forEach((t, i) => {
+        let priceStr = 'Loading...';
+        if (tokenPrices[t.symbol] === null && tokenPriceFetchError) {
+          priceStr = `<span style="color: #ff5c91;">Unavailable</span>`;
+        } else if (tokenPrices[t.symbol] !== undefined && tokenPrices[t.symbol] !== null) {
+          priceStr = `$${tokenPrices[t.symbol].toLocaleString(undefined, {minimumFractionDigits: 3, maximumFractionDigits: 8})}`;
+        }
+        html += `
+          <div class="token-row" onclick="showTradePopup(${i})">
+            <img class="token-img" src="${t.image}" alt="${t.symbol}" />
+            <span class="token-symbol">${t.symbol}</span>
+            <span class="token-name">${t.name}</span>
+            <span class="token-price" id="price-${t.symbol}">${priceStr}</span>
+            <button class="token-action" onclick="event.stopPropagation();showTradePopup(${i})">Buy/Sell</button>
+          </div>
+        `;
+      });
+      document.getElementById("tokenList").innerHTML = html;
+    }
+
+    // Trade popup
+    window.showTradePopup = function(idx) {
+      const t = TOKENS[idx];
+      let priceSection = '';
+      if (tokenPrices[t.symbol] !== undefined && tokenPrices[t.symbol] !== null) {
+        priceSection = `<div style="margin-bottom:0.5em;color:#ffdc5c;font-size:1.1em;">Market Price: $${tokenPrices[t.symbol]}</div>`;
+      }
+      showPopup(`
+        <div class="popup-title">
+          Trade ${t.name} (${t.symbol})
+        </div>
+        ${priceSection}
+        <div class="popup-row">
+          <label class="popup-label" for="tradeSide">Type:</label>
+          <select class="popup-select" id="tradeSide">
+            <option value="buy">Buy</option>
+            <option value="sell">Sell</option>
+          </select>
+        </div>
+        <div class="popup-row">
+          <label class="popup-label" for="tradeAmount">Amount:</label>
+          <input class="popup-input" id="tradeAmount" type="number" min="0" placeholder="Amount">
+        </div>
+        <button class="popup-btn" onclick="window.startTrade(${idx})">Execute Trade</button>
+        <div class="popup-status" id="tradeStatus"></div>
+        <div class="popup-close" onclick="closePopup()">Cancel</div>
+      `);
+    };
+
+    // Jupiter API for Solana swaps
+    window.startTrade = async function(idx) {
+      const t = TOKENS[idx];
+      const statusEl = document.getElementById("tradeStatus");
+      if (!wallet || !wallet.address || !wallet.provider) {
+        statusEl.textContent = "Connect wallet first!";
+        return;
+      }
+      const side = document.getElementById("tradeSide").value;
+      const amount = parseFloat(document.getElementById("tradeAmount").value);
+      if (!amount || amount <= 0) {
+        statusEl.textContent = "Enter valid amount.";
+        return;
+      }
+      // Only allow SOLANA network
+      statusEl.textContent = "Fetching quote...";
+      try {
+        const fromMint = side === "buy" ? TOKENS[0].mint : t.mint;
+        const toMint = side === "buy" ? t.mint : TOKENS[0].mint;
+        const decimals = side === "buy" ? TOKENS[0].decimals : t.decimals;
+        const amountRaw = Math.floor(amount * Math.pow(10, decimals));
+        const quoteUrl = `https://quote-api.jup.ag/v6/quote?inputMint=${fromMint}&outputMint=${toMint}&amount=${amountRaw}&slippageBps=30`;
+        const quoteRes = await fetch(quoteUrl);
+        const quote = await quoteRes.json();
+        if (!quote.routes || !quote.routes.length) throw new Error("No swap route found.");
+        statusEl.textContent = "Building swap transaction...";
+        const swapRes = await fetch("https://quote-api.jup.ag/v6/swap", {
+          method: "POST",
+          headers: {"Content-Type": "application/json"},
+          body: JSON.stringify({
+            route: quote.routes[0],
+            userPublicKey: wallet.address,
+            wrapUnwrapSOL: true,
+            dynamicComputeUnitLimit: true
+          })
+        });
+        const swapData = await swapRes.json();
+        if (!swapData.swapTransaction) throw new Error("Failed to build swap transaction.");
+        statusEl.textContent = "Signing transaction...";
+        let signedTx, txid;
+        const connection = new solanaWeb3.Connection(solanaWeb3.clusterApiUrl("mainnet-beta"));
+        const tx = solanaWeb3.Transaction.from(Buffer.from(swapData.swapTransaction, "base64"));
+        tx.feePayer = new solanaWeb3.PublicKey(wallet.address);
+        tx.recentBlockhash = (await connection.getRecentBlockhash()).blockhash;
+        signedTx = await wallet.provider.signTransaction(tx);
+        statusEl.textContent = "Sending transaction...";
+        txid = await connection.sendRawTransaction(signedTx.serialize());
+        statusEl.textContent = "Confirming transaction...";
+        await connection.confirmTransaction(txid, "finalized");
+        statusEl.innerHTML = `Trade successful!<br>Tx: <a href="https://solscan.io/tx/${txid}" target="_blank" style="color:#19FB9B">${txid}</a>`;
+      } catch (e) {
+        statusEl.textContent = "Trade failed: " + (e.message || e);
+      }
+    };
+
+    document.getElementById("connectBtn").onclick = showConnectPopup;
 
     // Initial load
     fetchTokenPrices();
