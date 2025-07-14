@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>FIXORIUM Wallet</title>
+  <title>FIXORIUM Wallet - WalletConnect EVM & Solana</title>
   <meta name="viewport" content="width=device-width,initial-scale=1.0" />
   <link href="https://fonts.googleapis.com/css?family=Arial:400,500,700&display=swap" rel="stylesheet">
   <style>
@@ -112,7 +112,6 @@
       box-shadow: 0 2px 12px #9945ff2b;
     }
     .token-action:hover { filter: brightness(1.09); }
-    /* Popup styles */
     .popup-bg {
       position: fixed;
       top:0;left:0;right:0;bottom:0;
@@ -192,6 +191,10 @@
       min-height: 1.3em;
       margin-top: 1em;
     }
+    .qr-box {
+      margin: 1em auto 0 auto;
+      text-align: center;
+    }
     .powered {
       text-align: center;
       color: #b6b8c1;
@@ -217,11 +220,15 @@
   <div class="powered">
     Powered by <a href="https://jup.ag/" target="_blank" style="color:#9945FF;">Jupiter</a> (Solana) & <a href="https://www.1inch.io/" target="_blank" style="color:#19FB9B;">1inch</a> (EVM)
   </div>
-  <!-- Popups rendered here -->
   <div id="popupRoot"></div>
   
+  <!-- Dependencies -->
+  <script src="https://cdn.jsdelivr.net/npm/web3@1.7.5/dist/web3.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@walletconnect/web3-provider@1.8.0/dist/umd/index.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@solana/web3.js@1.95.2/lib/index.iife.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@walletconnect/solana-provider@0.0.6/dist/umd/index.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js"></script>
   <script>
     // Demo token list: add one EVM token for swap example
     const TOKENS = [
@@ -235,6 +242,8 @@
 
     let wallet = null; // { address, balance, type, chain }
     let evmProvider = null; // ethers.js provider
+    let wcProvider = null; // EVM WalletConnect provider
+    let wcSolProvider = null; // Solana WalletConnect provider
 
     // Popup utilities
     function showPopup(html) {
@@ -243,16 +252,21 @@
     function closePopup() {
       document.getElementById("popupRoot").innerHTML = '';
     }
+
     // Connect wallet popup
     function showConnectPopup() {
       showPopup(`
         <div class="popup-title">Connect Your Wallet</div>
-        <button class="popup-btn" onclick="window.connectPhantom()">Phantom Wallet (Solana)</button>
-        <button class="popup-btn" onclick="window.connectMetaMaskOrBrave()">Browser Wallet (MetaMask/Brave/EVM)</button>
+        <button class="popup-btn" onclick="window.connectPhantom()">Phantom Extension (Solana)</button>
+        <button class="popup-btn" onclick="window.connectMetaMaskOrBrave()">MetaMask/Brave Extension (EVM)</button>
+        <button class="popup-btn" onclick="window.connectWalletConnectEvm()">WalletConnect (EVM Mobile)</button>
+        <button class="popup-btn" onclick="window.connectWalletConnectSolana()">WalletConnect (Solana Mobile)</button>
+        <div class="qr-box" id="qrBox"></div>
         <div class="popup-status" id="connectStatus"></div>
         <div class="popup-close" onclick="closePopup()">Cancel</div>
       `);
     }
+
     // Phantom connect
     window.connectPhantom = async function() {
       const statusEl = document.getElementById("connectStatus");
@@ -265,7 +279,7 @@
           const balanceLamports = await conn.getBalance(new solanaWeb3.PublicKey(address));
           const balanceSol = (balanceLamports / 1e9).toFixed(4);
           wallet = { address, balance: balanceSol, type: "Phantom (Solana)", chain: "solana" };
-          evmProvider = null;
+          evmProvider = null; wcProvider = null; wcSolProvider = null;
           updateWalletInfo();
           closePopup();
         } catch (e) {
@@ -275,6 +289,7 @@
         statusEl.innerHTML = `Phantom wallet not found! <a href="https://phantom.app/download" target="_blank" style="color:#19FB9B">Install Here</a>`;
       }
     };
+
     // MetaMask/Brave connect
     window.connectMetaMaskOrBrave = async function() {
       const statusEl = document.getElementById("connectStatus");
@@ -290,6 +305,7 @@
           let type = "MetaMask (EVM)";
           if (window.ethereum.isBraveWallet) type = "Brave Wallet (EVM)";
           wallet = { address, balance: parseFloat(balanceEth).toFixed(4), type, chain: "evm" };
+          wcProvider = null; wcSolProvider = null;
           updateWalletInfo();
           closePopup();
         } catch (e) {
@@ -298,6 +314,73 @@
       } else {
         statusEl.innerHTML = `No browser wallet detected! <a href="https://metamask.io/download.html" target="_blank" style="color:#19FB9B">Install MetaMask</a>`;
       }
+    };
+
+    // WalletConnect EVM
+    window.connectWalletConnectEvm = async function() {
+      const statusEl = document.getElementById("connectStatus");
+      statusEl.textContent = "Initializing WalletConnect...";
+      wcProvider = new WalletConnectProvider.default({
+        rpc: { 1: "https://rpc.ankr.com/eth" }, // Ethereum mainnet
+        qrcode: false // We generate QR manually
+      });
+      wcProvider.connector.on("display_uri", (err, payload) => {
+        if (payload && payload.params && payload.params[0]) {
+          generateQR(payload.params[0]);
+        }
+      });
+      await wcProvider.enable();
+      const web3 = new Web3(wcProvider);
+      const accounts = await web3.eth.getAccounts();
+      const address = accounts[0];
+      statusEl.textContent = "Connected: " + address;
+      const balanceWei = await web3.eth.getBalance(address);
+      const balanceEth = Web3.utils.fromWei(balanceWei, "ether");
+      wallet = { address, balance: parseFloat(balanceEth).toFixed(4), type: "WalletConnect (EVM)", chain: "evm" };
+      evmProvider = new ethers.providers.Web3Provider(wcProvider);
+      wcSolProvider = null;
+      updateWalletInfo();
+      setTimeout(closePopup, 1100);
+    };
+
+    function generateQR(uri) {
+      const qrBox = document.getElementById("qrBox");
+      qrBox.innerHTML = "";
+      window.QRCode.toCanvas(document.createElement('canvas'), uri, {
+        width: 200, margin: 2,
+        color: { dark: "#9945FF", light: "#232339"}
+      }, function(error, canvas) {
+        if (!error) qrBox.appendChild(canvas);
+      });
+      qrBox.innerHTML += `<div style="margin-top:0.8em;color:#19FB9B;">
+        Scan with your mobile EVM wallet (MetaMask, Trust, Rainbow, etc.)
+      </div>`;
+    }
+
+    // WalletConnect Solana (Phantom/Solflare mobile)
+    window.connectWalletConnectSolana = async function() {
+      const statusEl = document.getElementById("connectStatus");
+      statusEl.textContent = "Initializing WalletConnect...";
+      wcSolProvider = new window.WalletConnectSolanaProvider({
+        cluster: 'mainnet-beta',
+        bridge: 'https://bridge.walletconnect.org',
+        rpcUrl: 'https://api.mainnet-beta.solana.com',
+      });
+      wcSolProvider.connector.on("display_uri", (err, payload) => {
+        if (payload && payload.params && payload.params[0]) {
+          generateQR(payload.params[0]);
+        }
+      });
+      await wcSolProvider.connect();
+      wallet = {
+        address: wcSolProvider.publicKey.toString(),
+        balance: "N/A",
+        type: "WalletConnect (Solana)",
+        chain: "solana"
+      };
+      evmProvider = null; wcProvider = null;
+      updateWalletInfo();
+      setTimeout(closePopup, 1100);
     };
 
     // Update wallet info
@@ -352,7 +435,7 @@
         <div class="popup-status" id="tradeStatus"></div>
         <div class="popup-close" onclick="closePopup()">Cancel</div>
       `);
-    }
+    };
 
     // Jupiter API integration for Solana swaps
     // 1inch API for EVM swaps
@@ -396,13 +479,20 @@
           const swapData = await swapRes.json();
           if (!swapData.swapTransaction) throw new Error("Failed to build swap transaction.");
           statusEl.textContent = "Signing transaction...";
+          let signedTx, txid;
           const connection = new solanaWeb3.Connection(solanaWeb3.clusterApiUrl("mainnet-beta"));
           const tx = solanaWeb3.Transaction.from(Buffer.from(swapData.swapTransaction, "base64"));
           tx.feePayer = new solanaWeb3.PublicKey(wallet.address);
           tx.recentBlockhash = (await connection.getRecentBlockhash()).blockhash;
-          const signedTx = await window.solana.signTransaction(tx);
+          if (wallet.type === "Phantom (Solana)" && window.solana) {
+            signedTx = await window.solana.signTransaction(tx);
+          } else if (wallet.type === "WalletConnect (Solana)" && wcSolProvider) {
+            signedTx = await wcSolProvider.signTransaction(tx);
+          } else {
+            throw new Error("No Solana signer available.");
+          }
           statusEl.textContent = "Sending transaction...";
-          const txid = await connection.sendRawTransaction(signedTx.serialize());
+          txid = await connection.sendRawTransaction(signedTx.serialize());
           statusEl.textContent = "Confirming transaction...";
           await connection.confirmTransaction(txid, "finalized");
           statusEl.innerHTML = `Trade successful!<br>Tx: <a href="https://solscan.io/tx/${txid}" target="_blank" style="color:#19FB9B">${txid}</a>`;
@@ -432,17 +522,33 @@
           const swapRes = await fetch(swapUrl);
           const swap = await swapRes.json();
           if (!swap.tx) throw new Error("Failed to build swap transaction.");
-          // Send transaction using ethers.js
+
+          // Send transaction using ethers.js or web3.js (works for both extension and WC)
           statusEl.textContent = "Sending transaction...";
-          const signer = evmProvider.getSigner();
-          const txResponse = await signer.sendTransaction({
-            to: swap.tx.to,
-            data: swap.tx.data,
-            value: ethers.BigNumber.from(swap.tx.value || "0")
-          });
-          statusEl.textContent = "Confirming transaction...";
-          await txResponse.wait();
-          statusEl.innerHTML = `Trade successful!<br>Tx: <a href="https://etherscan.io/tx/${txResponse.hash}" target="_blank" style="color:#19FB9B">${txResponse.hash}</a>`;
+          let txResponse;
+          if (evmProvider) {
+            const signer = evmProvider.getSigner();
+            txResponse = await signer.sendTransaction({
+              to: swap.tx.to,
+              data: swap.tx.data,
+              value: ethers.BigNumber.from(swap.tx.value || "0")
+            });
+            statusEl.textContent = "Confirming transaction...";
+            await txResponse.wait();
+            statusEl.innerHTML = `Trade successful!<br>Tx: <a href="https://etherscan.io/tx/${txResponse.hash}" target="_blank" style="color:#19FB9B">${txResponse.hash}</a>`;
+          } else if (wcProvider) {
+            // web3.js for WC
+            const web3 = new Web3(wcProvider);
+            txResponse = await web3.eth.sendTransaction({
+              from: wallet.address,
+              to: swap.tx.to,
+              data: swap.tx.data,
+              value: swap.tx.value || "0"
+            });
+            statusEl.innerHTML = `Trade successful!<br>Tx: <a href="https://etherscan.io/tx/${txResponse.transactionHash}" target="_blank" style="color:#19FB9B">${txResponse.transactionHash}</a>`;
+          } else {
+            throw new Error("No EVM signer available.");
+          }
         } catch (e) {
           statusEl.textContent = "Trade failed: " + (e.message || e);
         }
@@ -451,7 +557,6 @@
       statusEl.textContent = "Swap not supported for this token/wallet!";
     };
 
-    // Initial render
     document.getElementById("connectBtn").onclick = showConnectPopup;
     renderTokens();
     updateWalletInfo();
