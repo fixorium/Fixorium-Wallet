@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>FIXORIUM Wallet - Final with Phantom Mobile & Extension, WalletConnect EVM & Solana</title>
+  <title>FIXORIUM Wallet - Final with Phantom Mobile & Extension, WalletConnect EVM & Solana, Live Token Prices</title>
   <meta name="viewport" content="width=device-width,initial-scale=1.0" />
   <link href="https://fonts.googleapis.com/css?family=Arial:400,500,700&display=swap" rel="stylesheet">
   <style>
@@ -98,6 +98,14 @@
       color: #b6b8c1;
       font-size: 1.08em;
       margin-right: auto;
+    }
+    .token-price {
+      color: #ffdc5c;
+      font-size: 1.08em;
+      margin-right: 1em;
+      font-weight: bold;
+      min-width: 80px;
+      text-align: right;
     }
     .token-action {
       background: linear-gradient(90deg, #9945FF, #19FB9B);
@@ -246,20 +254,47 @@
   <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js"></script>
   <script>
-    // Demo token list: add one EVM token for swap example
+    // Demo token list: add coingecko id for price fetch
     const TOKENS = [
-      { symbol: "SOL", name: "Solana", mint: "So11111111111111111111111111111111111111112", decimals: 9, image: "https://cryptologos.cc/logos/solana-sol-logo.png" },
-      { symbol: "BONK", name: "Bonk", mint: "DezX1xQ6ZhhXPb9D5e8C2J9pYc3i8c1a6h8VfmYbZ3Qh", decimals: 5, image: "https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/DezX1xQ6ZhhXPb9D5e8C2J9pYc3i8c1a6h8VfmYbZ3Qh/logo.png" },
-      { symbol: "MEW", name: "cat in a dogs world", mint: "6cA7QVY6L9Dn7dEyEfrXzQK6pQ6TjA2R8fLJwNr1cCzN", decimals: 6, image: "https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/6cA7QVY6L9Dn7dEyEfrXzQK6pQ6TjA2R8fLJwNr1cCzN/logo.png" },
-      // EVM example (ETH/USDC)
-      { symbol: "ETH", name: "Ethereum", address: "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE", decimals: 18, isEvm: true, image: "https://cryptologos.cc/logos/ethereum-eth-logo.png" },
-      { symbol: "USDC", name: "USD Coin", address: "0xA0b86991c6218b36c1d19d4a2e9eb0ce3606eb48", decimals: 6, isEvm: true, image: "https://cryptologos.cc/logos/usd-coin-usdc-logo.png" }
+      { symbol: "SOL", name: "Solana", mint: "So11111111111111111111111111111111111111112", decimals: 9, image: "https://cryptologos.cc/logos/solana-sol-logo.png", cgId: "solana" },
+      { symbol: "BONK", name: "Bonk", mint: "DezX1xQ6ZhhXPb9D5e8C2J9pYc3i8c1a6h8VfmYbZ3Qh", decimals: 5, image: "https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/DezX1xQ6ZhhXPb9D5e8C2J9pYc3i8c1a6h8VfmYbZ3Qh/logo.png", cgId: "bonk" },
+      { symbol: "MEW", name: "cat in a dogs world", mint: "6cA7QVY6L9Dn7dEyEfrXzQK6pQ6TjA2R8fLJwNr1cCzN", decimals: 6, image: "https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/6cA7QVY6L9Dn7dEyEfrXzQK6pQ6TjA2R8fLJwNr1cCzN/logo.png", cgId: "cat-in-a-dogs-world" },
+      { symbol: "ETH", name: "Ethereum", address: "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE", decimals: 18, isEvm: true, image: "https://cryptologos.cc/logos/ethereum-eth-logo.png", cgId: "ethereum" },
+      { symbol: "USDC", name: "USD Coin", address: "0xA0b86991c6218b36c1d19d4a2e9eb0ce3606eb48", decimals: 6, isEvm: true, image: "https://cryptologos.cc/logos/usd-coin-usdc-logo.png", cgId: "usd-coin" }
     ];
 
     let wallet = null; // { address, balance, type, chain }
     let evmProvider = null; // ethers.js provider
     let wcProvider = null; // EVM WalletConnect provider
     let wcSolProvider = null; // Solana WalletConnect provider
+    let tokenPrices = {}; // { symbol: price }
+    let tokenPriceFetchError = false;
+
+    // Price fetch from CoinGecko
+    async function fetchTokenPrices() {
+      try {
+        // Get all CoinGecko IDs
+        const ids = TOKENS.map(t => t.cgId).filter(Boolean).join(",");
+        const url = `https://api.coingecko.com/api/v3/simple/price?ids=${ids}&vs_currencies=usd`;
+        const res = await fetch(url);
+        if (!res.ok) throw new Error("Price API Error");
+        const data = await res.json();
+        tokenPrices = {};
+        TOKENS.forEach(t => {
+          if (t.cgId && data[t.cgId] && data[t.cgId].usd) {
+            tokenPrices[t.symbol] = data[t.cgId].usd;
+          } else {
+            tokenPrices[t.symbol] = null;
+          }
+        });
+        tokenPriceFetchError = false;
+      } catch (e) {
+        tokenPriceFetchError = true;
+        // fallback: set all prices to null
+        TOKENS.forEach(t => { tokenPrices[t.symbol] = null; });
+      }
+      renderTokens();
+    }
 
     // Popup utilities
     function showPopup(html) {
@@ -320,16 +355,17 @@
       const statusEl = document.getElementById("connectStatus");
       if (window.ethereum) {
         statusEl.textContent = "Connecting to browser wallet...";
+        let type = "MetaMask (EVM Extension)";
+        if (window.ethereum.isBraveWallet) type = "Brave Wallet (EVM Extension)";
         try {
           await window.ethereum.request({ method: 'eth_requestAccounts' });
-          evmProvider = new ethers.providers.Web3Provider(window.ethereum);
-          const signer = evmProvider.getSigner();
+          const provider = new ethers.providers.Web3Provider(window.ethereum);
+          const signer = provider.getSigner();
           const address = await signer.getAddress();
-          const balanceWei = await evmProvider.getBalance(address);
+          const balanceWei = await provider.getBalance(address);
           const balanceEth = ethers.utils.formatEther(balanceWei);
-          let type = "MetaMask (EVM Extension)";
-          if (window.ethereum.isBraveWallet) type = "Brave Wallet (EVM Extension)";
           wallet = { address, balance: parseFloat(balanceEth).toFixed(4), type, chain: "evm" };
+          evmProvider = provider;
           wcProvider = null; wcSolProvider = null;
           updateWalletInfo();
           closePopup();
@@ -346,8 +382,8 @@
       const statusEl = document.getElementById("connectStatus");
       statusEl.textContent = "Initializing WalletConnect for EVM...";
       wcProvider = new WalletConnectProvider.default({
-        rpc: { 1: "https://rpc.ankr.com/eth" }, // Ethereum mainnet
-        qrcode: false // We generate QR manually
+        rpc: { 1: "https://rpc.ankr.com/eth" },
+        qrcode: false
       });
       wcProvider.connector.on("display_uri", (err, payload) => {
         if (payload && payload.params && payload.params[0]) {
@@ -425,11 +461,18 @@
     function renderTokens() {
       let html = '';
       TOKENS.forEach((t, i) => {
+        let priceStr = 'Loading...';
+        if (tokenPrices[t.symbol] === null && tokenPriceFetchError) {
+          priceStr = `<span style="color: #ff5c91;">Unavailable</span>`;
+        } else if (tokenPrices[t.symbol] !== undefined && tokenPrices[t.symbol] !== null) {
+          priceStr = `$${tokenPrices[t.symbol].toLocaleString(undefined, {minimumFractionDigits: 3, maximumFractionDigits: 8})}`;
+        }
         html += `
           <div class="token-row" onclick="showTradePopup(${i})">
             <img class="token-img" src="${t.image}" alt="${t.symbol}" />
             <span class="token-symbol">${t.symbol}</span>
             <span class="token-name">${t.name}</span>
+            <span class="token-price" id="price-${t.symbol}">${priceStr}</span>
             <button class="token-action" onclick="event.stopPropagation();showTradePopup(${i})">Buy/Sell</button>
           </div>
         `;
@@ -440,10 +483,15 @@
     // Trade popup
     window.showTradePopup = function(idx) {
       const t = TOKENS[idx];
+      let priceSection = '';
+      if (tokenPrices[t.symbol] !== undefined && tokenPrices[t.symbol] !== null) {
+        priceSection = `<div style="margin-bottom:0.5em;color:#ffdc5c;font-size:1.1em;">Market Price: $${tokenPrices[t.symbol]}</div>`;
+      }
       showPopup(`
         <div class="popup-title">
           Trade ${t.name} (${t.symbol})
         </div>
+        ${priceSection}
         <div class="popup-row">
           <label class="popup-label" for="tradeSide">Type:</label>
           <select class="popup-select" id="tradeSide">
@@ -580,6 +628,10 @@
     };
 
     document.getElementById("connectBtn").onclick = showConnectPopup;
+
+    // Initial load
+    fetchTokenPrices();
+    setInterval(fetchTokenPrices, 60000); // Refresh prices every 60s
     renderTokens();
     updateWalletInfo();
   </script>
