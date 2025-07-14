@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Fixorium Solana SPL Token Swap dApp</title>
-  <!-- Include React and ReactDOM from CDN -->
+  <!-- React & ReactDOM (CDN) -->
   <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
   <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
   <!-- Babel for JSX transpiling in browser -->
@@ -12,10 +12,9 @@
   <!-- axios -->
   <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
   <!-- solana/web3.js -->
-  <script src="https://cdn.jsdelivr.net/npm/@solana/web3.js@1.75.0/lib/index.iife.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@solana/web3.js@1.95.2/lib/index.iife.min.js"></script>
   <!-- solana/spl-token -->
   <script src="https://cdn.jsdelivr.net/npm/@solana/spl-token@0.3.5/lib/index.iife.min.js"></script>
-
   <style>
     body {
       font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
@@ -135,11 +134,20 @@
       color: #007aff;
       text-decoration: underline;
     }
+    .token-logo {
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      margin-right: 4px;
+      vertical-align: middle;
+      background: #fff;
+      border: 1px solid #eee;
+      object-fit: cover;
+    }
   </style>
 </head>
 <body>
   <div id="root"></div>
-
   <script type="text/babel">
 
     const {
@@ -156,16 +164,9 @@
       Transaction,
     } = solanaWeb3;
 
-    const {
-      TOKEN_PROGRAM_ID,
-      getOrCreateAssociatedTokenAccount,
-      createTransferInstruction,
-    } = splToken;
-
     const SOL_MINT = 'So11111111111111111111111111111111111111112';
-    const JUPITER_API_BASE = 'https://quote-api.jup.ag/v4';
+    const JUPITER_API_BASE = 'https://quote-api.jup.ag/v6';
 
-    // Verified 10 trending tokens on mainnet-beta
     const tokensList = [
       {
         address: 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v',
@@ -266,16 +267,21 @@
       const connectWallet = useCallback(async () => {
         if (window.solana && window.solana.isPhantom) {
           try {
-            const resp = await window.solana.connect();
-            const pk = new PublicKey(resp.publicKey.toString());
+            await window.solana.connect({ onlyIfTrusted: false });
+            const pk = new PublicKey(window.solana.publicKey.toString());
             setPublicKey(pk);
             setWalletConnected(true);
           } catch (err) {
             console.error('Wallet connection failed:', err);
-            alert('Failed to connect wallet: ' + err.message || err);
+            alert('Failed to connect wallet: ' + (err.message || err));
           }
         } else {
-          alert('Phantom wallet not found. Please install it from https://phantom.app/');
+          // Use Phantom deep link for mobile
+          if (/android|iphone|ipad|ipod/i.test(navigator.userAgent)) {
+            window.open(`https://phantom.app/ul/browse/${encodeURIComponent(window.location.href)}`, '_blank');
+          } else {
+            alert('Phantom wallet not found. Please install it from https://phantom.app/');
+          }
         }
       }, []);
 
@@ -404,9 +410,9 @@
             },
           });
 
-          if (resp.data && resp.data.data && resp.data.data.length > 0) {
-            setRoutes(resp.data.data);
-            setSelectedRoute(resp.data.data[0]);
+          if (resp.data && resp.data.routes && resp.data.routes.length > 0) {
+            setRoutes(resp.data.routes);
+            setSelectedRoute(resp.data.routes[0]);
           } else {
             alert('No swap routes found for this pair and amount');
             setRoutes([]);
@@ -436,30 +442,17 @@
           const resp = await axios.post(`${JUPITER_API_BASE}/swap`, {
             route: selectedRoute,
             userPublicKey: publicKey.toBase58(),
+            wrapUnwrapSOL: true,
+            dynamicComputeUnitLimit: true,
           });
 
-          if (!resp.data || !resp.data.swapTransactions) {
-            alert('Failed to get swap transactions');
+          if (!resp.data || !resp.data.swapTransaction) {
+            alert('Failed to get swap transaction');
             setSwapping(false);
             return;
           }
 
-          const { swapTransactions } = resp.data;
-
-          // Handle optional setup transaction
-          if (swapTransactions.setupTransaction) {
-            const setupTx = Transaction.from(Buffer.from(swapTransactions.setupTransaction, 'base64'));
-            setupTx.feePayer = publicKey;
-            const { blockhash } = await connection.getLatestBlockhash();
-            setupTx.recentBlockhash = blockhash;
-
-            const signedSetupTx = await window.solana.signTransaction(setupTx);
-            const setupTxid = await connection.sendRawTransaction(signedSetupTx.serialize());
-            await connection.confirmTransaction(setupTxid, 'confirmed');
-          }
-
-          // Main swap transaction
-          const swapTx = Transaction.from(Buffer.from(swapTransactions.swapTransaction, 'base64'));
+          const swapTx = Transaction.from(Buffer.from(resp.data.swapTransaction, 'base64'));
           swapTx.feePayer = publicKey;
           const { blockhash } = await connection.getLatestBlockhash();
           swapTx.recentBlockhash = blockhash;
@@ -545,7 +538,6 @@
 
           <fieldset disabled={!walletConnected || loadingQuotes || swapping}>
             <legend>Swap</legend>
-
             <label htmlFor="fromSelect">From:</label>
             <select
               id="fromSelect"
@@ -554,7 +546,7 @@
                 const sel =
                   tokensList.find((t) => t.address === e.target.value) ||
                   (e.target.value === SOL_MINT
-                    ? { address: SOL_MINT, symbol: 'SOL', name: 'SOL', decimals: 9, logoURI: '' }
+                    ? { address: SOL_MINT, symbol: 'SOL', name: 'SOL', decimals: 9, logoURI: 'https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/solana/info/logo.png' }
                     : null);
                 if (sel) {
                   setFromToken(sel);
@@ -565,7 +557,9 @@
                 }
               }}
             >
-              <option value={SOL_MINT}>SOL</option>
+              <option value={SOL_MINT}>
+                <img src="https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/solana/info/logo.png" className="token-logo" alt="SOL" /> SOL
+              </option>
               {tokensList.map((token) => (
                 <option key={token.address} value={token.address}>
                   {token.symbol}
@@ -586,7 +580,7 @@
                 const sel =
                   tokensList.find((t) => t.address === e.target.value) ||
                   (e.target.value === SOL_MINT
-                    ? { address: SOL_MINT, symbol: 'SOL', name: 'SOL', decimals: 9, logoURI: '' }
+                    ? { address: SOL_MINT, symbol: 'SOL', name: 'SOL', decimals: 9, logoURI: 'https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/solana/info/logo.png' }
                     : null);
                 if (sel) {
                   setToToken(sel);
