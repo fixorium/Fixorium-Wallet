@@ -2,349 +2,459 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1.0" />
   <title>FIXORIUM Wallet</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0" />
   <link href="https://fonts.googleapis.com/css?family=Arial:400,500,700&display=swap" rel="stylesheet">
   <style>
-    :root {
-      --primary: #9945FF;
-      --accent: #19FB9B;
-      --bg: #111117;
-      --box: #181824;
-      --border: #232339;
-      --text: #e3e7ed;
-      --gray: #b6b8c1;
-      --radius: 16px;
-      --shadow: 0 6px 32px rgba(60,72,88,0.10);
-      --error: #ff5c91;
-      --success: #20c997;
-    }
-    html, body {
-      font-size: 13px;
-      background: var(--bg);
-      font-family: "Arial", Arial, sans-serif;
-      color: var(--text);
+    body {
+      background: linear-gradient(135deg, #181824 0%, #232339 100%);
+      color: #e3e7ed;
+      font-family: Arial, sans-serif;
       margin: 0;
       min-height: 100vh;
     }
-    .topbar {
+    .header {
+      text-align: center;
+      font-size: 2em;
+      font-weight: 700;
+      margin: 2em 0 1em 0;
+      color: #9945FF;
+      letter-spacing: 0.03em;
       display: flex;
+      flex-direction: column;
       align-items: center;
-      justify-content: space-between;
-      background: var(--box);
-      box-shadow: var(--shadow);
-      padding: 0.4rem 1rem;
-      min-height: 40px;
-      font-size: 12px;
     }
     .logo {
+      width: 70px;
+      height: 70px;
+      border-radius: 50%;
+      box-shadow: 0 6px 24px #9945ff46;
+      margin-bottom: 0.5em;
+      background: #fff;
+      object-fit: cover;
+    }
+    .connect-btn {
+      display: block;
+      margin: 0 auto 1.5em auto;
+      background: linear-gradient(90deg, #9945FF, #19FB9B);
+      color: #181824;
+      border: none;
+      border-radius: 10px;
+      font-weight: 600;
+      font-size: 1.2em;
+      padding: 0.7em 2em;
+      cursor: pointer;
+      box-shadow: 0 2px 12px #9945ff2b;
+      transition: background 0.15s;
+    }
+    .connect-btn:hover { filter: brightness(1.09); }
+    .wallet-info {
+      text-align: center;
+      margin-bottom: 2em;
+      font-size: 1.1em;
+      background: #232339;
+      border-radius: 10px;
+      display: inline-block;
+      min-width: 270px;
+      padding: 1em 1.5em;
+      box-shadow: 0 2px 18px #2323392b;
+    }
+    .token-list {
+      width: 96%;
+      max-width: 700px;
+      margin: 0 auto;
+      background: #232339;
+      border-radius: 18px;
+      box-shadow: 0 4px 20px rgba(60,72,88,0.14);
+      padding: 1.2em 1em;
+    }
+    .token-row {
       display: flex;
       align-items: center;
+      border-bottom: 1px solid #29294a;
+      padding: 1em 0.2em;
+      cursor: pointer;
+      transition: background 0.13s;
     }
-    .logo img {
-      height: 27px;
-      width: auto;
-      margin-right: 0.4rem;
+    .token-row:last-child { border-bottom: none; }
+    .token-row:hover { background: #191923; }
+    .token-img {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      margin-right: 1em;
+      background: #fff;
+      border: 2px solid #9945FF;
+      box-shadow: 0 2px 10px #9945ff33;
+      object-fit: cover;
     }
-    .logo span {
-      font-size: 1rem;
+    .token-symbol {
       font-weight: 700;
-      letter-spacing: 0.04em;
-      color: var(--primary);
-      font-family: "Arial", Arial, sans-serif;
+      color: #19FB9B;
+      margin-right: 0.8em;
+      font-size: 1.1em;
     }
-    .topbar-btn {
-      background: var(--primary);
+    .token-name {
+      color: #b6b8c1;
+      font-size: 1.08em;
+      margin-right: auto;
+    }
+    .token-action {
+      background: linear-gradient(90deg, #9945FF, #19FB9B);
       color: #fff;
       border: none;
       border-radius: 8px;
       font-weight: 600;
-      font-size: 0.97rem;
-      padding: 0.32rem 1.1rem;
-      letter-spacing: 0.03em;
-      cursor: pointer;
-      box-shadow: 0 2px 8px rgba(70,70,140,0.08);
-      transition: background 0.14s;
-      min-width: 85px;
-      margin-left: 0.4rem;
-      font-family: "Arial", Arial, sans-serif;
-    }
-    .topbar-btn:hover { filter: brightness(1.07); }
-    .container {
-      max-width: 400px;
-      margin: 2rem auto 0 auto;
-      background: var(--box);
-      border-radius: var(--radius);
-      box-shadow: var(--shadow);
-      padding: 1.1rem 0.7rem 1.1rem 0.7rem;
-      font-size: 12px;
-      position: relative;
-    }
-    h1 {
-      margin: 0 0 1.1rem 0;
-      font-weight: 700;
-      color: var(--primary);
-      font-size: 1rem;
-      letter-spacing:0.01em;
-      text-align:center;
-      font-family: "Arial", Arial, sans-serif;
-    }
-    .token-list-table {
-      width: 100%;
-      border-collapse: collapse;
-      background: var(--box);
-      border-radius: 10px;
-      overflow: hidden;
-      margin-bottom: 1.1rem;
-      font-size: 12px;
-    }
-    .token-list-table th, .token-list-table td {
-      padding: 0.42em 0.3em;
-      text-align: left;
-      font-size: 0.95em;
-      font-family: "Arial", Arial, sans-serif;
-    }
-    .token-list-table th {
-      background: #181830;
-      color: var(--primary);
-      font-weight: 700;
-      font-family: "Arial", Arial, sans-serif;
-    }
-    .token-list-table tr {
-      transition: background 0.07s;
-      cursor: pointer;
-    }
-    .token-list-table tr:hover {
-      background: #23233a;
-    }
-    .token-img {
-      width: 22px;
-      height: 22px;
-      border-radius: 50%;
-      object-fit: contain;
-      border: 1px solid #232339;
-      background: #191923;
-      margin-right: 0.6em;
-      vertical-align: middle;
-      box-shadow: 0 1px 5px rgba(70,70,120,0.04);
-    }
-    .token-symbol {
-      font-weight: 700;
-      color: var(--primary);
       font-size: 1em;
-      margin-right: 0.1em;
-      font-family: "Arial", Arial, sans-serif;
+      padding: 0.4em 1em;
+      cursor: pointer;
+      transition: background 0.15s;
+      box-shadow: 0 2px 12px #9945ff2b;
     }
-    .token-price {
-      color: #19FB9B;
-      font-weight: 600;
-      font-size: 1em;
-      margin-left: 0.2em;
-      font-family: "Arial", Arial, sans-serif;
-    }
-    .commercial {
-      margin: 1rem 0 0.5rem 0;
-      background: #22222b;
-      color: #19FB9B;
-      border-radius: 10px;
-      padding: 0.7em 0.8em;
-      text-align: center;
-      font-size: 0.97em;
-      font-weight: 600;
-      font-family: "Arial", Arial, sans-serif;
-    }
-    #errorMsg, .error-msg {
-      color: var(--error);
-      background: #2b1420;
-      border-radius: 5px;
-      padding: 6px 8px;
-      font-size: 0.98em;
-      margin-bottom: 0.8rem;
-      display: none;
-      font-family: "Arial", Arial, sans-serif;
-    }
-    #successMsg, .success-msg {
-      color: var(--success);
-      background: #19342a;
-      border-radius: 5px;
-      padding: 6px 8px;
-      font-size: 0.98em;
-      margin-bottom: 0.8rem;
-      display: none;
-      font-family: "Arial", Arial, sans-serif;
-    }
-    .loader-wrap {
+    .token-action:hover { filter: brightness(1.09); }
+    /* Popup styles */
+    .popup-bg {
+      position: fixed;
+      top:0;left:0;right:0;bottom:0;
+      background: rgba(20,20,32,0.85);
+      z-index: 9999;
       display: flex;
-      flex-direction: column;
       align-items: center;
       justify-content: center;
-      min-height: 80px;
-      width: 100%;
-      margin: 1.2rem 0 0.7rem 0;
-      font-size: 1.15em;
-      color: var(--primary);
-      font-weight: 700;
-      letter-spacing: 0.04em;
-      font-family: "Arial", Arial, sans-serif;
     }
-    .hidden { display: none !important; }
-    .user-wallet {
-      background: #22222b;
-      padding: 0.6em 0.8em;
-      border-radius: 8px;
-      margin-bottom: 1em;
-      color: var(--accent);
-      font-size: 0.98em;
-      font-family: "Arial", Arial, sans-serif;
-      word-break: break-all;
+    .popup-box {
+      background: #232339;
+      border-radius: 16px;
+      box-shadow: 0 6px 32px rgba(80,100,120,0.16);
+      padding: 2em 1.5em;
+      max-width: 340px;
+      width: 94vw;
       text-align: center;
+      color: #e3e7ed;
+    }
+    .popup-title {
+      font-size: 1.15em;
+      font-weight: bold;
+      color: #9945FF;
+      margin-bottom: 1em;
+    }
+    .popup-btn {
+      background: linear-gradient(90deg, #9945FF, #19FB9B);
+      color: #181824;
+      border: none;
+      border-radius: 8px;
+      font-weight: 600;
+      font-size: 1em;
+      padding: 0.5em 1em;
+      margin: 0.5em 0;
+      cursor: pointer;
+      width: 100%;
+      transition: background 0.15s;
+      box-shadow: 0 2px 12px #9945ff2b;
+    }
+    .popup-btn:hover { filter: brightness(1.08); }
+    .popup-close {
+      margin-top: 1.2em;
+      color: #b6b8c1;
+      text-decoration: underline;
+      cursor: pointer;
+      font-size: 0.98em;
+    }
+    .popup-row {
+      margin: 1em 0;
+      text-align: left;
+    }
+    .popup-label {
+      font-weight: 600;
+      margin-bottom: 0.3em;
+      display: block;
+    }
+    .popup-input, .popup-select {
+      width: 100%;
+      padding: 0.55em 0.9em;
+      border-radius: 8px;
+      border: 1px solid #29294a;
+      font-size: 1em;
+      background: #181824;
+      color: #e3e7ed;
+      font-family: Arial, sans-serif;
+      margin-bottom: 0.6em;
+    }
+    .popup-status {
+      margin-top: 1em;
+      color: #19FB9B;
+      font-size: 1.01em;
+      min-height: 1.3em;
+    }
+    .popup-error {
+      color: #ff5c91;
+      font-size: 1.01em;
+      min-height: 1.3em;
+      margin-top: 1em;
+    }
+    .powered {
+      text-align: center;
+      color: #b6b8c1;
+      margin: 2em 0 0.5em 0;
+      font-size: 0.93em;
+      letter-spacing: 0.02em;
     }
     @media (max-width: 600px) {
-      .container {
-        padding: 0.4rem 0.02rem;
-        max-width: 99vw;
-      }
-      .token-list-table th, .token-list-table td {
-        font-size: 0.91em;
-      }
-      .logo img {
-        height: 21px;
-      }
-      .logo span {
-        font-size: 0.93rem;
-      }
-      .topbar-btn {
-        padding: 0.23rem 0.8rem;
-        min-width: 60px;
-        font-size: 0.95rem;
-      }
-      .loader-wrap { min-height: 50px; }
+      .header { font-size: 1.4em; }
+      .logo { width: 54px; height: 54px; }
+      .wallet-info { min-width: 180px; padding: 0.7em 0.9em; }
     }
   </style>
 </head>
 <body>
-  <div class="topbar">
-    <div class="logo">
-      <img src="https://i.postimg.cc/8s8BjVTL/coin.png" alt="FIXORIUM Logo" />
-      <span>FIXORIUM</span>
-    </div>
-    <button id="connectWalletBtn" class="topbar-btn">CONNECT</button>
+  <div class="header">
+    <img class="logo" src="https://cryptologos.cc/logos/solana-sol-logo.png?v=024" alt="Fixorium Logo"/>
+    FIXORIUM Wallet
   </div>
-  <div class="container">
-    <h1><br>FIXORIUM TOKEN SELECTION<br>
-     💥100x GEM FIXERCOIN<br>BUY NOW</h1>
-    <div id="errorMsg" class="error-msg"></div>
-    <div id="successMsg" class="success-msg"></div>
-    <div id="userWalletInfo" class="user-wallet hidden"></div>
-    <div id="tokenLoader" class="loader-wrap">LOADING !!!</div>
-    <table class="token-list-table hidden" id="tokenListTable">
-      <thead>
-        <tr>
-          <th>#</th>
-          <th>TOKEN</th>
-          <th>SYMBOL</th>
-          <th>PRICE</th>
-        </tr>
-      </thead>
-      <tbody id="tokenTableBody"></tbody>
-    </table>
-    <div class="commercial">
-      🚀 BUY & SELL <br>
-      SOLANA MEME TOKENS INSTANTLY<br>
-      WITH FIXORIUM DEX. <br/>
-    </div>
+  <button class="connect-btn" id="connectBtn">Connect Wallet</button>
+  <div class="wallet-info" id="walletInfo"></div>
+  <div class="token-list" id="tokenList"></div>
+  <div class="powered">
+    Powered by <a href="https://jup.ag/" target="_blank" style="color:#9945FF;">Jupiter</a> (Solana) & <a href="https://www.1inch.io/" target="_blank" style="color:#19FB9B;">1inch</a> (EVM)
   </div>
+  <!-- Popups rendered here -->
+  <div id="popupRoot"></div>
+  
   <script src="https://cdn.jsdelivr.net/npm/@solana/web3.js@1.95.2/lib/index.iife.min.js"></script>
-  <script type="module">
-    // --- TOKENS ---
+  <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"></script>
+  <script>
+    // Demo token list: add one EVM token for swap example
     const TOKENS = [
       { symbol: "SOL", name: "Solana", mint: "So11111111111111111111111111111111111111112", decimals: 9, image: "https://cryptologos.cc/logos/solana-sol-logo.png" },
       { symbol: "BONK", name: "Bonk", mint: "DezX1xQ6ZhhXPb9D5e8C2J9pYc3i8c1a6h8VfmYbZ3Qh", decimals: 5, image: "https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/DezX1xQ6ZhhXPb9D5e8C2J9pYc3i8c1a6h8VfmYbZ3Qh/logo.png" },
       { symbol: "MEW", name: "cat in a dogs world", mint: "6cA7QVY6L9Dn7dEyEfrXzQK6pQ6TjA2R8fLJwNr1cCzN", decimals: 6, image: "https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/6cA7QVY6L9Dn7dEyEfrXzQK6pQ6TjA2R8fLJwNr1cCzN/logo.png" },
-      { symbol: "SAMO", name: "Samoyedcoin", mint: "7xKX2W5ZfVbknk8V2yZ6pR6A2K1v8R4F7k4G7U7vS8g", decimals: 9, image: "https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/7xKX2W5ZfVbknk8V2yZ6pR6A2K1v8R4F7k4G7U7vS8g/logo.png" }
+      // EVM example (ETH/USDC)
+      { symbol: "ETH", name: "Ethereum", address: "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE", decimals: 18, isEvm: true, image: "https://cryptologos.cc/logos/ethereum-eth-logo.png" },
+      { symbol: "USDC", name: "USD Coin", address: "0xA0b86991c6218b36c1d19d4a2e9eb0ce3606eb48", decimals: 6, isEvm: true, image: "https://cryptologos.cc/logos/usd-coin-usdc-logo.png" }
     ];
-    let walletAddress = null;
-    let walletBalance = null;
 
-    function getRandomPrice(symbol) {
-      if (symbol === "SOL") return 150 + Math.random() * 10;
-      if (symbol === "BONK") return 0.000022 + Math.random()*0.000002;
-      if (symbol === "MEW") return 0.0025 + Math.random()*0.001;
-      if (symbol === "SAMO") return 0.012 + Math.random()*0.005;
-      return Math.random()*0.01 + 0.001;
+    let wallet = null; // { address, balance, type, chain }
+    let evmProvider = null; // ethers.js provider
+
+    // Popup utilities
+    function showPopup(html) {
+      document.getElementById("popupRoot").innerHTML = `<div class="popup-bg"><div class="popup-box">${html}</div></div>`;
     }
-    function formatPrice(price) {
-      return price > 1 ? price.toFixed(2) : price > 0.01 ? price.toFixed(4) : price.toFixed(8);
+    function closePopup() {
+      document.getElementById("popupRoot").innerHTML = '';
     }
-    function renderTokenTable() {
-      tokenLoader.classList.remove("hidden");
-      tokenListTable.classList.add("hidden");
-      setTimeout(() => {
-        tokenTableBody.innerHTML = "";
-        TOKENS.forEach((token, idx) => {
-          let price = getRandomPrice(token.symbol);
-          const tr = document.createElement("tr");
-          tr.onclick = () => openTokenTradePopup(idx);
-          tr.innerHTML = `
-            <td>${idx+1}</td>
-            <td><img class="token-img" src="${token.image}" alt="${token.symbol}" /> ${token.name}</td>
-            <td class="token-symbol">${token.symbol}</td>
-            <td class="token-price">$${formatPrice(price)}</td>
-          `;
-          tokenTableBody.appendChild(tr);
-        });
-        tokenLoader.classList.add("hidden");
-        tokenListTable.classList.remove("hidden");
-      }, 900);
+    // Connect wallet popup
+    function showConnectPopup() {
+      showPopup(`
+        <div class="popup-title">Connect Your Wallet</div>
+        <button class="popup-btn" onclick="window.connectPhantom()">Phantom Wallet (Solana)</button>
+        <button class="popup-btn" onclick="window.connectMetaMaskOrBrave()">Browser Wallet (MetaMask/Brave/EVM)</button>
+        <div class="popup-status" id="connectStatus"></div>
+        <div class="popup-close" onclick="closePopup()">Cancel</div>
+      `);
+    }
+    // Phantom connect
+    window.connectPhantom = async function() {
+      const statusEl = document.getElementById("connectStatus");
+      if (window.solana && window.solana.isPhantom) {
+        statusEl.textContent = "Connecting to Phantom...";
+        try {
+          const resp = await window.solana.connect({ onlyIfTrusted: false });
+          const address = resp.publicKey.toString();
+          const conn = new solanaWeb3.Connection(solanaWeb3.clusterApiUrl("mainnet-beta"));
+          const balanceLamports = await conn.getBalance(new solanaWeb3.PublicKey(address));
+          const balanceSol = (balanceLamports / 1e9).toFixed(4);
+          wallet = { address, balance: balanceSol, type: "Phantom (Solana)", chain: "solana" };
+          evmProvider = null;
+          updateWalletInfo();
+          closePopup();
+        } catch (e) {
+          statusEl.textContent = "Phantom connection failed!";
+        }
+      } else {
+        statusEl.innerHTML = `Phantom wallet not found! <a href="https://phantom.app/download" target="_blank" style="color:#19FB9B">Install Here</a>`;
+      }
+    };
+    // MetaMask/Brave connect
+    window.connectMetaMaskOrBrave = async function() {
+      const statusEl = document.getElementById("connectStatus");
+      if (window.ethereum) {
+        statusEl.textContent = "Connecting to browser wallet...";
+        try {
+          await window.ethereum.request({ method: 'eth_requestAccounts' });
+          evmProvider = new ethers.providers.Web3Provider(window.ethereum);
+          const signer = evmProvider.getSigner();
+          const address = await signer.getAddress();
+          const balanceWei = await evmProvider.getBalance(address);
+          const balanceEth = ethers.utils.formatEther(balanceWei);
+          let type = "MetaMask (EVM)";
+          if (window.ethereum.isBraveWallet) type = "Brave Wallet (EVM)";
+          wallet = { address, balance: parseFloat(balanceEth).toFixed(4), type, chain: "evm" };
+          updateWalletInfo();
+          closePopup();
+        } catch (e) {
+          statusEl.textContent = "Browser wallet connection failed!";
+        }
+      } else {
+        statusEl.innerHTML = `No browser wallet detected! <a href="https://metamask.io/download.html" target="_blank" style="color:#19FB9B">Install MetaMask</a>`;
+      }
+    };
+
+    // Update wallet info
+    function updateWalletInfo() {
+      const el = document.getElementById("walletInfo");
+      if (wallet) {
+        el.innerHTML = `
+          <div>Connected: <span style="color:#19FB9B;">${wallet.address}</span></div>
+          <div>Balance: <span style="color:#19FB9B;">${wallet.balance}</span> (${wallet.chain === "solana"?"SOL":"ETH"})</div>
+          <div style="margin-top:0.3em;color:#9945FF;font-size:0.98em;">Wallet: ${wallet.type}</div>
+        `;
+      } else {
+        el.textContent = "";
+      }
     }
 
-    // --- MAIN PAGE EVENTS ---
-    const connectWalletBtn = document.getElementById('connectWalletBtn');
-    connectWalletBtn.onclick = () => openWalletPopup();
-
-    function openWalletPopup() {
-      const url = "http://htmlpreview.github.io/?https://github.com/fixorium/Fixorium-Wallet/blob/main/connect.html";
-      const features = "width=420,height=520,top=120,left=120,toolbar=no,location=no,status=no,menubar=no,scrollbars=no,resizable=no";
-      window.open(url, "ConnectWallet", features);
+    // Render token table
+    function renderTokens() {
+      let html = '';
+      TOKENS.forEach((t, i) => {
+        html += `
+          <div class="token-row" onclick="showTradePopup(${i})">
+            <img class="token-img" src="${t.image}" alt="${t.symbol}" />
+            <span class="token-symbol">${t.symbol}</span>
+            <span class="token-name">${t.name}</span>
+            <button class="token-action" onclick="event.stopPropagation();showTradePopup(${i})">Buy/Sell</button>
+          </div>
+        `;
+      });
+      document.getElementById("tokenList").innerHTML = html;
     }
 
-    function openTokenTradePopup(idx) {
-      if (!walletAddress) {
-        showError("Please connect a wallet first.");
+    // Trade popup
+    window.showTradePopup = function(idx) {
+      const t = TOKENS[idx];
+      showPopup(`
+        <div class="popup-title">
+          Trade ${t.name} (${t.symbol})
+        </div>
+        <div class="popup-row">
+          <label class="popup-label" for="tradeSide">Type:</label>
+          <select class="popup-select" id="tradeSide">
+            <option value="buy">Buy</option>
+            <option value="sell">Sell</option>
+          </select>
+        </div>
+        <div class="popup-row">
+          <label class="popup-label" for="tradeAmount">Amount:</label>
+          <input class="popup-input" id="tradeAmount" type="number" min="0" placeholder="Amount">
+        </div>
+        <button class="popup-btn" onclick="window.startTrade(${idx})">Execute Trade</button>
+        <div class="popup-status" id="tradeStatus"></div>
+        <div class="popup-close" onclick="closePopup()">Cancel</div>
+      `);
+    }
+
+    // Jupiter API integration for Solana swaps
+    // 1inch API for EVM swaps
+    window.startTrade = async function(idx) {
+      const t = TOKENS[idx];
+      const statusEl = document.getElementById("tradeStatus");
+      if (!wallet || !wallet.address) {
+        statusEl.textContent = "Connect wallet first!";
         return;
       }
-      const url = `trade.html?token=${idx}&wallet=${walletAddress}`;
-      const features = "width=480,height=620,top=120,left=120,toolbar=no,location=no,status=no,menubar=no,scrollbars=no,resizable=no";
-      window.open(url, "TokenTrade" + idx, features);
-    }
-
-    // --- Handle wallet connect from popup ---
-    window.addEventListener("message", (event) => {
-      if (event.data.type === "wallet-connected") {
-        walletAddress = event.data.address;
-        walletBalance = event.data.balance;
-        document.getElementById("userWalletInfo").innerHTML =
-          `Connected: <b>${walletAddress}</b><br/>Balance: <b>${walletBalance} SOL</b>`;
-        document.getElementById("userWalletInfo").classList.remove("hidden");
-        showSuccess("Wallet connected!");
+      const side = document.getElementById("tradeSide").value;
+      const amount = parseFloat(document.getElementById("tradeAmount").value);
+      if (!amount || amount <= 0) {
+        statusEl.textContent = "Enter valid amount.";
+        return;
       }
-    });
+      // SOLANA SWAP
+      if (wallet.chain === "solana" && !t.isEvm) {
+        statusEl.textContent = "Fetching quote...";
+        try {
+          const fromMint = side === "buy" ? TOKENS[0].mint : t.mint;
+          const toMint = side === "buy" ? t.mint : TOKENS[0].mint;
+          const decimals = side === "buy" ? TOKENS[0].decimals : t.decimals;
+          const amountRaw = Math.floor(amount * Math.pow(10, decimals));
+          // Jupiter quote
+          const quoteUrl = `https://quote-api.jup.ag/v6/quote?inputMint=${fromMint}&outputMint=${toMint}&amount=${amountRaw}&slippageBps=30`;
+          const quoteRes = await fetch(quoteUrl);
+          const quote = await quoteRes.json();
+          if (!quote.routes || !quote.routes.length) throw new Error("No swap route found.");
+          statusEl.textContent = "Building swap transaction...";
+          const swapRes = await fetch("https://quote-api.jup.ag/v6/swap", {
+            method: "POST",
+            headers: {"Content-Type": "application/json"},
+            body: JSON.stringify({
+              route: quote.routes[0],
+              userPublicKey: wallet.address,
+              wrapUnwrapSOL: true,
+              dynamicComputeUnitLimit: true
+            })
+          });
+          const swapData = await swapRes.json();
+          if (!swapData.swapTransaction) throw new Error("Failed to build swap transaction.");
+          statusEl.textContent = "Signing transaction...";
+          const connection = new solanaWeb3.Connection(solanaWeb3.clusterApiUrl("mainnet-beta"));
+          const tx = solanaWeb3.Transaction.from(Buffer.from(swapData.swapTransaction, "base64"));
+          tx.feePayer = new solanaWeb3.PublicKey(wallet.address);
+          tx.recentBlockhash = (await connection.getRecentBlockhash()).blockhash;
+          const signedTx = await window.solana.signTransaction(tx);
+          statusEl.textContent = "Sending transaction...";
+          const txid = await connection.sendRawTransaction(signedTx.serialize());
+          statusEl.textContent = "Confirming transaction...";
+          await connection.confirmTransaction(txid, "finalized");
+          statusEl.innerHTML = `Trade successful!<br>Tx: <a href="https://solscan.io/tx/${txid}" target="_blank" style="color:#19FB9B">${txid}</a>`;
+        } catch (e) {
+          statusEl.textContent = "Trade failed: " + (e.message || e);
+        }
+        return;
+      }
+      // EVM SWAP (1inch API)
+      if (wallet.chain === "evm" && t.isEvm) {
+        statusEl.textContent = "Fetching quote...";
+        try {
+          // Only ETH <-> USDC for demo, you can expand for other tokens
+          const chainId = 1; // Ethereum Mainnet
+          const fromToken = side === "buy" ? TOKENS[3].address : t.address;
+          const toToken = side === "buy" ? t.address : TOKENS[3].address;
+          const decimals = side === "buy" ? TOKENS[3].decimals : t.decimals;
+          const amountRaw = ethers.utils.parseUnits(amount.toString(), decimals).toString();
+          // 1inch quote
+          const quoteUrl = `https://api.1inch.io/v5.0/${chainId}/quote?fromTokenAddress=${fromToken}&toTokenAddress=${toToken}&amount=${amountRaw}`;
+          const quoteRes = await fetch(quoteUrl);
+          const quote = await quoteRes.json();
+          if (!quote.toTokenAmount) throw new Error("No swap route found.");
+          statusEl.textContent = "Building swap transaction...";
+          // 1inch swap API
+          const swapUrl = `https://api.1inch.io/v5.0/${chainId}/swap?fromTokenAddress=${fromToken}&toTokenAddress=${toToken}&amount=${amountRaw}&fromAddress=${wallet.address}&slippage=1`;
+          const swapRes = await fetch(swapUrl);
+          const swap = await swapRes.json();
+          if (!swap.tx) throw new Error("Failed to build swap transaction.");
+          // Send transaction using ethers.js
+          statusEl.textContent = "Sending transaction...";
+          const signer = evmProvider.getSigner();
+          const txResponse = await signer.sendTransaction({
+            to: swap.tx.to,
+            data: swap.tx.data,
+            value: ethers.BigNumber.from(swap.tx.value || "0")
+          });
+          statusEl.textContent = "Confirming transaction...";
+          await txResponse.wait();
+          statusEl.innerHTML = `Trade successful!<br>Tx: <a href="https://etherscan.io/tx/${txResponse.hash}" target="_blank" style="color:#19FB9B">${txResponse.hash}</a>`;
+        } catch (e) {
+          statusEl.textContent = "Trade failed: " + (e.message || e);
+        }
+        return;
+      }
+      statusEl.textContent = "Swap not supported for this token/wallet!";
+    };
 
-    // --- Feedback ---
-    function showError(msg) {
-      const errorMsg = document.getElementById('errorMsg');
-      errorMsg.textContent = msg;
-      errorMsg.style.display = 'block';
-      setTimeout(() => errorMsg.style.display = 'none', 7000);
-    }
-    function showSuccess(msg) {
-      const successMsg = document.getElementById('successMsg');
-      successMsg.textContent = msg;
-      successMsg.style.display = 'block';
-      setTimeout(() => successMsg.style.display = 'none', 6000);
-    }
-
-   https://fonts.googleapis.com/css?family=Arial:400,500,700&display=swap
+    // Initial render
+    document.getElementById("connectBtn").onclick = showConnectPopup;
+    renderTokens();
+    updateWalletInfo();
   </script>
 </body>
 </html>
