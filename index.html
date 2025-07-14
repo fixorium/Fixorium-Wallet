@@ -419,13 +419,14 @@
       const BN = window.BN;
       const QRCode = window.QRCode;
 
+      // Solana connection and Jupiter API
       const connection = new Connection("https://solana-api.projectserum.com", "confirmed");
       const JUPITER_API_BASE = "https://quote-api.jup.ag/v6";
       const TOKEN_PROGRAM_ID = new PublicKey("TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA");
       const ASSOCIATED_TOKEN_PROGRAM_ID = new PublicKey("ATokenGPvR1HuTRHqpPDp7HHTRmAg3zRk6USH3UUZsM");
       const SOL_MINT = "So11111111111111111111111111111111111111112";
 
-      // Token list - customize here
+      // Tokens list (customize as needed)
       const tokensList = [
         { mint: null, symbol: "SOL", name: "Solana", decimals: 9, logoURI: "https://cryptologos.cc/logos/solana-sol-logo.svg?v=014" },
         { mint: new PublicKey("EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"), symbol: "USDC", name: "USD Coin", decimals: 6, logoURI: "https://cryptologos.cc/logos/usd-coin-usdc-logo.svg?v=014" },
@@ -463,44 +464,49 @@
       }
 
       function App() {
-        // Wallet and provider
+        // Wallet & provider
         const [provider, setProvider] = useState(null);
         const [walletConnected, setWalletConnected] = useState(false);
         const [publicKey, setPublicKey] = useState(null);
+
         // Balances and prices
         const [balances, setBalances] = useState({});
         const [prices, setPrices] = useState({});
-        // Overlay modals
-        const [activeModal, setActiveModal] = useState(null); // "deposit", "withdraw", "swap", null
+
+        // Modal state: null or "deposit", "withdraw", "swap"
+        const [activeModal, setActiveModal] = useState(null);
+
+        // Messages and loading states
         const [error, setError] = useState("");
         const [status, setStatus] = useState("");
         const [withdrawing, setWithdrawing] = useState(false);
         const [swapping, setSwapping] = useState(false);
         const [loadingQuotes, setLoadingQuotes] = useState(false);
 
-        // Withdraw form states
+        // Withdraw form
         const [withdrawAddress, setWithdrawAddress] = useState("");
         const [withdrawAmount, setWithdrawAmount] = useState("");
 
-        // SPL withdraw states
+        // SPL withdraw form
         const [splWithdrawTokenSymbol, setSplWithdrawTokenSymbol] = useState("FIXR");
         const [splWithdrawAddress, setSplWithdrawAddress] = useState("");
         const [splWithdrawAmount, setSplWithdrawAmount] = useState("");
 
-        // Swap states: allow SOL <-> any SPL from tokensList (filter mint!=null)
+        // Swap form
+        // For swap, allow SOL <-> SPL (any token with mint)
         const solToken = tokensList.find(t => t.symbol === "SOL");
         const splTokens = tokensList.filter(t => t.mint !== null);
-        const [swapFromToken, setSwapFromToken] = useState(solToken); // default SOL
+        const [swapFromToken, setSwapFromToken] = useState(solToken);
         const [swapToToken, setSwapToToken] = useState(splTokens.find(t => t.symbol === "FIXR"));
         const [swapAmount, setSwapAmount] = useState("");
         const [slippage, setSlippage] = useState(0.5);
         const [routes, setRoutes] = useState([]);
         const [selectedRoute, setSelectedRoute] = useState(null);
 
-        // QR code canvas ref for deposit
+        // Ref for QR code canvas
         const qrCanvasRef = useRef(null);
 
-        // Detect Phantom
+        // Phantom detection on load
         useEffect(() => {
           const p = (() => {
             if (window.solana && window.solana.isPhantom) return window.solana;
@@ -523,7 +529,6 @@
             setWalletConnected(true);
             setError("");
             setStatus("");
-            document.getElementById('connectWalletBtn').innerText = shortAddress(resp.publicKey.toString());
           } catch {
             setError("Wallet connection rejected or failed.");
           }
@@ -546,29 +551,32 @@
           setWithdrawAddress("");
           setSplWithdrawAmount("");
           setSplWithdrawAddress("");
-          document.getElementById('connectWalletBtn').innerText = "Connect";
           setActiveModal(null);
         };
 
-        // Connect button logic
+        // Setup connect button interaction
         useEffect(() => {
-          const btn = document.getElementById('connectWalletBtn');
+          const btn = document.getElementById("connectWalletBtn");
           if (!btn) return;
           btn.onclick = () => {
             if (walletConnected) disconnectWallet();
             else connectWallet();
           };
-        }, [walletConnected, connectWallet, disconnectWallet]);
+          // Set initial text
+          btn.innerText = walletConnected && publicKey ? shortAddress(publicKey) : "Connect";
+        }, [walletConnected, connectWallet, disconnectWallet, publicKey]);
 
-        // Wallet events
+        // Listen wallet events inside React
         useEffect(() => {
           if (!provider) return;
           const onConnect = (pk) => {
-            setPublicKey(new PublicKey(pk.toString()));
+            const address = typeof pk.toBase58 === 'function' ? pk.toBase58() : pk.toString();
+            setPublicKey(new PublicKey(address));
             setWalletConnected(true);
             setError("");
             setStatus("");
-            document.getElementById('connectWalletBtn').innerText = shortAddress(pk.toBase58());
+            const btn = document.getElementById("connectWalletBtn");
+            if (btn) btn.innerText = shortAddress(address);
           };
           const onDisconnect = () => {
             setWalletConnected(false);
@@ -584,7 +592,8 @@
             setWithdrawAddress("");
             setSplWithdrawAmount("");
             setSplWithdrawAddress("");
-            document.getElementById('connectWalletBtn').innerText = "Connect";
+            const btn = document.getElementById("connectWalletBtn");
+            if (btn) btn.innerText = "Connect";
             setActiveModal(null);
           };
           provider.on("connect", onConnect);
@@ -606,11 +615,9 @@
           async function fetchAll() {
             setError("");
             try {
-              // SOL balance
               const solLamports = await connection.getBalance(publicKey);
               const newBalances = { SOL: solLamports / 1e9 };
 
-              // SPL balances
               await Promise.all(tokensList.map(async t => {
                 if (!t.mint) return;
                 try {
@@ -624,15 +631,15 @@
 
               setBalances(newBalances);
 
-              // CoinGecko mapping for prices (same as before)
+              // Map for CoinGecko IDs
               const cgMap = {
                 SOL: "solana",
                 USDC: "usd-coin",
                 USDT: "tether",
-                FIXR: "ethereum" // Replace with your token's real CG id if available
+                FIXR: "ethereum" // Replace with true ID if available
               };
-              const ids = Object.values(cgMap).filter(Boolean).join(",");
-              const resp = await axios.get(`https://api.coingecko.com/api/v3/simple/price?ids=${ids}&vs_currencies=usd`);
+              const cgIds = Object.values(cgMap).filter(Boolean).join(",");
+              const resp = await axios.get(`https://api.coingecko.com/api/v3/simple/price?ids=${cgIds}&vs_currencies=usd`);
               const pricesObj = {};
               Object.entries(cgMap).forEach(([sym, id]) => {
                 pricesObj[sym] = resp.data[id]?.usd || 0;
@@ -645,168 +652,96 @@
           fetchAll();
         }, [walletConnected, publicKey]);
 
-        // Total balance USD:
-        const totalBalanceUSD = Object.entries(balances).reduce((acc, [sym, bal]) => acc + (prices[sym] || 0) * bal, 0);
+        const totalBalanceUSD = Object.entries(balances).reduce((a, [sym, bal]) => a + (prices[sym] || 0) * bal, 0);
 
-
-        // Modal components:
-        // 1) Deposit: show wallet address and QR code for SOL network only
-
+        // Deposit modal - display wallet address and QR Code
         function DepositModal() {
-          const canvasRef = useRef(null);
           useEffect(() => {
-            if (canvasRef.current && publicKey) {
-              // QR code of solana:<address>
-              const url = `solana:${publicKey.toBase58()}`;
-              QRCode.toCanvas(canvasRef.current, url, { width: 160 });
+            if (qrCanvasRef.current && publicKey) {
+              const qrString = `solana:${publicKey.toBase58()}`;
+              QRCode.toCanvas(qrCanvasRef.current, qrString, { width: 180 });
             }
           }, [publicKey]);
 
           return e("div", { className: "overlay-bg", onClick: () => setActiveModal(null) },
-            e("div",
-              {
-                className: "overlay-panel",
-                onClick: e => e.stopPropagation(),
-                role: "dialog",
-                "aria-modal": "true",
-                "aria-labelledby": "depositTitle"
-              },
+            e("div", { className: "overlay-panel", onClick: e => e.stopPropagation(), role: "dialog", "aria-modal": "true", "aria-labelledby": "depositTitle" },
               e("div", { className: "overlay-header" },
                 e("h2", { id: "depositTitle" }, "Deposit SOL Network Tokens"),
                 e("button", { className: "overlay-close-btn", "aria-label": "Close", onClick: () => setActiveModal(null) }, "×")
               ),
-              e("p", null, "Send SOL or SPL tokens on the SOLANA network to this wallet address:"),
+              e("p", null, "Send SOL or SPL tokens on Solana network to this wallet address:"),
               e("code", { id: "depositAddress", spellCheck: "false", tabIndex: 0 }, publicKey ? publicKey.toBase58() : ""),
-              e("canvas", { id: "qrcode", ref: canvasRef, role: "img", "aria-label": "QR Code for receiving SOL tokens" }),
+              e("canvas", { id: "qrcode", ref: qrCanvasRef, role: "img", "aria-label": "QR Code for SOL deposit" }),
               e("small", null, "Only Solana network tokens are supported."),
-              e("button", {
-                className: "modal-btn",
-                onClick: () => setActiveModal(null),
-                type: "button"
-              }, "Close")
+              e("button", { className: "modal-btn", onClick: () => setActiveModal(null), type: "button" }, "Close")
             )
           );
         }
 
-        // 2) Withdraw modal
-
+        // Withdraw modal
         function WithdrawModal() {
           const maxWithdrawSol = balances.SOL || 0;
+          const tokenData = tokensList.find(t => t.symbol === splWithdrawTokenSymbol);
 
           function maxClick() {
             setWithdrawAmount(maxWithdrawSol.toFixed(9));
           }
-
-          const tokenData = tokensList.find(t => t.symbol === splWithdrawTokenSymbol);
-
           function maxClickSPL() {
             const bal = balances[splWithdrawTokenSymbol] || 0;
-            setSplWithdrawAmount(bal.toFixed(tokenData?.decimals || 0));
+            if (!tokenData) return;
+            setSplWithdrawAmount(bal.toFixed(tokenData.decimals));
           }
 
           return e("div", { className: "overlay-bg", onClick: () => setActiveModal(null) },
-            e("div",
-              {
-                className: "overlay-panel",
-                onClick: e => e.stopPropagation(),
-                role: "dialog",
-                "aria-modal": "true",
-                "aria-labelledby": "withdrawTitle"
-              },
+            e("div", { className: "overlay-panel", onClick: e => e.stopPropagation(), role: "dialog", "aria-modal": "true", "aria-labelledby": "withdrawTitle" },
               e("div", { className: "overlay-header" },
-                e("h2", { id: "withdrawTitle" }, "Withdraw SOL or SPL Tokens"),
+                e("h2", { id: "withdrawTitle" }, "Withdraw Tokens"),
                 e("button", { className: "overlay-close-btn", "aria-label": "Close", onClick: () => setActiveModal(null) }, "×")
               ),
 
-              // Withdraw SOL
               e("div", { className: "modal-section" },
-                e("label", { htmlFor: "withdrawAddress" }, "Your Solana Address (for record)"),
-                e("input", {
-                  id: "withdrawAddress",
-                  type: "text",
-                  spellCheck: false,
-                  autoComplete: "off",
-                  placeholder: "Sender Solana address",
-                  value: withdrawAddress,
-                  onChange: e => setWithdrawAddress(e.target.value)
-                }),
-                e("label", { htmlFor: "withdrawAmount" }, `Amount (SOL)`),
+                e("label", { htmlFor: "withdrawAddress" }, "Your Solana Address"),
+                e("input", { id: "withdrawAddress", type: "text", spellCheck: false, autoComplete: "off", value: withdrawAddress, onChange: e => setWithdrawAddress(e.target.value), placeholder: "Sender Solana address" }),
+                e("label", { htmlFor: "withdrawAmount" }, "Amount (SOL)"),
                 e("div", { className: "input-wrapper" },
-                  e("input", {
-                    id: "withdrawAmount",
-                    type: "number", min: "0", step: "any",
-                    placeholder: "0",
-                    value: withdrawAmount,
-                    onChange: e => setWithdrawAmount(e.target.value)
-                  }),
-                  e("button", { type: "button", className: "max-button", onClick: maxClick, title: "Max Withdraw" }, "Max")
+                  e("input", { id: "withdrawAmount", type: "number", min: "0", step: "any", placeholder: "0", value: withdrawAmount, onChange: e => setWithdrawAmount(e.target.value) }),
+                  e("button", { type: "button", className: "max-button", title: "Max Withdraw", onClick: maxClick }, "Max")
                 ),
-                e("button", {
-                  className: "modal-btn",
-                  onClick: withdrawSol,
-                  disabled: withdrawing || !withdrawAmount || !withdrawAddress
-                }, withdrawing ? "Withdrawing..." : "Withdraw SOL")
+                e("button", { className: "modal-btn", onClick: withdrawSol, disabled: withdrawing || !withdrawAmount || !withdrawAddress }, withdrawing ? "Withdrawing..." : "Withdraw SOL")
               ),
 
-              // Withdraw SPL Token
               e("hr", { style: { margin: "20px 0", borderColor: "#2e445b" } }),
+
               e("div", { className: "modal-section" },
-                e("label", { htmlFor: "splWithdrawTokenSelect" }, "Token"),
+                e("label", { htmlFor: "splWithdrawTokenSelect" }, "Select Token"),
                 e("select", {
                   id: "splWithdrawTokenSelect",
-                  style: { marginBottom: "10px" },
                   value: splWithdrawTokenSymbol,
                   onChange: e => setSplWithdrawTokenSymbol(e.target.value)
-                },
-                  tokensList.filter(t => t.symbol !== "SOL").map(t => e("option", { key: t.symbol, value: t.symbol }, t.symbol))
-                ),
+                }, tokensList.filter(t => t.symbol !== "SOL").map(t => e("option", { key: t.symbol, value: t.symbol }, t.symbol))),
 
                 e("label", { htmlFor: "splWithdrawAddress" }, "Recipient Solana Address"),
-                e("input", {
-                  id: "splWithdrawAddress",
-                  type: "text",
-                  spellCheck: false,
-                  autoComplete: "off",
-                  placeholder: "Recipient Solana address",
-                  value: splWithdrawAddress,
-                  onChange: e => setSplWithdrawAddress(e.target.value)
-                }),
+                e("input", { id: "splWithdrawAddress", type: "text", spellCheck: false, autoComplete: "off", value: splWithdrawAddress, onChange: e => setSplWithdrawAddress(e.target.value), placeholder: "Recipient Solana address" }),
 
                 e("label", { htmlFor: "splWithdrawAmount" }, `Amount (${splWithdrawTokenSymbol})`),
                 e("div", { className: "input-wrapper" },
-                  e("input", {
-                    id: "splWithdrawAmount",
-                    type: "number", min: "0", step: "any",
-                    placeholder: "0",
-                    value: splWithdrawAmount,
-                    onChange: e => setSplWithdrawAmount(e.target.value)
-                  }),
-                  e("button", { type: "button", className: "max-button", onClick: maxClickSPL, title: "Max Withdraw" }, "Max")
+                  e("input", { id: "splWithdrawAmount", type: "number", min: "0", step: "any", placeholder: "0", value: splWithdrawAmount, onChange: e => setSplWithdrawAmount(e.target.value) }),
+                  e("button", { type: "button", className: "max-button", title: "Max Withdraw", onClick: maxClickSPL }, "Max")
                 ),
 
-                e("button", {
-                  className: "modal-btn",
-                  onClick: withdrawSPLToken,
-                  disabled: withdrawing || !splWithdrawAmount || !splWithdrawAddress
-                }, withdrawing ? `Withdrawing ${splWithdrawTokenSymbol}...` : `Withdraw ${splWithdrawTokenSymbol}`)
+                e("button", { className: "modal-btn", onClick: withdrawSPLToken, disabled: withdrawing || !splWithdrawAmount || !splWithdrawAddress }, withdrawing ? `Withdrawing ${splWithdrawTokenSymbol}...` : `Withdraw ${splWithdrawTokenSymbol}`)
               ),
 
               error && e("p", { className: "error" }, error),
               status && e("p", { className: "status" }, status),
 
-              e("button", {
-                className: "modal-btn",
-                onClick: () => setActiveModal(null),
-                type: "button",
-                style: { marginTop: "10px", backgroundColor: "#444" }
-              }, "Close")
+              e("button", { className: "modal-btn", onClick: () => setActiveModal(null), type: "button", style: { marginTop: "10px", backgroundColor: "#444" } }, "Close")
             )
           );
         }
 
-        // Swap modal: two-way SOL <-> SPL token swap with slippage slider and quotes + confirm button
+        // Swap modal
         function SwapModal() {
-          // local states copy for inputs
           const [localSwapFromToken, setLocalSwapFromToken] = useState(swapFromToken);
           const [localSwapToToken, setLocalSwapToToken] = useState(swapToToken);
           const [localSwapAmount, setLocalSwapAmount] = useState(swapAmount);
@@ -819,8 +754,7 @@
             setLocalSlippage(slippage);
           }, [swapFromToken, swapToToken, swapAmount, slippage]);
 
-          // Allow swap 'direction' by swapping from & to token select
-          function switchTokens() {
+          const switchTokens = () => {
             setLocalSwapFromToken(localSwapToToken);
             setLocalSwapToToken(localSwapFromToken);
             setLocalSwapAmount("");
@@ -828,7 +762,7 @@
             setSelectedRoute(null);
             setError("");
             setStatus("");
-          }
+          };
 
           const getQuotes = async () => {
             setError("");
@@ -879,7 +813,7 @@
               } else {
                 setError("No swap routes found.");
               }
-            } catch (e) {
+            } catch {
               setError("Failed to fetch swap quotes.");
             }
             setLoadingQuotes(false);
@@ -906,8 +840,8 @@
               if (resp.data.swapTransactions.setupTransaction) {
                 const setupTx = Transaction.from(Buffer.from(resp.data.swapTransactions.setupTransaction, "base64"));
                 setupTx.feePayer = publicKey;
-                const blockhash = (await connection.getLatestBlockhash()).blockhash;
-                setupTx.recentBlockhash = blockhash;
+                const blk = await connection.getLatestBlockhash();
+                setupTx.recentBlockhash = blk.blockhash;
                 const signedSetup = await provider.signTransaction(setupTx);
                 const setupTxid = await connection.sendRawTransaction(signedSetup.serialize());
                 setStatus("Setup tx sent: " + setupTxid);
@@ -915,16 +849,16 @@
               }
               const swapTx = Transaction.from(Buffer.from(resp.data.swapTransactions.swapTransaction, "base64"));
               swapTx.feePayer = publicKey;
-              const blockhash2 = (await connection.getLatestBlockhash()).blockhash;
-              swapTx.recentBlockhash = blockhash2;
+              const blk2 = await connection.getLatestBlockhash();
+              swapTx.recentBlockhash = blk2.blockhash;
               const signedSwap = await provider.signTransaction(swapTx);
               const swapTxid = await connection.sendRawTransaction(signedSwap.serialize());
               setStatus("Swap tx sent: " + swapTxid);
               await connection.confirmTransaction(swapTxid);
               setStatus("Swap confirmed: " + swapTxid);
-              // Refresh balances after swap
-              const solBalanceLamports = await connection.getBalance(publicKey);
-              const newBalances = { SOL: solBalanceLamports / 1e9 };
+              // Refresh balances
+              const solBal = await connection.getBalance(publicKey);
+              const newBalances = { SOL: solBal / 1e9 };
               for (const t of tokensList) {
                 if (!t.mint) continue;
                 try {
@@ -936,6 +870,7 @@
                 }
               }
               setBalances(newBalances);
+              setActiveModal(null);
               setSwapAmount("");
               setRoutes([]);
               setSelectedRoute(null);
@@ -1077,11 +1012,8 @@
           );
 
           async function getQuotes() {
-            // Save input into main state to keep consistent
             setSwapAmount(localSwapAmount);
             setSlippage(localSlippage);
-
-            // Prepare for call
             setError("");
             setStatus("");
             setRoutes([]);
@@ -1091,7 +1023,6 @@
             try {
               let inputMint = localSwapFromToken.symbol === "SOL" ? SOL_MINT : localSwapFromToken.mint.toBase58();
               let outputMint = localSwapToToken.symbol === "SOL" ? SOL_MINT : localSwapToToken.mint.toBase58();
-
               const amount64 = toBaseUnits(localSwapAmount, localSwapFromToken.decimals);
               if (amount64 === 0) {
                 setError("Amount too small.");
@@ -1158,7 +1089,7 @@
               setStatus("Swap tx sent: " + swapTxid);
               await connection.confirmTransaction(swapTxid);
               setStatus("Swap confirmed: " + swapTxid);
-              // Refresh balance
+              // Refresh balances
               const solBal = await connection.getBalance(publicKey);
               const newBalances = { SOL: solBal / 1e9 };
               for (const t of tokensList) {
@@ -1184,7 +1115,7 @@
           }
         }
 
-        // Withdraw and deposit functions as before
+        // Withdraw functions
 
         async function withdrawSol() {
           setError("");
@@ -1312,87 +1243,65 @@
           setWithdrawing(false);
         }
 
-        // Show short connected wallet in header top right (under connect wallet button)
+        // Total balance short address display setup
         useEffect(() => {
-          if (walletConnected && publicKey) {
-            let spanWallet = document.getElementById('walletAddrShort');
-            if (!spanWallet) {
-              spanWallet = document.createElement('div');
-              spanWallet.id = "walletAddrShort";
-              spanWallet.style.fontFamily = 'monospace';
-              spanWallet.style.color = '#ccc';
-              spanWallet.style.position = 'absolute';
-              spanWallet.style.right = '10px';
-              spanWallet.style.top = '52px';
-              spanWallet.style.userSelect = 'text';
-              spanWallet.style.fontSize = '0.7rem';
-              document.querySelector('header').appendChild(spanWallet);
-            }
-            spanWallet.textContent = shortAddress(publicKey);
-          } else {
-            let spanWallet = document.getElementById('walletAddrShort');
-            if (spanWallet) {
-              spanWallet.textContent = "";
-            }
+          const hdr = document.querySelector("header");
+          if (!hdr) return;
+          let shortAddr = hdr.querySelector("#walletAddrShort");
+          if (!shortAddr) {
+            shortAddr = document.createElement("div");
+            shortAddr.id = "walletAddrShort";
+            shortAddr.style.cssText = "font-family: monospace; color: #ccc; font-size: 0.7rem; position: absolute; right: 10px; top: 52px; user-select: text; white-space: nowrap;";
+            hdr.appendChild(shortAddr);
           }
+          shortAddr.textContent = walletConnected && publicKey ? shortAddress(publicKey) : "";
         }, [walletConnected, publicKey]);
 
-        // On mount hide wallet address short field just in case
-        useEffect(() => {
-          let spanWallet = document.getElementById('walletAddrShort');
-          if (spanWallet) spanWallet.textContent = "";
-        }, []);
-
-        // Render main app UI
+        // Render app UI
         return e("div", null,
           e("div", { id: "totalBalance", title: "Total USD Balance" }, walletConnected ? `$${totalBalanceUSD.toFixed(2)}` : ""),
 
           e("section", { className: "tokens-list", "aria-label": "Token balances" },
-            tokensList.map(t => {
-              const bal = balances[t.symbol] || 0;
-              const price = prices[t.symbol] || 0;
-              if(!walletConnected) return null;
-              return e("article", {
-                key: t.symbol,
-                className: "token-item",
-                tabIndex: 0,
-                role: "button",
-                onClick: () => setActiveModal('withdraw'),
-                onKeyDown: e => { if (e.key === 'Enter' || e.key === ' ') setActiveModal('withdraw'); },
-                "aria-label": `Token ${t.symbol} balance ${bal.toFixed(t.decimals)} USD price $${price.toFixed(4)}. Click to open withdraw.`
-              },
-                e(TokenLogo, { token: t }),
-                e("div", { className: "token-info" },
-                  e("div", { className: "token-symbol" }, t.symbol),
-                  e("div", { className: "token-balance" }, `Balance: ${bal.toFixed(t.decimals)}`),
-                  e("div", { className: "token-price" }, `Price: $${price.toFixed(4)}`),
-                )
-              );
-            })
+            walletConnected ?
+              tokensList.map(t => {
+                const bal = balances[t.symbol] || 0;
+                const price = prices[t.symbol] || 0;
+                return e("article", {
+                  key: t.symbol,
+                  className: "token-item",
+                  tabIndex: 0,
+                  onClick: () => setActiveModal("withdraw"),
+                  role: "button",
+                  onKeyDown: ev => { if (ev.key === "Enter" || ev.key === " ") setActiveModal("withdraw"); },
+                  "aria-label": `Token ${t.symbol}, balance ${bal.toFixed(t.decimals)}, price $${price.toFixed(4)}. Click to withdraw`
+                },
+                  e(TokenLogo, { token: t }),
+                  e("div", { className: "token-info" },
+                    e("div", { className: "token-symbol" }, t.symbol),
+                    e("div", { className: "token-balance" }, `Balance: ${bal.toFixed(t.decimals)}`),
+                    e("div", { className: "token-price" }, `Price: $${price.toFixed(4)}`)
+                  )
+                );
+              })
+              : e("p", { style: { color: "#666", fontSize: "0.9rem", textAlign: "center", marginTop: "24px" } }, "Connect your Phantom Wallet using the button top-right to begin.")
           ),
 
           walletConnected && e("div", { className: "button-bar" },
-            e("button", { onClick: () => setActiveModal('deposit'), type: "button", title: "Deposit Instruction" }, "Deposit"),
-            e("button", { onClick: () => setActiveModal('withdraw'), type: "button", title: "Withdraw Tokens" }, "Withdraw"),
-            e("button", { onClick: () => setActiveModal('swap'), type: "button", title: "Swap Tokens" }, "Swap")
+            e("button", { onClick: () => setActiveModal("deposit"), type: "button", title: "Deposit Instruction" }, "Deposit"),
+            e("button", { onClick: () => setActiveModal("withdraw"), type: "button", title: "Withdraw Tokens" }, "Withdraw"),
+            e("button", { onClick: () => setActiveModal("swap"), type: "button", title: "Swap Tokens" }, "Swap")
           ),
 
           walletConnected && activeModal === "deposit" && e(DepositModal),
           walletConnected && activeModal === "withdraw" && e(WithdrawModal),
           walletConnected && activeModal === "swap" && e(SwapModal),
 
-          !walletConnected && e("p", {
-            style: {
-              color: "#666",
-              fontSize: "0.9rem",
-              textAlign: "center",
-              marginTop: "24px",
-            }
-          }, "Connect your Phantom Wallet using the button top-right to begin.")
+          error && e("p", { className: "error", style: { position: "fixed", bottom: "12px", left: "50%", transform: "translateX(-50%)", width: "90%", maxWidth: "400px", zIndex: 50, backgroundColor: "#330000bb", padding: "10px", borderRadius: "8px", textAlign: "center" } }, error),
+          status && e("p", { className: "status", style: { position: "fixed", bottom: "50px", left: "50%", transform: "translateX(-50%)", width: "90%", maxWidth: "400px", zIndex: 50, backgroundColor: "#003366bb", padding: "10px", borderRadius: "8px", textAlign: "center" } }, status),
         );
       }
 
-      ReactDOM.createRoot(document.getElementById('root')).render(e(App));
+      ReactDOM.createRoot(document.getElementById("root")).render(e(App));
     })();
   </script>
 </body>
