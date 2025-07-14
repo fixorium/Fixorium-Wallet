@@ -3,6 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <title>Select Wallet</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0" />
   <link href="https://fonts.googleapis.com/css?family=Arial:400,500,700&display=swap" rel="stylesheet">
   <style>
     body {
@@ -14,7 +15,30 @@
       display: flex;
       flex-direction: column;
       align-items: center;
-      justify-content: center;
+      justify-content: flex-start;
+    }
+    .commercial {
+      background: #22222b;
+      color: #19FB9B;
+      border-radius: 12px;
+      padding: 1em 1.2em;
+      margin: 2em 0 1em 0;
+      max-width: 370px;
+      text-align: center;
+      font-size: 0.97em;
+      font-weight: 600;
+      font-family: "Arial", Arial, sans-serif;
+      box-shadow: 0 2px 10px rgba(60,72,88,0.14);
+    }
+    .intro-title {
+      margin-top: 2em;
+      margin-bottom: 0.4em;
+      font-size: 1.2em;
+      font-weight: 700;
+      color: #9945FF;
+      font-family: Arial, sans-serif;
+      text-align: center;
+      letter-spacing: 0.03em;
     }
     .wallet-list {
       width: 90%;
@@ -23,6 +47,7 @@
       border-radius: 14px;
       box-shadow: 0 4px 20px rgba(60,72,88,0.18);
       padding: 1.2em 1em;
+      margin-bottom: 1em;
     }
     .wallet-btn {
       display: flex;
@@ -50,14 +75,25 @@
       background: #191923;
     }
     .info {
-      color: #19FB9B;
+      color: #ff5c91;
       margin-top: 1em;
       text-align: center;
+      min-height: 1.4em;
+    }
+    @media (max-width: 500px) {
+      .commercial, .wallet-list { max-width: 98vw; }
+      .intro-title { font-size: 1em; }
     }
   </style>
 </head>
 <body>
-  <h2>Select Wallet</h2>
+  <div class="intro-title">Connect Your Wallet to FIXORIUM!</div>
+  <div class="commercial">
+    <b>FIXERCOIN/SOL</b> is the core trading pair on FIXORIUM DEX, powering instant swaps of top Solana meme tokens.<br><br>
+    <span style="color:#e3e7ed;font-weight:400;">
+      FIXERCOIN brings speed, security, and ultra-low fees to Solana traders. Connect your wallet below to start buying, selling, and swapping with the smoothest meme coin experience in crypto!
+    </span>
+  </div>
   <div class="wallet-list">
     <button class="wallet-btn" onclick="connectPhantom()">
       <img src="https://cryptologos.cc/logos/solana-sol-logo.png" alt="Phantom" /> Phantom (Solana)
@@ -65,7 +101,22 @@
     <button class="wallet-btn" onclick="connectBackpack()">
       <img src="https://pbs.twimg.com/profile_images/1732466769072377856/3U_Mu8vI_400x400.jpg" alt="Backpack" /> Backpack (Solana)
     </button>
-    <button class="wallet-btn" onclick="connectMetamask()">
+    <button class="wallet-btn" onclick="connectSolflare()">
+      <img src="https://avatars.githubusercontent.com/u/70069609?s=200&v=4" alt="Solflare" /> Solflare (Solana)
+    </button>
+    <button class="wallet-btn" onclick="connectTorus()">
+      <img src="https://tor.us/images/ptor.png" alt="Torus" /> Torus (Solana/Ethereum)
+    </button>
+    <button class="wallet-btn" onclick="connectSlope()">
+      <img src="https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/Slope/logo.png" alt="Slope" /> Slope (Solana)
+    </button>
+    <button class="wallet-btn" onclick="connectGlow()">
+      <img src="https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/Glow/logo.png" alt="Glow" /> Glow (Solana)
+    </button>
+    <button class="wallet-btn" onclick="connectSollet()">
+      <img src="https://sollet.io/favicon.png" alt="Sollet" /> Sollet (Solana)
+    </button>
+    <button class="wallet-btn" onclick="connectMetaMask()">
       <img src="https://cdn.iconscout.com/icon/free/png-256/metamask-2728406-2261817.png" alt="MetaMask" /> MetaMask (Ethereum)
     </button>
     <div class="info" id="info"></div>
@@ -73,13 +124,18 @@
   <script src="https://cdn.jsdelivr.net/npm/@solana/web3.js@1.95.2/lib/index.iife.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"></script>
   <script>
-    function postWallet(address, balance) {
+    function postWallet(address, balance, walletType) {
       window.opener.postMessage({
         type: "wallet-connected",
         address,
-        balance
+        balance,
+        walletType
       }, "*");
       setTimeout(() => window.close(), 800);
+    }
+
+    function showInfo(msg) {
+      document.getElementById("info").textContent = msg;
     }
 
     async function connectPhantom() {
@@ -90,31 +146,123 @@
           const connection = new solanaWeb3.Connection(solanaWeb3.clusterApiUrl("mainnet-beta"));
           const balanceLamports = await connection.getBalance(new solanaWeb3.PublicKey(address));
           const balance = (balanceLamports / 1e9).toFixed(4);
-          postWallet(address, balance);
+          postWallet(address, balance, "Phantom");
         } catch (e) {
-          document.getElementById("info").textContent = "Wallet connection failed!";
+          showInfo("Phantom connection failed!");
         }
       } else {
-        document.getElementById("info").textContent = "Phantom wallet not found!";
+        showInfo("Phantom wallet not found!");
       }
     }
+
     async function connectBackpack() {
-      if (window.backpack) {
+      if (window.backpack && window.backpack.isBackpack) {
         try {
           const resp = await window.backpack.connect();
           const address = resp.publicKey.toString();
           const connection = new solanaWeb3.Connection(solanaWeb3.clusterApiUrl("mainnet-beta"));
           const balanceLamports = await connection.getBalance(new solanaWeb3.PublicKey(address));
           const balance = (balanceLamports / 1e9).toFixed(4);
-          postWallet(address, balance);
+          postWallet(address, balance, "Backpack");
         } catch (e) {
-          document.getElementById("info").textContent = "Backpack connection failed!";
+          showInfo("Backpack connection failed!");
         }
       } else {
-        document.getElementById("info").textContent = "Backpack wallet not found!";
+        showInfo("Backpack wallet not found!");
       }
     }
-    async function connectMetamask() {
+
+    async function connectSolflare() {
+      if (window.solflare && window.solflare.isSolflare) {
+        try {
+          const resp = await window.solflare.connect();
+          const address = resp.publicKey.toString();
+          const connection = new solanaWeb3.Connection(solanaWeb3.clusterApiUrl("mainnet-beta"));
+          const balanceLamports = await connection.getBalance(new solanaWeb3.PublicKey(address));
+          const balance = (balanceLamports / 1e9).toFixed(4);
+          postWallet(address, balance, "Solflare");
+        } catch (e) {
+          showInfo("Solflare connection failed!");
+        }
+      } else {
+        showInfo("Solflare wallet not found!");
+      }
+    }
+
+    async function connectTorus() {
+      if (window.torus) {
+        try {
+          await window.torus.init();
+          const resp = await window.torus.login();
+          const address = resp.publicKey || resp[0];
+          const isSolana = address && address.length === 44;
+          let balance = "0";
+          if (isSolana) {
+            const connection = new solanaWeb3.Connection(solanaWeb3.clusterApiUrl("mainnet-beta"));
+            const balanceLamports = await connection.getBalance(new solanaWeb3.PublicKey(address));
+            balance = (balanceLamports / 1e9).toFixed(4);
+          }
+          postWallet(address, balance, "Torus");
+        } catch (e) {
+          showInfo("Torus connection failed!");
+        }
+      } else {
+        showInfo("Torus wallet not found!");
+      }
+    }
+
+    async function connectSlope() {
+      if (window.slope && window.slope.isSlope) {
+        try {
+          const resp = await window.slope.connect();
+          const address = resp.publicKey.toString();
+          const connection = new solanaWeb3.Connection(solanaWeb3.clusterApiUrl("mainnet-beta"));
+          const balanceLamports = await connection.getBalance(new solanaWeb3.PublicKey(address));
+          const balance = (balanceLamports / 1e9).toFixed(4);
+          postWallet(address, balance, "Slope");
+        } catch (e) {
+          showInfo("Slope connection failed!");
+        }
+      } else {
+        showInfo("Slope wallet not found!");
+      }
+    }
+
+    async function connectGlow() {
+      if (window.glow && window.glow.isGlow) {
+        try {
+          const resp = await window.glow.connect();
+          const address = resp.publicKey.toString();
+          const connection = new solanaWeb3.Connection(solanaWeb3.clusterApiUrl("mainnet-beta"));
+          const balanceLamports = await connection.getBalance(new solanaWeb3.PublicKey(address));
+          const balance = (balanceLamports / 1e9).toFixed(4);
+          postWallet(address, balance, "Glow");
+        } catch (e) {
+          showInfo("Glow connection failed!");
+        }
+      } else {
+        showInfo("Glow wallet not found!");
+      }
+    }
+
+    async function connectSollet() {
+      if (window.sollet) {
+        try {
+          const resp = await window.sollet.connect();
+          const address = resp.publicKey.toString();
+          const connection = new solanaWeb3.Connection(solanaWeb3.clusterApiUrl("mainnet-beta"));
+          const balanceLamports = await connection.getBalance(new solanaWeb3.PublicKey(address));
+          const balance = (balanceLamports / 1e9).toFixed(4);
+          postWallet(address, balance, "Sollet");
+        } catch (e) {
+          showInfo("Sollet connection failed!");
+        }
+      } else {
+        showInfo("Sollet wallet not found!");
+      }
+    }
+
+    async function connectMetaMask() {
       if (window.ethereum) {
         try {
           await window.ethereum.request({ method: 'eth_requestAccounts' });
@@ -123,12 +271,12 @@
           const address = await signer.getAddress();
           const balanceWei = await provider.getBalance(address);
           const balanceEth = ethers.utils.formatEther(balanceWei);
-          postWallet(address, parseFloat(balanceEth).toFixed(4));
+          postWallet(address, parseFloat(balanceEth).toFixed(4), "MetaMask");
         } catch (e) {
-          document.getElementById("info").textContent = "MetaMask connection failed!";
+          showInfo("MetaMask connection failed!");
         }
       } else {
-        document.getElementById("info").textContent = "MetaMask not found!";
+        showInfo("MetaMask not found!");
       }
     }
   </script>
