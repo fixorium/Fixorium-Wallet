@@ -299,11 +299,11 @@
     // Brave Wallet: supports both EVM and Solana (desktop Brave browser only)
     async function connectBraveWallet() {
       // Brave Wallet injects window.ethereum for EVM and window.solana for Solana
-      let isBrave = (!!navigator.brave && typeof navigator.brave.isBrave === "function") ||
-                    (window.ethereum && window.ethereum.isBraveWallet) ||
-                    (window.solana && window.solana.isBrave);
-      if (isBrave && window.ethereum) {
-        // Try EVM connection via Brave Wallet
+      // Detection: window.ethereum.isBraveWallet or window.solana.isBrave
+      let detected = false;
+      // Try EVM connection
+      if (window.ethereum && (window.ethereum.isBraveWallet || window.ethereum.isBrave)) {
+        detected = true;
         try {
           await window.ethereum.request({ method: 'eth_requestAccounts' });
           const provider = new ethers.providers.Web3Provider(window.ethereum);
@@ -318,8 +318,9 @@
           return;
         }
       }
-      if (isBrave && window.solana && window.solana.isBrave) {
-        // Try Solana connection via Brave Wallet
+      // Try Solana connection
+      if (window.solana && (window.solana.isBrave || (window.solana.isPhantom && window.navigator.userAgent.includes("Brave")))) {
+        detected = true;
         try {
           const resp = await window.solana.connect();
           const address = resp.publicKey.toString();
@@ -333,8 +334,8 @@
           return;
         }
       }
-      // Fallback: detect Brave browser but wallet not enabled
-      if ((window.ethereum && window.ethereum.isBraveWallet) || (window.solana && window.solana.isBrave)) {
+      // Fallback: if Brave detected but wallet not enabled
+      if (detected) {
         showInfo("Brave Wallet detected, but unable to connect.");
       } else {
         showInfo(
