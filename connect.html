@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Select Wallet</title>
+  <title>Connect Wallet</title>
   <meta name="viewport" content="width=device-width,initial-scale=1.0" />
   <link href="https://fonts.googleapis.com/css?family=Arial:400,500,700&display=swap" rel="stylesheet">
   <style>
@@ -101,39 +101,23 @@
       FIXERCOIN brings speed, security, and ultra-low fees to Solana traders. Connect your wallet below to start buying, selling, and swapping with the smoothest meme coin experience in crypto!
     </span>
   </div>
-
-  <div class="wallet-list" id="extensionSection">
-    <button class="wallet-btn" onclick="connectMetaMask()">
-      <img src="https://cdn.iconscout.com/icon/free/png-256/metamask-2728406-2261817.png" alt="MetaMask" /> Connect MetaMask (EVM)
+  <div class="wallet-list">
+    <button class="wallet-btn" onclick="connectPhantom()">
+      <img src="https://cryptologos.cc/logos/solana-sol-logo.png" alt="Phantom" /> Connect Phantom Wallet (Solana)
     </button>
-    <button class="wallet-btn" onclick="connectBraveWallet()">
-      <img src="https://cdn.jsdelivr.net/gh/brave/brave-browser/assets/brave-icon.png" alt="Brave Wallet" /> Connect Brave Wallet (EVM/Solana)
+    <button class="wallet-btn" onclick="connectMetaMaskApp()">
+      <img src="https://cdn.iconscout.com/icon/free/png-256/metamask-2728406-2261817.png" alt="MetaMask App" /> Connect MetaMask Wallet App (Mobile)
+    </button>
+    <button class="wallet-btn" onclick="connectMetaMaskBrave()">
+      <img src="https://cdn.iconscout.com/icon/free/png-256/metamask-2728406-2261817.png" alt="MetaMask Brave" /> Connect MetaMask Extension (Brave)
     </button>
     <div class="info" id="info"></div>
   </div>
   <script src="https://cdn.jsdelivr.net/npm/@solana/web3.js@1.95.2/lib/index.iife.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"></script>
   <script>
-    window.addEventListener("DOMContentLoaded", showWalletDiagnostics);
-
-    // Show what wallets are detected at load
-    function showWalletDiagnostics() {
-      let msg = "";
-      if (window.ethereum) {
-        msg += "Detected window.ethereum";
-        if (window.ethereum.isBraveWallet) msg += "<br>- Brave Wallet (EVM) detected";
-        if (window.ethereum.isMetaMask) msg += "<br>- MetaMask extension detected";
-      }
-      if (window.solana) {
-        msg += "<br>Detected window.solana";
-        if (window.solana.isBrave) msg += "<br>- Brave Wallet (Solana) detected";
-      }
-      if (!msg) msg = "No wallet detected on page load.";
-      document.getElementById("info").innerHTML = msg;
-    }
-
     function postWallet(address, balance, walletType) {
-      window.opener.postMessage({
+      window.opener && window.opener.postMessage({
         type: "wallet-connected",
         address,
         balance,
@@ -150,60 +134,72 @@
       }
     }
 
-    async function connectMetaMask() {
-      if (window.ethereum && window.ethereum.isMetaMask) {
-        try {
-          await window.ethereum.request({ method: 'eth_requestAccounts' });
-          const provider = new ethers.providers.Web3Provider(window.ethereum);
-          const signer = provider.getSigner();
-          const address = await signer.getAddress();
-          const balanceWei = await provider.getBalance(address);
-          const balanceEth = ethers.utils.formatEther(balanceWei);
-          postWallet(address, parseFloat(balanceEth).toFixed(4), "MetaMask");
-        } catch (e) {
-          showInfo("MetaMask connection failed!");
-        }
-      } else {
-        showInfo("MetaMask wallet not found!", "https://metamask.io/download.html");
-      }
-    }
-
-    async function connectBraveWallet() {
-      let isBraveEVM = window.ethereum && window.ethereum.isBraveWallet;
-      let isBraveSolana = window.solana && window.solana.isBrave;
-      if (isBraveEVM) {
-        try {
-          await window.ethereum.request({ method: 'eth_requestAccounts' });
-          const provider = new ethers.providers.Web3Provider(window.ethereum);
-          const signer = provider.getSigner();
-          const address = await signer.getAddress();
-          const balanceWei = await provider.getBalance(address);
-          const balanceEth = ethers.utils.formatEther(balanceWei);
-          postWallet(address, parseFloat(balanceEth).toFixed(4), "Brave Wallet (EVM)");
-          return;
-        } catch (e) {
-          showInfo("Brave Wallet (EVM) connection failed!");
-          return;
-        }
-      }
-      if (isBraveSolana) {
+    // Phantom for desktop extension and mobile deep link
+    async function connectPhantom() {
+      if (!isMobile() && window.solana && window.solana.isPhantom) {
         try {
           const resp = await window.solana.connect();
           const address = resp.publicKey.toString();
           const connection = new solanaWeb3.Connection(solanaWeb3.clusterApiUrl("mainnet-beta"));
           const balanceLamports = await connection.getBalance(new solanaWeb3.PublicKey(address));
           const balance = (balanceLamports / 1e9).toFixed(4);
-          postWallet(address, balance, "Brave Wallet (Solana)");
-          return;
+          postWallet(address, balance, "Phantom");
         } catch (e) {
-          showInfo("Brave Wallet (Solana) connection failed!");
-          return;
+          showInfo("Phantom connection failed! Please approve in your wallet.");
         }
+      } else if (isMobile()) {
+        // Mobile deep link
+        const deeplink = "https://phantom.app/ul/browse/" + encodeURIComponent(window.location.origin);
+        showInfo(`Open Phantom app and scan or <a href="${deeplink}" target="_blank" style="color:#19FB9B;text-decoration:underline;">tap here</a> to connect.`, "https://phantom.app/download");
+        window.open(deeplink, "_blank");
+      } else {
+        showInfo("Phantom wallet not found!", "https://phantom.app/download");
       }
-      showInfo(
-        "Brave Wallet not detected! You need Brave Browser with Brave Wallet enabled.",
-        "https://brave.com/wallet/"
-      );
+    }
+
+    // MetaMask Wallet App (mobile)
+    function connectMetaMaskApp() {
+      if (isMobile()) {
+        // Prompt user to open your dapp in MetaMask Mobile browser
+        showInfo(`To connect, please open this site in the MetaMask app browser.<br>
+        <a class="install-link" href="https://metamask.io/download.html" target="_blank">Get MetaMask App</a>`);
+        // Optionally: attempt to open MetaMask app via universal link (will only work for some dapps)
+        // window.open('https://metamask.app.link/dapp/' + window.location.host, '_blank');
+      } else {
+        showInfo("MetaMask App is for mobile devices.<br>Use the MetaMask Extension in your desktop browser.", "https://metamask.io/download.html");
+      }
+    }
+
+    // MetaMask Extension in Brave
+    async function connectMetaMaskBrave() {
+      // Only allow this if MetaMask extension is detected in Brave
+      if (window.ethereum && window.ethereum.isMetaMask && isBraveBrowser()) {
+        try {
+          await window.ethereum.request({ method: 'eth_requestAccounts' });
+          const provider = new ethers.providers.Web3Provider(window.ethereum);
+          const signer = provider.getSigner();
+          const address = await signer.getAddress();
+          const balanceWei = await provider.getBalance(address);
+          const balanceEth = ethers.utils.formatEther(balanceWei);
+          postWallet(address, parseFloat(balanceEth).toFixed(4), "MetaMask (Brave Extension)");
+        } catch (e) {
+          showInfo("MetaMask (Brave) connection failed! Please approve in your wallet.");
+        }
+      } else if (!isBraveBrowser()) {
+        showInfo("MetaMask (Brave) option is only for Brave browser users.", "https://brave.com/download/");
+      } else {
+        showInfo("MetaMask extension not found in Brave browser.", "https://metamask.io/download.html");
+      }
+    }
+
+    function isMobile() {
+      return /Android|iPhone|iPad|iPod|Opera Mini|IEMobile|WPDesktop|Mobile/i.test(navigator.userAgent);
+    }
+
+    function isBraveBrowser() {
+      // This reliably works for Brave desktop; on mobile, Brave doesn't support extensions.
+      const ua = navigator.userAgent || '';
+      return ua.includes('Brave') || (navigator.brave && typeof navigator.brave.isBrave === 'function');
     }
   </script>
 </body>
