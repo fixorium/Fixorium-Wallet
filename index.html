@@ -16,7 +16,7 @@
     #logo-left { font-size:1.5rem; font-weight:700; color:#00ffa8; }
     #connectWalletBtn { background:#00ffa8; border:none; color:#121212; font-weight:700; padding:8px 20px; border-radius:6px; cursor:pointer; min-width:90px; }
     #connectWalletBtn:hover { background:#00cc7a; }
-    main { max-width:900px; margin:0 auto; padding:18px 12px 30px; }
+    main { max-width:900px; margin:0 auto; padding:18px 12px 80px; /* padding bottom for button bar */ }
     #totalBalance { font-size:1.3rem; margin-bottom:15px; font-weight:700; color:#00ff99; text-align:center; min-height:2em; }
     .tokens-list { display:grid; grid-template-columns:repeat(auto-fill,minmax(190px,1fr)); gap:13px; margin-bottom:20px; }
     .token-item { background:#121b26; border-radius:10px; padding:14px 12px; box-shadow:inset 2px 2px 6px #0a0e12,inset -2px -2px 6px #1e2734; display:flex;flex-direction:column;user-select:none; }
@@ -28,10 +28,6 @@
     .sell-btn { color:#ea3943; border-color:#ea3943; background:transparent; }
     .blink { animation:blink 1.3s linear infinite; }
     @keyframes blink {0%,100%{opacity:1;} 50%{opacity:.35;}}
-    .button-bar {display:flex;justify-content:center;gap:22px;margin-bottom:30px;flex-wrap:wrap;}
-    .button-bar button { cursor:pointer; background:linear-gradient(135deg,#00c77f 0%,#00ff99 100%); border:none; border-radius:12px; font-weight:700; font-size:1.05rem; padding:12px 28px; color:#121212; box-shadow:0 3px 6px #004e3b;min-width:120px; }
-    .button-bar button:hover:not(:disabled) { background:linear-gradient(135deg,#00ff99 0%,#00c77f 100%);}
-    .button-bar button:disabled{opacity:.5;cursor:default;}
     .dot-loader { display:inline-flex; gap:6px; user-select:none; }
     .dot-loader span { background:#0ee; width:8px; height:8px; border-radius:50%;display:inline-block;animation:bounce 1.2s infinite ease-in-out;}
     .dot-loader span:nth-child(2){animation-delay:.15s;}
@@ -49,7 +45,41 @@
     .status{background:#004400b3;padding:10px 16px;margin-bottom:14px;border-radius:10px;color:#a8ffaa;font-weight:700;text-align:center;}
     #depositAddress { font-family:monospace;word-break:break-all;margin-top:6px;margin-bottom:12px;font-size:0.95rem;border-radius:8px;background:#151c2b;padding:8px 10px;user-select:text;}
     #qrcode { margin:14px auto 0; display:block; max-width:180px; width:100%; height:auto; user-select:none; }
-    @media (max-width:520px){.button-bar button{width:100%;max-width:none;font-size:1rem;}.tokens-list{grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:8px;}#totalBalance{font-size:1.09rem;}}
+    .fixed-button-bar {
+      position: fixed;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      z-index: 3000;
+      background: rgba(14,18,23,0.97);
+      box-shadow: 0 -2px 18px #00ffa84d;
+      display: flex;
+      justify-content: center;
+      gap: 30px;
+      padding: 20px 14px 18px;
+    }
+    .fixed-button-bar button {
+      cursor:pointer; background:linear-gradient(135deg,#00c77f 0%,#00ff99 100%); border:none; border-radius:12px; font-weight:700; font-size:1.05rem; padding:12px 28px; color:#121212; box-shadow:0 3px 6px #004e3b;min-width:120px;
+      transition: background 0.25s;
+    }
+    .fixed-button-bar button:hover:not(:disabled) { background:linear-gradient(135deg,#00ff99 0%,#00c77f 100%);}
+    .fixed-button-bar button:disabled{opacity:.5;cursor:default;}
+    /* Friendly enhancements for Withdraw/Swap */
+    .form-row { display:flex; gap:7px; align-items:center; }
+    .form-row label { min-width:92px; }
+    .input-max-btn-wrapper { display:flex; align-items:center; gap:6px; }
+    .input-max-btn {
+      font-size:0.8rem; background:#00ffa8; border:none; color:#151c2b; font-weight:700; border-radius:7px; padding:3px 10px; margin-left:3px; cursor:pointer; transition: background 0.2s;
+    }
+    .input-max-btn:hover { background:#00cc7a; }
+    .swap-token-row { display:flex; align-items:center; gap:10px; margin-bottom:8px;}
+    .swap-arrow { font-size:1.6rem; color:#00ff99; font-weight:900; margin:0 6px; user-select:none;}
+    .swap-min-received { color:#a0ffa8; font-size:0.95rem; margin-top:4px;}
+    .swap-estimate { color:#ffdf00; font-size:0.94rem; margin-top:4px; }
+    @media (max-width:700px){
+      .fixed-button-bar {gap:10px;padding:15px 5px 12px;}
+      .fixed-button-bar button{font-size:0.97rem;padding:10px 12px;}
+    }
   </style>
 </head>
 <body>
@@ -66,10 +96,13 @@
       const e = React.createElement;
       const { useState, useEffect, useCallback, useRef } = React;
       // Add .pump field for mint string!
+      // Remove USDT/USDC, add BTC, SHIBA, BONK, PEPE. Add pump.fun for FIXERCOIN.
       const tokensList = [
         { symbol: "SOL", name: "Solana", decimals: 9, cg: "solana", mint: null, pump: null },
-        { symbol: "USDC", name: "USD Coin", decimals: 6, cg: "usd-coin", mint: new solanaWeb3.PublicKey("EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"), pump: "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v" },
-        { symbol: "USDT", name: "Tether USD", decimals: 6, cg: "tether", mint: new solanaWeb3.PublicKey("Es9vMFrzaCER7N1TvjVqauDziYbPEmxW5M9VpX1TTd8C"), pump: "Es9vMFrzaCER7N1TvjVqauDziYbPEmxW5M9VpX1TTd8C" },
+        { symbol: "BTC", name: "Bitcoin", decimals: 8, cg: "bitcoin", mint: null, pump: null },
+        { symbol: "SHIB", name: "Shiba Inu", decimals: 18, cg: "shiba-inu", mint: null, pump: null },
+        { symbol: "BONK", name: "Bonk", decimals: 5, cg: "bonk", mint: new solanaWeb3.PublicKey("DezXAV3qR2v8h8JqK9q9GvGz3B4vqV1YbG9G9gQjL3Fq"), pump: "DezXAV3qR2v8h8JqK9q9GvGz3B4vqV1YbG9G9gQjL3Fq" },
+        { symbol: "PEPE", name: "Pepe", decimals: 6, cg: "pepe", mint: null, pump: null },
         { symbol: "FIXR", name: "FixerCoin", decimals: 9, cg: "", mint: new solanaWeb3.PublicKey("D2mGkp5D43jirFeapx8UZmpiH7FaWeX1eUWy94q1F2hD"), pump: "D2mGkp5D43jirFeapx8UZmpiH7FaWeX1eUWy94q1F2hD" }
       ];
       const cgMap = Object.fromEntries(tokensList.map(t=>[t.symbol,t.cg]));
@@ -131,7 +164,7 @@
           )
         );
       }
-      // Withdraw modal
+      // Withdraw modal (friendly enhancements)
       function WithdrawModal({
         tokensList, balances, publicKey, provider, connection, prices, onClose, fetchBalancesAndPrices, ASSOCIATED_TOKEN_PROGRAM_ID, TOKEN_PROGRAM_ID
       }) {
@@ -142,6 +175,8 @@
         const [withdrawing, setWithdrawing] = useState(false);
         const [error, setError] = useState("");
         const [status, setStatus] = useState("");
+        const inputRef = useRef();
+        useEffect(()=>{ inputRef.current && inputRef.current.focus(); },[]);
         async function innerFindAssociatedTokenAddress(walletAddress, tokenMintAddress) {
           return (
             await solanaWeb3.PublicKey.findProgramAddress(
@@ -238,66 +273,82 @@
             e(
               "form",
               { onSubmit: handleWithdrawConfirm, noValidate: true },
-              e("label", { htmlFor: "withdrawTokenSelect" }, "Select Token / Coin"),
-              e("select", {
-                id: "withdrawTokenSelect",
-                value: withdrawToken.symbol,
-                onChange: e => {
-                  const tok = tokensList.find(t => t.symbol === e.target.value);
-                  setWithdrawToken(tok);
-                  setWithdrawAmount("");
-                  setError("");
-                  setWithdrawNetwork(tok.symbol === "SOL" ? "sol" : "token");
-                }
-              }, tokensList.map(t => e("option", { key: t.symbol, value: t.symbol }, t.symbol))),
-              e("label", { htmlFor: "networkSelect" }, "Network"),
-              e("select", {
-                id: "networkSelect",
-                value: withdrawNetwork,
-                onChange: e => setWithdrawNetwork(e.target.value)
-              },
-                e("option", { value: "sol" }, "Solana Network (SOL transfer)"),
-                e("option", { value: "token" }, "Token Transfer (SPL Token)")
+              e("div", { className: "form-row" },
+                e("label", { htmlFor: "withdrawTokenSelect" }, "Token"),
+                e("select", {
+                  id: "withdrawTokenSelect",
+                  value: withdrawToken.symbol,
+                  onChange: e => {
+                    const tok = tokensList.find(t => t.symbol === e.target.value);
+                    setWithdrawToken(tok);
+                    setWithdrawAmount("");
+                    setError("");
+                    setWithdrawNetwork(tok.symbol === "SOL" ? "sol" : "token");
+                  }
+                }, tokensList.map(t => e("option", { key: t.symbol, value: t.symbol }, t.symbol)))
               ),
-              e("label", { htmlFor: "withdrawAmount" }, `Amount (Max: ${userBal} ${withdrawToken.symbol})`),
-              e("input", {
-                id: "withdrawAmount",
-                type: "number",
-                min: "0",
-                max: userBal,
-                step: "any",
-                required: true,
-                value: withdrawAmount,
-                onChange: e => {
-                  let val = e.target.value;
-                  if (parseFloat(val) > parseFloat(userBal)) val = userBal;
-                  setWithdrawAmount(val);
-                  setError("");
-                }
-              }),
-              e("label", { htmlFor: "withdrawReceiveAddress" }, "Receive Address"),
-              e("input", {
-                id: "withdrawReceiveAddress",
-                type: "text",
-                placeholder: "Enter recipient wallet address",
-                value: withdrawReceiveAddress,
-                onChange: e => setWithdrawReceiveAddress(e.target.value.trim()),
-                required: true,
-                spellCheck: false,
-                autoComplete: "off"
-              }),
-              e("small", null, "Destination address must be valid on selected network."),
-              e(
-                "div",
-                { style: { marginTop: "10px", fontWeight: "700", userSelect: "text" } },
-                "Wallet Balance: ",
-                userBal,
-                " ",
-                withdrawToken.symbol,
+              e("div", { className: "form-row" },
+                e("label", { htmlFor: "networkSelect" }, "Network"),
+                e("select", {
+                  id: "networkSelect",
+                  value: withdrawNetwork,
+                  onChange: e => setWithdrawNetwork(e.target.value)
+                },
+                  e("option", { value: "sol" }, "Solana (SOL)"),
+                  e("option", { value: "token" }, "Token (SPL)")
+                )
+              ),
+              e("div", { className: "form-row" },
+                e("label", { htmlFor: "withdrawAmount" }, `Amount`),
+                e("div", { className: "input-max-btn-wrapper" },
+                  e("input", {
+                    id: "withdrawAmount",
+                    ref: inputRef,
+                    type: "number",
+                    min: "0",
+                    max: userBal,
+                    step: "any",
+                    required: true,
+                    style: { width: 110 },
+                    value: withdrawAmount,
+                    placeholder: "0",
+                    onChange: e => {
+                      let val = e.target.value;
+                      if (parseFloat(val) > parseFloat(userBal)) val = userBal;
+                      setWithdrawAmount(val);
+                      setError("");
+                    }
+                  }),
+                  e("button", {
+                    type: "button",
+                    className: "input-max-btn",
+                    onClick: () => setWithdrawAmount(userBal),
+                    tabIndex: 0
+                  }, "Max")
+                ),
+                e("span", null, withdrawToken.symbol)
+              ),
+              e("div", { className: "form-row" },
+                e("label", { htmlFor: "withdrawReceiveAddress" }, "To Address"),
+                e("input", {
+                  id: "withdrawReceiveAddress",
+                  type: "text",
+                  placeholder: "Recipient wallet address",
+                  value: withdrawReceiveAddress,
+                  onChange: e => setWithdrawReceiveAddress(e.target.value.trim()),
+                  required: true,
+                  style: { width: 210 },
+                  spellCheck: false,
+                  autoComplete: "off"
+                })
+              ),
+              e("div", { style: { color: "#ffe", fontSize: "0.93rem", marginTop: 7 } },
+                "Balance: ",
+                userBal, " ", withdrawToken.symbol,
                 prices && prices[withdrawToken.symbol] ? " ≈ $" + (userBal * prices[withdrawToken.symbol]).toFixed(2) : ""
               ),
               e("button", { className: "modal-btn", type: "submit", disabled: withdrawing || !withdrawAmount || !withdrawReceiveAddress },
-                withdrawing ? e("span", { className: "dot-loader" }, e("span"), e("span"), e("span")) : "Confirm Transaction"
+                withdrawing ? e("span", { className: "dot-loader" }, e("span"), e("span"), e("span")) : "Withdraw"
               )
             ),
             error && e("div", { className: "error" }, error),
@@ -306,6 +357,129 @@
         );
       }
 
+      // Swap modal (friendly enhancements)
+      function SwapModal({tokensList,swapFromToken,swapToToken,setSwapFromToken,setSwapToToken,swapAmount,setSwapAmount,loadingQuotes,routes,selectedRoute,setSelectedRoute,swapping,provider,publicKey,connection,JUPITER_API_BASE,onSuccess,onClose,balances}) {
+        const [swapError, setSwapError] = useState("");
+        const [swapStatus, setSwapStatus] = useState("");
+        const inputRef = useRef();
+        useEffect(()=>{ inputRef.current && inputRef.current.focus(); },[]);
+        async function handleSwap(ev) {
+          ev.preventDefault();
+          setSwapError(""); setSwapStatus("");
+          if (!provider) { setSwapError("Phantom wallet not detected"); return; }
+          if (!publicKey) { setSwapError("No wallet connected"); return; }
+          if (!selectedRoute) { setSwapError("No swap route selected."); return; }
+          try {
+            onSuccess && onSuccess("swapping");
+            const swapResp = await axios.post(
+              `${JUPITER_API_BASE}/swap`,
+              {
+                route: selectedRoute,
+                userPublicKey: publicKey.toString(),
+                wrapUnwrapSOL: true,
+              }
+            );
+            if (!swapResp.data?.swapTransaction) throw new Error("Jupiter did not return a transaction.");
+            const tx = solanaWeb3.Transaction.from(Buffer.from(swapResp.data.swapTransaction, "base64"));
+            tx.feePayer = publicKey;
+            tx.recentBlockhash = (await connection.getLatestBlockhash()).blockhash;
+            const signed = await provider.signTransaction(tx);
+            const sig = await connection.sendRawTransaction(signed.serialize());
+            setSwapStatus("Swapped! Tx: " + sig);
+            setTimeout(()=>onClose&&onClose(), 2000);
+            onSuccess && onSuccess("swapped");
+          } catch (err) {
+            setSwapError(err.message || "Swap failed.");
+          }
+        }
+        const maxAmount = balances[swapFromToken.symbol] || 0;
+        return e(
+          "div",
+          { className: "overlay-bg", onClick: onClose },
+          e(
+            "div",
+            { className: "overlay-panel", onClick: e => e.stopPropagation() },
+            e("div", { className: "overlay-header" },
+              e("h2", null, "Swap"),
+              e("button", { className: "overlay-close-btn", onClick: onClose }, "×")
+            ),
+            e(
+              "form",
+              { onSubmit: handleSwap },
+              e("div", { className: "swap-token-row" },
+                e("label", null, "From"),
+                e("select", {
+                  value: swapFromToken.symbol,
+                  onChange: e => {
+                    const tok = tokensList.find(t => t.symbol === e.target.value);
+                    setSwapFromToken(tok);
+                    if (tok.symbol === swapToToken.symbol) {
+                      const nextTo = tokensList.find(t => t.symbol !== tok.symbol) || tokensList[0];
+                      setSwapToToken(nextTo);
+                    }
+                  }
+                }, tokensList.filter(t => t.symbol !== swapToToken.symbol).map(t => e("option", { key: t.symbol, value: t.symbol }, t.symbol))),
+                e("span", { className: "swap-arrow" }, "→"),
+                e("label", null, "To"),
+                e("select", {
+                  value: swapToToken.symbol,
+                  onChange: e => {
+                    const tok = tokensList.find(t => t.symbol === e.target.value);
+                    setSwapToToken(tok);
+                    if (tok.symbol === swapFromToken.symbol) {
+                      setSwapFromToken(tokensList.find(t => t.symbol !== tok.symbol) || tokensList[0]);
+                    }
+                  }
+                }, tokensList.filter(t => t.symbol !== swapFromToken.symbol).map(t => e("option", { key: t.symbol, value: t.symbol }, t.symbol)))
+              ),
+              e("div", { className: "form-row" },
+                e("label", { htmlFor: "swapAmount" }, "Amount"),
+                e("div", { className: "input-max-btn-wrapper" },
+                  e("input", {
+                    id: "swapAmount",
+                    ref: inputRef,
+                    type: "number",
+                    min: "0",
+                    max: maxAmount,
+                    step: "any",
+                    required: true,
+                    style: { width: 110 },
+                    value: swapAmount,
+                    placeholder: "0",
+                    onChange: e => setSwapAmount(e.target.value)
+                  }),
+                  e("button", {
+                    type: "button",
+                    className: "input-max-btn",
+                    onClick: () => setSwapAmount(maxAmount),
+                    tabIndex: 0
+                  }, "Max")
+                ),
+                e("span", null, swapFromToken.symbol)
+              ),
+              e("div", { style: { color: "#ffe", fontSize: "0.93rem", marginTop: 7, marginBottom: 3 } },
+                "Balance: ", maxAmount, " ", swapFromToken.symbol
+              ),
+              loadingQuotes ? e("div", null, e("span", { className: "dot-loader" }, e("span"), e("span"), e("span"))) : null,
+              routes.length > 0 && selectedRoute && e("div", { className: "swap-estimate" },
+                "Estimated: ", (selectedRoute.outAmount / 10 ** swapToToken.decimals).toLocaleString(undefined, { maximumFractionDigits: swapToToken.decimals }),
+                " ", swapToToken.symbol,
+                e("div", { className: "swap-min-received" },
+                  "Minimum received (slippage 0.05%): ",
+                  (selectedRoute.amountOutWithSlippage / 10 ** swapToToken.decimals).toLocaleString(undefined, { maximumFractionDigits: swapToToken.decimals }),
+                  " ", swapToToken.symbol
+                ),
+                e("div", null, "Best route: ", selectedRoute.marketInfos && selectedRoute.marketInfos[0]?.amm?.label ? selectedRoute.marketInfos[0].amm.label : "-")
+              ),
+              e("button", { className: "modal-btn", type: "submit", disabled: swapping || !selectedRoute },
+                swapping ? e("span", { className: "dot-loader" }, e("span"), e("span"), e("span")) : "Swap"
+              )
+            ),
+            swapError && e("div", { className: "error" }, swapError),
+            swapStatus && e("div", { className: "status" }, swapStatus)
+          )
+        );
+      }
       function App() {
         const [provider,setProvider]=useState(null);
         const [walletConnected,setWalletConnected]=useState(false);
@@ -329,7 +503,6 @@
 
         const signals = useBotSignals(prices, priceChanges);
 
-        // Phantom detection, connect/disconnect, etc.
         useEffect(() => {
           function detectProvider() {
             if (window.solana && window.solana.isPhantom) {
@@ -379,7 +552,6 @@
           if(provider.isConnected && provider.publicKey) onConnect(provider.publicKey);
           return ()=>{ provider.removeListener&&provider.removeListener("connect",onConnect); provider.removeListener&&provider.removeListener("disconnect",onDisconnect); }
         },[provider]);
-        // Fetch pump.fun prices for all tokens with a pump field
         async function fetchPumpPrices() {
           try {
             const pumpEntries = await Promise.all(tokensList
@@ -447,7 +619,6 @@
         useEffect(() => { fetchAll(); const intv1 = setInterval(fetchPrices,60000); const intv2 = setInterval(fetchPumpPrices,60000); return ()=>{clearInterval(intv1);clearInterval(intv2);}; }, []);
         useEffect(() => { fetchAll(); }, [walletConnected,publicKey,activeModal,status]);
         useEffect(() => { fetchPumpPrices(); }, []);
-        // --- Jupiter swap/quotes (full API integration) ---
         useEffect(() => {
           async function fetchQuotes() {
             setLoadingQuotes(true); setRoutes([]); setSelectedRoute(null);
@@ -530,9 +701,10 @@
               )
             )
           ),
+          // Fixed bottom button bar
           e(
             "div",
-            { className: "button-bar" },
+            { className: "fixed-button-bar" },
             e("button", { onClick: () => setActiveModal("swap") }, "Swap"),
             e("button", { onClick: () => setActiveModal("withdraw") }, "Withdraw"),
             e("button", { onClick: () => setActiveModal("deposit") }, "Deposit")
@@ -548,113 +720,14 @@
             fetchBalancesAndPrices: fetchAll,
             ASSOCIATED_TOKEN_PROGRAM_ID, TOKEN_PROGRAM_ID
           }),
-          // Jupiter Swap modal (real swap)
-          activeModal === "swap" && e(() => {
-            const [swapError, setSwapError] = useState("");
-            const [swapStatus, setSwapStatus] = useState("");
-            async function handleSwap(ev) {
-              ev.preventDefault();
-              setSwapping(true);
-              setSwapError("");
-              setSwapStatus("");
-              try {
-                if (!provider) throw new Error("Phantom wallet not detected");
-                if (!publicKey) throw new Error("No wallet connected");
-                if (!selectedRoute) throw new Error("No swap route selected.");
-                // POST to Jupiter swap endpoint
-                const swapResp = await axios.post(
-                  `${JUPITER_API_BASE}/swap`,
-                  {
-                    route: selectedRoute,
-                    userPublicKey: publicKey.toString(),
-                    wrapUnwrapSOL: true,
-                  }
-                );
-                if (!swapResp.data?.swapTransaction) throw new Error("Jupiter did not return a transaction.");
-                const tx = solanaWeb3.Transaction.from(Buffer.from(swapResp.data.swapTransaction, "base64"));
-                tx.feePayer = publicKey;
-                tx.recentBlockhash = (await connection.getLatestBlockhash()).blockhash;
-                const signed = await provider.signTransaction(tx);
-                const sig = await connection.sendRawTransaction(signed.serialize());
-                setSwapStatus("Swapped! Tx: " + sig);
-                setSwapAmount("");
-                setTimeout(()=>setActiveModal(null), 2000);
-                fetchAll();
-              } catch (err) {
-                setSwapError(err.message || "Swap failed.");
-              }
-              setSwapping(false);
-            }
-            return e(
-              "div",
-              { className: "overlay-bg", onClick: () => setActiveModal(null) },
-              e(
-                "div",
-                { className: "overlay-panel", onClick: e => e.stopPropagation() },
-                e("div", { className: "overlay-header" },
-                  e("h2", null, "Swap (Jupiter)"),
-                  e("button", { className: "overlay-close-btn", onClick: () => setActiveModal(null) }, "×")
-                ),
-                e(
-                  "form",
-                  { onSubmit: handleSwap },
-                  e("label", null, "From"),
-                  e("select", {
-                    value: swapFromToken.symbol,
-                    onChange: e => {
-                      const tok = tokensList.find(t => t.symbol === e.target.value);
-                      setSwapFromToken(tok);
-                      if (tok.symbol === swapToToken.symbol) {
-                        const nextTo = tokensList.find(t => t.symbol !== tok.symbol) || tokensList[0];
-                        setSwapToToken(nextTo);
-                      }
-                    }
-                  }, tokensList.filter(t => t.symbol !== swapToToken.symbol).map(t => e("option", { key: t.symbol, value: t.symbol }, t.symbol))),
-                  e("label", null, "To"),
-                  e("select", {
-                    value: swapToToken.symbol,
-                    onChange: e => {
-                      const tok = tokensList.find(t => t.symbol === e.target.value);
-                      setSwapToToken(tok);
-                      if (tok.symbol === swapFromToken.symbol) {
-                        setSwapFromToken(tokensList.find(t => t.symbol !== tok.symbol) || tokensList[0]);
-                      }
-                    }
-                  }, tokensList.filter(t => t.symbol !== swapFromToken.symbol).map(t => e("option", { key: t.symbol, value: t.symbol }, t.symbol))),
-                  e("label", null, "Amount"),
-                  e("input", {
-                    type: "number", min: "0", required: true, step: "any", value: swapAmount,
-                    onChange: e => setSwapAmount(e.target.value)
-                  }),
-                  loadingQuotes ? e("div", null, e("span", { className: "dot-loader" }, e("span"), e("span"), e("span"))) : null,
-                  routes.length > 0 && e("div", null,
-                    routes.map((route, idx) =>
-                      e(
-                        "div",
-                        {
-                          className: "route-option" + (selectedRoute === route ? " selected" : ""),
-                          key: idx,
-                          tabIndex: 0,
-                          onClick: () => setSelectedRoute(route),
-                          onKeyDown: evt => { if (evt.key === "Enter") setSelectedRoute(route); }
-                        },
-                        e("div", { className: "route-info" },
-                          "Output: ",
-                          (route.outAmount / 10 ** swapToToken.decimals).toLocaleString(undefined, { maximumFractionDigits: swapToToken.decimals }),
-                          " ", swapToToken.symbol
-                        ),
-                        e("div", null, "Best route: ", route.marketInfos && route.marketInfos[0]?.amm?.label ? route.marketInfos[0].amm.label : "-")
-                      )
-                    )
-                  ),
-                  e("button", { className: "modal-btn", type: "submit", disabled: swapping || !selectedRoute },
-                    swapping ? e("span", { className: "dot-loader" }, e("span"), e("span"), e("span")) : "Swap Now"
-                  )
-                ),
-                swapError && e("div", { className: "error" }, swapError),
-                swapStatus && e("div", { className: "status" }, swapStatus)
-              )
-            );
+          // Enhanced Jupiter Swap modal
+          activeModal === "swap" && e(SwapModal, {
+            tokensList, swapFromToken, swapToToken, setSwapFromToken, setSwapToToken,
+            swapAmount, setSwapAmount, loadingQuotes, routes, selectedRoute, setSelectedRoute, swapping,
+            provider, publicKey, connection, JUPITER_API_BASE,
+            onSuccess: (stat) => setSwapping(stat === "swapping"),
+            onClose: () => setActiveModal(null),
+            balances
           })
         );
       }
