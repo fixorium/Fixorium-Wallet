@@ -1,558 +1,63 @@
- <!DOCTYPE html>
+ # Token Swap Page
+
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Solana Meme Token Wallet</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@solana/web3.js@latest/lib/index.iife.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@solana/spl-token@0.2.0/lib/index.iife.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
-    <style>
-        body {
-            font-family: 'Inter', sans-serif;
-            background: linear-gradient(135deg, #0f0f0f 0%, #1a1a1a 100%);
-        }
-        .token-card {
-            transition: all 0.3s ease;
-        }
-        .token-card:hover {
-            transform: scale(1.05);
-            box-shadow: 0 10px 20px rgba(0,0,0,0.3);
-        }
-    </style>
+    <title>Token Swap</title>
+    <link rel="stylesheet" href="styles.css">
 </head>
-<body class="bg-black text-white min-h-screen">
-    <div class="container mx-auto px-4 py-8">
-        <!-- Header -->
-        <header class="flex justify-between items-center mb-8">
-            <div class="flex items-center">
-                <img src="meme-token-logo.png" alt="Meme Token Wallet" class="w-12 h-12 mr-4">
-                <h1 class="text-3xl font-bold text-green-400">Meme Token Wallet</h1>
+<body>
+    <header>
+        <h1>Token Swap Interface</h1>
+    </header>
+    <main>
+        <section id="token-info">
+            <h2>Token Information</h2>
+            <div id="token-details">
+                <p>Token Name: <span id="token-name"></span></p>
+                <p>Token Price: <span id="token-price"></span></p>
             </div>
-            <div id="wallet-connection" class="flex items-center">
-                <button id="connect-wallet" class="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded-lg mr-4">
-                    Connect Wallet
-                </button>
-            </div>
-        </header>
-
-        <!-- Wallet Dashboard -->
-        <div id="wallet-dashboard" class="hidden">
-            <!-- Wallet Overview -->
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-                <div class="bg-gray-900 rounded-lg p-6 col-span-2">
-                    <div class="flex justify-between items-center mb-4">
-                        <h2 class="text-2xl font-bold">Wallet Overview</h2>
-                        <button id="disconnect-wallet" class="bg-red-500 hover:bg-red-600 text-white py-2 px-4 rounded-lg">
-                            Disconnect
-                        </button>
-                    </div>
-                    
-                    <div class="grid grid-cols-3 gap-4">
-                        <div>
-                            <p class="text-gray-400">Total Balance</p>
-                            <h3 id="total-balance" class="text-3xl font-bold text-green-400">$0.00</h3>
-                        </div>
-                        <div>
-                            <p class="text-gray-400">Wallet Address</p>
-                            <p id="wallet-address" class="text-blue-300 truncate"></p>
-                        </div>
-                        <div>
-                            <p class="text-gray-400">Network</p>
-                            <p class="text-yellow-400">Solana Mainnet</p>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Quick Actions -->
-                <div class="bg-gray-900 rounded-lg p-6">
-                    <h2 class="text-2xl font-bold mb-4">Quick Actions</h2>
-                    <div class="grid grid-cols-3 gap-4">
-                        <button id="deposit-btn" class="bg-blue-500 hover:bg-blue-600 text-white py-2 rounded-lg">
-                            Deposit
-                        </button>
-                        <button id="withdraw-btn" class="bg-yellow-500 hover:bg-yellow-600 text-white py-2 rounded-lg">
-                            Withdraw
-                        </button>
-                        <button id="swap-btn" class="bg-purple-500 hover:bg-purple-600 text-white py-2 rounded-lg">
-                            Swap
-                        </button>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Meme Tokens Market -->
-            <div class="mb-8">
-                <h2 class="text-2xl font-bold mb-4">Meme Token Market</h2>
-                <div id="meme-tokens" class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
-                    <!-- Meme tokens will be dynamically populated -->
-                </div>
-            </div>
-
-            <!-- Your Tokens -->
-            <div class="bg-gray-900 rounded-lg p-6">
-                <h2 class="text-2xl font-bold mb-4">Your Tokens</h2>
-                <div id="user-tokens" class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
-                    <!-- User tokens will be dynamically populated -->
-                </div>
-            </div>
-        </div>
-
-        <!-- Modals -->
-        <div id="modals">
-            <!-- Deposit Modal -->
-            <div id="deposit-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
-                <div class="bg-gray-900 rounded-lg p-8 w-full max-w-md">
-                    <h2 class="text-2xl font-bold mb-4">Deposit Funds</h2>
-                    <div class="mb-4">
-                        <label class="block mb-2">Select Token</label>
-                        <select id="deposit-token" class="w-full p-2 bg-gray-800 rounded">
-                            <option value="SOL">SOL</option>
-                            <option value="BONK">BONK</option>
-                            <option value="WIF">WIF</option>
-                        </select>
-                    </div>
-                    <div class="mb-4">
-                        <label class="block mb-2">Amount</label>
-                        <input type="number" id="deposit-amount" class="w-full p-2 bg-gray-800 rounded" placeholder="Enter amount">
-                    </div>
-                    <div class="flex space-x-4">
-                        <button id="execute-deposit" class="flex-1 bg-green-500 hover:bg-green-600 text-white py-3 rounded">
-                            Deposit
-                        </button>
-                        <button id="cancel-deposit" class="flex-1 bg-red-500 hover:bg-red-600 text-white py-3 rounded">
-                            Cancel
-                        </button>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Withdraw Modal -->
-            <div id="withdraw-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
-                <div class="bg-gray-900 rounded-lg p-8 w-full max-w-md">
-                    <h2 class="text-2xl font-bold mb-4">Withdraw Funds</h2>
-                    <div class="mb-4">
-                        <label class="block mb-2">Select Token</label>
-                        <select id="withdraw-token" class="w-full p-2 bg-gray-800 rounded">
-                            <option value="SOL">SOL</option>
-                            <option value="BONK">BONK</option>
-                            <option value="WIF">WIF</option>
-                        </select>
-                    </div>
-                    <div class="mb-4">
-                        <label class="block mb-2">Amount</label>
-                        <input type="number" id="withdraw-amount" class="w-full p-2 bg-gray-800 rounded" placeholder="Enter amount">
-                    </div>
-                    <div class="mb-4">
-                        <label class="block mb-2">Recipient Address</label>
-                        <input type="text" id="withdraw-address" class="w-full p-2 bg-gray-800 rounded" placeholder="Enter recipient address">
-                    </div>
-                    <div class="flex space-x-4">
-                        <button id="execute-withdraw" class="flex-1 bg-green-500 hover:bg-green-600 text-white py-3 rounded">
-                            Withdraw
-                        </button>
-                        <button id="cancel-withdraw" class="flex-1 bg-red-500 hover:bg-red-600 text-white py-3 rounded">
-                            Cancel
-                        </button>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Swap Modal -->
-            <div id="swap-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
-                <div class="bg-gray-900 rounded-lg p-8 w-full max-w-md">
-                    <h2 class="text-2xl font-bold mb-4">Token Swap</h2>
-                    <div class="mb-4">
-                        <label class="block mb-2">From Token</label>
-                        <select id="swap-from-token" class="w-full p-2 bg-gray-800 rounded">
-                            <option value="SOL">SOL</option>
-                            <option value="BONK">BONK</option>
-                            <option value="WIF">WIF</option>
-                        </select>
-                    </div>
-                    <div class="mb-4">
-                        <label class="block mb-2">To Token</label>
-                        <select id="swap-to-token" class="w-full p-2 bg-gray-800 rounded">
-                            <option value="BONK">BONK</option>
-                            <option value="SOL">SOL</option>
-                            <option value="WIF">WIF</option>
-                        </select>
-                    </div>
-                    <div class="mb-4">
-                        <label class="block mb-2">Amount</label>
-                        <input type="number" id="swap-amount" class="w-full p-2 bg-gray-800 rounded" placeholder="Enter amount">
-                    </div>
-                    <div id="swap-quote" class="mb-4 text-center text-yellow-400">
-                        <!-- Swap quote will be displayed here -->
-                    </div>
-                    <div class="flex space-x-4">
-                        <button id="execute-swap" class="flex-1 bg-green-500 hover:bg-green-600 text-white py-3 rounded">
-                            Swap Tokens
-                        </button>
-                        <button id="cancel-swap" class="flex-1 bg-red-500 hover:bg-red-600 text-white py-3 rounded">
-                            Cancel
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
+        </section>
+        <section id="swap-section">
+            <h2>Swap Tokens</h2>
+            <form id="swap-form">
+                <label for="amount">Amount:</label>
+                <input type="number" id="amount" required>
+                <button type="submit">Swap</button>
+            </form>
+        </section>
+    </main>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/web3/1.3.0/web3.min.js"></script>
     <script>
-        class MemeTokenWallet {
-            constructor() {
-                this.connection = null;
-                this.wallet = null;
-                this.publicKey = null;
-                this.tokenBalances = {};
-                this.tokenPrices = {};
-                this.memeTokens = [
-                    { 
-                        symbol: 'BONK', 
-                        name: 'Bonk', 
-                        mint: 'DezXAZ8z7PnrnRJjz3wXBoRhwTLdMPkqhuBczetogeoK',
-                        logo: 'bonk-logo.png' 
-                    },
-                    { 
-                        symbol: 'WIF', 
-                        name: 'Dogwifhat', 
-                        mint: 'EKpQGSJtjMFqKZ9KQanSqYXRcF8fBtUk6goG7zcX3New',
-                        logo: 'wif-logo.png' 
-                    }
-                ];
+        const tokenAddress = 'H4qKn8FMFha8jJuj8xMryMqRhH3h7GjLuxw7TVixpump';
+        const phantomWallet = window.solana;
 
-                this.initializeEventListeners();
-                this.loadMemeTokenPrices();
-            }
-
-            initializeEventListeners() {
-                document.getElementById('connect-wallet').addEventListener('click', () => this.connectWallet());
-                document.getElementById('disconnect-wallet').addEventListener('click', () => this.disconnectWallet());
-
-                // Modal Triggers
-                document.getElementById('deposit-btn').addEventListener('click', () => this.openModal('deposit-modal'));
-                document.getElementById('withdraw-btn').addEventListener('click', () => this.openModal('withdraw-modal'));
-                document.getElementById('swap-btn').addEventListener('click', () => this.openModal('swap-modal'));
-
-                // Modal Cancellations
-                document.getElementById('cancel-deposit').addEventListener('click', () => this.closeModal('deposit-modal'));
-                document.getElementById('cancel-withdraw').addEventListener('click', () => this.closeModal('withdraw-modal'));
-                document.getElementById('cancel-swap').addEventListener('click', () => this.closeModal('swap-modal'));
-
-                // Modal Executions
-                document.getElementById('execute-deposit').addEventListener('click', () => this.executeDeposit());
-                document.getElementById('execute-withdraw').addEventListener('click', () => this.executeWithdraw());
-                document.getElementById('execute-swap').addEventListener('click', () => this.executeSwap());
-
-                // Swap Quote Generation
-                document.getElementById('swap-amount').addEventListener('input', () => this.generateSwapQuote());
-                document.getElementById('swap-from-token').addEventListener('change', () => this.generateSwapQuote());
-                document.getElementById('swap-to-token').addEventListener('change', () => this.generateSwapQuote());
-            }
-
-            async connectWallet() {
-                try {
-                    if (!window.solana?.isPhantom) {
-                        this.showNotification('error', 'Phantom wallet not found');
-                        return;
-                    }
-
-                    const wallet = window.solana;
-                    await wallet.connect();
-
-                    this.wallet = wallet;
-                    this.publicKey = wallet.publicKey;
-                    this.connection = new solanaWeb3.Connection(
-                        solanaWeb3.clusterApiUrl('mainnet-beta'), 
-                        'confirmed'
-                    );
-
-                    this.updateWalletUI();
-                    await this.fetchWalletDetails();
-                } catch (error) {
-                    this.showNotification('error', `Connection failed: ${error.message}`);
-                }
-            }
-
-            async loadMemeTokenPrices() {
-                const memeTokensContainer = document.getElementById('meme-tokens');
-                memeTokensContainer.innerHTML = '';
-
-                try {
-                    const tokenIds = this.memeTokens.map(token => token.symbol.toLowerCase()).join(',');
-                    const response = await axios.get(
-                        `https://api.coingecko.com/api/v3/simple/price?ids=${tokenIds}&vs_currencies=usd`
-                    );
-
-                    this.memeTokens.forEach(token => {
-                        const price = response.data[token.symbol.toLowerCase()]?.usd || 0;
-                        const change = this.generateRandomPercentage();
-
-                        const tokenCard = document.createElement('div');
-                        tokenCard.className = 'token-card bg-gray-800 rounded-lg p-4 hover:bg-gray-700 cursor-pointer';
-                        tokenCard.innerHTML = `
-                            <img src="${token.logo}" alt="${token.symbol}" class="w-16 h-16 mx-auto mb-2">
-                            <h3 class="text-center font-bold">${token.symbol}</h3>
-                            <p class="text-center text-green-400">$${price.toFixed(4)}</p>
-                            <p class="text-center ${change > 0 ? 'text-green-500' : 'text-red-500'}">
-                                24h: ${change}%
-                            </p>
-                        `;
-                        memeTokensContainer.appendChild(tokenCard);
-                    });
-                } catch (error) {
-                    this.showNotification('error', `Token price fetch failed: ${error.message}`);
-                }
-            }
-
-            async fetchWalletDetails() {
-                try {
-                    await Promise.all([
-                        this.fetchSolBalance(),
-                        this.fetchMemeTokenBalances(),
-                        this.updateTokenPrices()
-                    ]);
-
-                    this.renderUserTokens();
-                    this.updateTotalBalance();
-                } catch (error) {
-                    this.showNotification('error', `Wallet details fetch failed: ${error.message}`);
-                }
-            }
-
-            async fetchSolBalance() {
-                try {
-                    const balance = await this.connection.getBalance(this.publicKey);
-                    this.tokenBalances['SOL'] = balance / solanaWeb3.LAMPORTS_PER_SOL;
-                } catch (error) {
-                    this.showNotification('error', `SOL balance fetch failed: ${error.message}`);
-                }
-            }
-
-            async fetchMemeTokenBalances() {
-                try {
-                    const tokenAccounts = await this.connection.getParsedTokenAccountsByOwner(
-                        this.publicKey,
-                        { programId: solanaWeb3.TOKEN_PROGRAM_ID }
-                    );
-
-                    tokenAccounts.value.forEach(account => {
-                        const mintAddress = account.account.data.parsed.info.mint;
-                        const balance = account.account.data.parsed.info.tokenAmount.uiAmount;
-                        
-                        const token = this.memeTokens.find(t => t.mint === mintAddress);
-                        if (token) {
-                            this.tokenBalances[token.symbol] = balance;
-                        }
-                    });
-                } catch (error) {
-                    this.showNotification('error', `Meme token balances fetch failed: ${error.message}`);
-                }
-            }
-
-            async updateTokenPrices() {
-                try {
-                    const tokenIds = [...this.memeTokens.map(t => t.symbol.toLowerCase()), 'solana'];
-                    const response = await axios.get(
-                        `https://api.coingecko.com/api/v3/simple/price?ids=${tokenIds.join(',')}&vs_currencies=usd`
-                    );
-
-                    this.tokenPrices = {
-                        SOL: response.data.solana.usd,
-                        ...Object.fromEntries(
-                            this.memeTokens.map(token => [
-                                token.symbol, 
-                                response.data[token.symbol.toLowerCase()].usd
-                            ])
-                        )
-                    };
-                } catch (error) {
-                    this.showNotification('error', `Token prices update failed: ${error.message}`);
-                }
-            }
-
-            renderUserTokens() {
-                const userTokensContainer = document.getElementById('user-tokens');
-                userTokensContainer.innerHTML = '';
-
-                Object.entries(this.tokenBalances).forEach(([symbol, balance]) => {
-                    if (balance > 0) {
-                        const price = this.tokenPrices[symbol] || 0;
-                        const totalValue = balance * price;
-
-                        const tokenCard = document.createElement('div');
-                        tokenCard.className = 'bg-gray-800 rounded-lg p-4';
-                        tokenCard.innerHTML = `
-                            <h3 class="text-center font-bold">${symbol}</h3>
-                            <p class="text-center">Balance: ${balance.toFixed(4)}</p>
-                            <p class="text-center">Price: $${price.toFixed(2)}</p>
-                            <p class="text-center">Value: $${totalValue.toFixed(2)}</p>
-                        `;
-                        userTokensContainer.appendChild(tokenCard);
-                    }
-                });
-            }
-
-            updateTotalBalance() {
-                let totalBalance = 0;
-                Object.entries(this.tokenBalances).forEach(([symbol, balance]) => {
-                    const price = this.tokenPrices[symbol] || 0;
-                    totalBalance += balance * price;
-                });
-
-                document.getElementById('total-balance').textContent = 
-                    `$${totalBalance.toFixed(2)}`;
-            }
-
-            generateSwapQuote() {
-                const fromToken = document.getElementById('swap-from-token').value;
-                const toToken = document.getElementById('swap-to-token').value;
-                const amount = parseFloat(document.getElementById('swap-amount').value);
-
-                if (!amount || isNaN(amount)) {
-                    document.getElementById('swap-quote').textContent = '';
-                    return;
-                }
-
-                const fromPrice = this.tokenPrices[fromToken] || 0;
-                const toPrice = this.tokenPrices[toToken] || 0;
-
-                const convertedAmount = (amount * fromPrice) / toPrice;
-
-                document.getElementById('swap-quote').textContent = 
-                    `1 ${fromToken} ≈ ${convertedAmount.toFixed(4)} ${toToken}`;
-            }
-
-            async executeDeposit() {
-                const token = document.getElementById('deposit-token').value;
-                const amount = parseFloat(document.getElementById('deposit-amount').value);
-
-                try {
-                    // Validate input
-                    if (isNaN(amount) || amount <= 0) {
-                        throw new Error('Invalid deposit amount');
-                    }
-
-                    // TODO: Implement actual deposit logic
-                    this.showNotification('success', `Deposited ${amount} ${token}`);
-                    this.closeModal('deposit-modal');
-                    await this.fetchWalletDetails();
-                } catch (error) {
-                    this.showNotification('error', error.message);
-                }
-            }
-
-            async executeWithdraw() {
-                const token = document.getElementById('withdraw-token').value;
-                const amount = parseFloat(document.getElementById('withdraw-amount').value);
-                const address = document.getElementById('withdraw-address').value;
-
-                try {
-                    // Validate inputs
-                    if (isNaN(amount) || amount <= 0) {
-                        throw new Error('Invalid withdrawal amount');
-                    }
-                    if (!address) {
-                        throw new Error('Invalid recipient address');
-                    }
-
-                    // TODO: Implement actual withdrawal logic
-                    this.showNotification('success', `Withdrawn ${amount} ${token}`);
-                    this.closeModal('withdraw-modal');
-                    await this.fetchWalletDetails();
-                } catch (error) {
-                    this.showNotification('error', error.message);
-                }
-            }
-
-            async executeSwap() {
-                const fromToken = document.getElementById('swap-from-token').value;
-                const toToken = document.getElementById('swap-to-token').value;
-                const amount = parseFloat(document.getElementById('swap-amount').value);
-
-                try {
-                    // Validate inputs
-                    if (isNaN(amount) || amount <= 0) {
-                        throw new Error('Invalid swap amount');
-                    }
-                    if (fromToken === toToken) {
-                        throw new Error('Cannot swap to the same token');
-                    }
-
-                    // TODO: Implement actual swap logic using Jupiter Aggregator
-                    this.showNotification('success', `Swapped ${amount} ${fromToken} to ${toToken}`);
-                    this.closeModal('swap-modal');
-                    await this.fetchWalletDetails();
-                } catch (error) {
-                    this.showNotification('error', error.message);
-                }
-            }
-
-            // Utility Methods
-            updateWalletUI() {
-                document.getElementById('wallet-connection').classList.add('hidden');
-                document.getElementById('wallet-dashboard').classList.remove('hidden');
-                
-                const addressElement = document.getElementById('wallet-address');
-                addressElement.textContent = this.formatAddress(this.publicKey.toBase58());
-            }
-
-            formatAddress(address) {
-                return `${address.slice(0, 6)}...${address.slice(-4)}`;
-            }
-
-            disconnectWallet() {
-                if (this.wallet) {
-                    this.wallet.disconnect();
-                }
-
-                // Reset UI and state
-                document.getElementById('wallet-connection').classList.remove('hidden');
-                document.getElementById('wallet-dashboard').classList.add('hidden');
-                
-                // Reset all states
-                this.connection = null;
-                this.wallet = null;
-                this.publicKey = null;
-                this.tokenBalances = {};
-                this.tokenPrices = {};
-
-                // Reset UI elements
-                document.getElementById('total-balance').textContent = '$0.00';
-                document.getElementById('wallet-address').textContent = '';
-            }
-
-            openModal(modalId) {
-                document.getElementById(modalId).classList.remove('hidden');
-                document.getElementById(modalId).classList.add('flex');
-            }
-
-            closeModal(modalId) {
-                document.getElementById(modalId).classList.add('hidden');
-                document.getElementById(modalId).classList.remove('flex');
-            }
-
-            generateRandomPercentage() {
-                return (Math.random() * 20 * (Math.random() > 0.5 ? 1 : -1)).toFixed(2);
-            }
-
-            showNotification(type, message) {
-                const notification = document.createElement('div');
-                notification.className = `
-                    fixed top-4 right-4 p-4 rounded z-50
-                    ${type === 'error' ? 'bg-red-500' : 'bg-green-500'}
-                    text-white
-                `;
-                notification.textContent = message;
-                document.body.appendChild(notification);
-                setTimeout(() => document.body.removeChild(notification), 5000);
-            }
+        async function fetchTokenPrice() {
+            // Fetch token price logic here
+            const response = await fetch(`https://api.example.com/token/${tokenAddress}/price`);
+            const data = await response.json();
+            document.getElementById('token-name').innerText = data.name;
+            document.getElementById('token-price').innerText = data.price;
         }
 
-        // Initialize Wallet Manager
-        const walletManager = new MemeTokenWallet();
+        async function swapTokens(amount) {
+            const connection = new solanaWeb3.Connection(solanaWeb3.clusterApiUrl('mainnet-beta'));
+            const wallet = phantomWallet;
+            const transaction = new solanaWeb3.Transaction();
+            // Add swap logic here
+            const signature = await solanaWeb3.sendAndConfirmTransaction(connection, transaction, [wallet]);
+            console.log('Swap successful with signature:', signature);
+        }
+
+        document.getElementById('swap-form').addEventListener('submit', async (event) => {
+            event.preventDefault();
+            const amount = document.getElementById('amount').value;
+            await swapTokens(amount);
+        });
+
+        window.onload = fetchTokenPrice;
     </script>
 </body>
 </html>
