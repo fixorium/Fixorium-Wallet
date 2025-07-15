@@ -1,57 +1,98 @@
- <!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <title>Swap | FIXORIUM Wallet</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <style>
-    body { background:#101; color:#fff; font-family:Arial,sans-serif; font-size:15px; margin:0; }
-    .center { max-width:430px; margin:60px auto 0; background:#191c22; border-radius:12px; padding:29px 22px; box-shadow:0 4px 18px #00ffa822; text-align:center;}
-    h2 { color:#00ffa8; font-weight:700; margin-bottom:18px;}
-    select,input { font-size:1em; margin:8px 0; padding:6px 8px; border-radius:4px; border:1px solid #333; background:#1a1e24; color:#00ffa8;}
-    .form-row { margin-bottom:14px; display:flex; flex-direction:column; align-items:center;}
-    .actions { margin-top:17px;}
-    button { background:#00ffa8; color:#101; font-weight:700; border:none; border-radius:6px; padding:9px 21px; font-size:15px; margin-right:10px; cursor:pointer;}
-    button:hover { background:#fff; color:#222;}
-    .back-btn { margin-top:8px; font-size:13px; background:#222; color:#fff; border:1px solid #00ffa8;}
-    .back-btn:hover { background:#00ffa8; color:#101;}
-  </style>
-</head>
-<body>
-  <div class="center">
-    <h2>Swap (Pump.fun format)</h2>
-    <form>
-      <div class="form-row">
-        <label>From</label>
-        <select>
-          <option>SOL</option>
-          <option>FIXERCOIN</option>
-          <option>FARTCOIN</option>
-          <option>PNUT</option>
-          <option>RAYDIUM</option>
-          <option>PUMPFUN</option>
-        </select>
-      </div>
-      <div class="form-row">
-        <label>To</label>
-        <select>
-          <option>FIXERCOIN</option>
-          <option>FARTCOIN</option>
-          <option>PNUT</option>
-          <option>RAYDIUM</option>
-          <option>PUMPFUN</option>
-          <option>SOL</option>
-        </select>
-      </div>
-      <div class="form-row">
-        <label>Amount</label>
-        <input type="number" min="0" step="any" placeholder="0.00"/>
-      </div>
-      <div class="actions">
-        <button type="submit">Swap</button>
-        <button type="button" class="back-btn" onclick="window.location.href='index.html'">Back</button>
-      </div>
-    </form>
-  </div>
-</body>
-</html>
+ import React, { useState, useEffect } from "react";
+
+// Mock: Jupiter and pump.fun aggregator (for real you need to call their APIs)
+const TOKENS = [
+  { symbol: "SOL", name: "SOLANA" },
+  { symbol: "FIXERCOIN", name: "FIXERCOIN" },
+  { symbol: "FARTCOIN", name: "FARTCOIN" },
+  { symbol: "PNUT", name: "PNUT" },
+  { symbol: "RAYDIUM", name: "RAYDIUM" },
+  { symbol: "PUMPFUN", name: "PUMPFUN" }
+];
+
+export default function Swap() {
+  const [from, setFrom] = useState("SOL");
+  const [to, setTo] = useState("FIXERCOIN");
+  const [amount, setAmount] = useState("");
+  const [bestRoute, setBestRoute] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [txResult, setTxResult] = useState(null);
+
+  useEffect(() => {
+    if (from === to || !amount) {
+      setBestRoute(null);
+      return;
+    }
+    setLoading(true);
+    // Simulate aggregator find best route
+    setTimeout(() => {
+      setBestRoute({
+        aggregator: Math.random() > 0.5 ? "JUPITER" : "PUMPFUN",
+        priceImpact: Math.random() * 1.5,
+        outAmount: (parseFloat(amount) * (0.97 + Math.random()*0.03)).toFixed(4)
+      });
+      setLoading(false);
+    }, 800);
+  }, [from, to, amount]);
+
+  const handleSwap = e => {
+    e.preventDefault();
+    setLoading(true);
+    setTimeout(() => {
+      setLoading(false);
+      setTxResult("SUCCESS");
+      // Redirect to index.html after 2s
+      setTimeout(() => window.location.href="index.html", 2000);
+    }, 1500);
+  };
+
+  return (
+    <div style={{
+      maxWidth: 440, margin: "60px auto 0", background: "#191c22", borderRadius: 14,
+      padding: "30px 28px", boxShadow: "0 4px 18px #00ffa822", textAlign: "center", color: "#fff"
+    }}>
+      <h2 style={{color: "#00ffa8", fontWeight: 900, marginBottom: 18, letterSpacing: "0.11em", textTransform: "uppercase"}}>SWAP</h2>
+      <form onSubmit={handleSwap}>
+        <div style={{marginBottom:16}}>
+          <label style={{display:"block",marginBottom:4,fontWeight:900,letterSpacing:"0.09em"}}>FROM</label>
+          <select value={from} onChange={e=>setFrom(e.target.value)} style={{fontSize:18,padding:"6px 8px",borderRadius:4,border:"1px solid #333",background:"#1a1e24",color:"#00ffa8"}}>
+            {TOKENS.map(t=>(
+              <option key={t.symbol} value={t.symbol}>{t.symbol}</option>
+            ))}
+          </select>
+        </div>
+        <div style={{marginBottom:16}}>
+          <label style={{display:"block",marginBottom:4,fontWeight:900,letterSpacing:"0.09em"}}>TO</label>
+          <select value={to} onChange={e=>setTo(e.target.value)} style={{fontSize:18,padding:"6px 8px",borderRadius:4,border:"1px solid #333",background:"#1a1e24",color:"#00ffa8"}}>
+            {TOKENS.filter(t=>t.symbol!==from).map(t=>(
+              <option key={t.symbol} value={t.symbol}>{t.symbol}</option>
+            ))}
+          </select>
+        </div>
+        <div style={{marginBottom:16}}>
+          <label style={{display:"block",marginBottom:4,fontWeight:900,letterSpacing:"0.09em"}}>AMOUNT</label>
+          <input value={amount} onChange={e=>setAmount(e.target.value)} type="number" min="0" step="any" style={{fontSize:18,padding:"6px 8px",borderRadius:4,border:"1px solid #333",background:"#1a1e24",color:"#00ffa8"}} placeholder="0.00"/>
+        </div>
+        {loading && (
+          <div style={{color:"#ffe56e",fontWeight:900,marginBottom:12,letterSpacing:"0.08em"}}>FINDING BEST ROUTE...</div>
+        )}
+        {bestRoute && !loading && (
+          <div style={{marginBottom:14,color:"#0dc",fontWeight:900,letterSpacing:"0.08em"}}>
+            AGGREGATOR: {bestRoute.aggregator}<br/>
+            PRICE IMPACT: {bestRoute.priceImpact.toFixed(2)}%<br/>
+            YOU RECEIVE: {bestRoute.outAmount} {to}
+          </div>
+        )}
+        <button type="submit" disabled={!amount || from===to || loading}
+          style={{background:"#00ffa8",color:"#191c22",fontWeight:900,fontSize:18,borderRadius:6,padding:"11px 32px",marginTop:10,border:"none",cursor:"pointer",letterSpacing:"0.09em"}}
+        >SWAP</button>
+        <button type="button" onClick={()=>window.location.href="index.html"}
+          style={{background:"#222",color:"#fff",marginLeft:16,fontWeight:900,fontSize:16,borderRadius:6,padding:"10px 24px",marginTop:10,border:"1.5px solid #00ffa8",cursor:"pointer",letterSpacing:"0.07em"}}
+        >BACK</button>
+      </form>
+      {txResult==="SUCCESS" && (
+        <div style={{marginTop:26,fontWeight:900,color:"#16c784",fontSize:20,letterSpacing:"0.09em"}}>SWAP SUCCESS! RETURNING TO MAIN...</div>
+      )}
+    </div>
+  );
+}
