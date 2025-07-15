@@ -1,351 +1,954 @@
  <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
   <title>FIXORIUM WALLET</title>
   <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
   <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@solana/web3.js@1.95.2/lib/index.iife.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js"></script>
   <style>
-    body { margin:0; background:#111; color:#fff; font-family:Arial,sans-serif; font-size:12px; }
-    header { display:flex; justify-content:space-between; align-items:center; background:#181818; padding:7px 12px; }
-    #logo-left { font-size:1.1rem; font-weight:700; color:#00ffa8; letter-spacing:0.02em; }
-    #wallet-row { display:flex; gap:7px; align-items:center; }
-    #connectWalletBtn, #disconnectWalletBtn, .tinybar-btn {
-      background:#00ffa8; border:none; color:#111; font-weight:700; padding:4px 15px; border-radius:5px;
-      cursor:pointer; min-width:60px; font-size:12px; transition:background .18s;
-      box-shadow:0 1px 6px #00ffa833;
-      margin:2px;
-      text-transform:uppercase;
+    /* Reset & base */
+    body {
+      margin: 0;
+      background: #111;
+      color: #fff;
+      font-family: Arial, sans-serif;
+      font-size: 13px;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+      user-select: none;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
     }
-    #connectWalletBtn:hover, .tinybar-btn:hover { background:#fff; color:#111; }
-    #disconnectWalletBtn { background: #2e2c47; color:#fff; border:1.3px solid #00ffa8; }
-    #disconnectWalletBtn:hover { background:#00ffa8; color:#111; }
-    #walletAddress { font-size:11px; color:#00ffa8; padding-left:8px; letter-spacing:0.02em;}
-    main { max-width:900px; margin:0 auto; padding:16px 8px 64px; }
-    #totalBalance { font-size:1rem; margin-bottom:10px; font-weight:700; color:#00ff99; text-align:center; min-height:1.5em; letter-spacing:0.04em; }
-    .tokens-list-holder { width:100%; display:flex; justify-content:center; margin-bottom:0; }
-    .tokens-list {
-      display:grid;
-      grid-template-columns:repeat(auto-fit,minmax(100px,1fr));
-      gap:8px;
-      margin-bottom:13px;
-      max-width:900px;
-      width:100%;
-      justify-content:center;
-      align-items:center;
+
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: #181818;
+      padding: 8px 12px;
+      box-shadow: 0 2px 8px #00ffa833;
+      flex-shrink: 0;
     }
-    /* Center the tokens-list in its container */
-    .tokens-list-holder, .tokens-list {
-      justify-content: center !important;
-      align-items: center !important;
-      margin-left: auto;
-      margin-right: auto;
+
+    #logo-left {
+      font-size: 1.2rem;
+      font-weight: 700;
+      color: #00ffa8;
+      letter-spacing: 0.02em;
+      user-select: text;
     }
-    .token-item {
-      background:#181c22;
-      border-radius:8px;
-      box-shadow:0 1px 6px #00ffa824;
-      display:flex;flex-direction:column;align-items:center;user-select:none;
-      padding:9px 2px 8px;
-      justify-content:center;
-      min-height:50px; min-width:70px; max-width:120px;
-      transition: box-shadow .08s;
-      font-size:11px;
-      text-align:center;
+
+    #wallet-row {
+      display: flex;
+      gap: 7px;
+      align-items: center;
+      min-width: 200px;
+      justify-content: end;
+      flex-wrap: nowrap;
     }
-    .token-item:hover { box-shadow:0 1px 10px #00ffa844; }
-    .token-symbol { font-weight:700; font-size:11px; color:#00ffa8; margin-bottom:3px; text-align:center; letter-spacing:0.05em; }
-    .token-balance, .token-price { font-size:11px; white-space:nowrap; display:flex;align-items:center;gap:2px; text-transform:uppercase;}
-    .tiny-buy-btn, .tiny-sell-btn {
-      border:1px solid; border-radius:5px; padding:0px 4px; font-weight:700; font-size:9px; user-select:none; min-width:18px;
-      text-align:center; background:transparent; letter-spacing:0.03em; text-transform:uppercase;
-      height:15px; display:inline-flex;align-items:center;justify-content:center;transition:background .12s;
-      margin-left:2px; margin-top:2px;
-      line-height:1;
+
+    #connectWalletBtn,
+    #disconnectWalletBtn {
+      background: #00ffa8;
+      border: none;
+      color: #111;
+      font-weight: 700;
+      padding: 5px 18px;
+      border-radius: 6px;
+      cursor: pointer;
+      min-width: 90px;
+      font-size: 13px;
+      white-space: nowrap;
+      user-select: none;
+      text-transform: uppercase;
+      box-shadow: 0 1px 8px #00ffa844;
+      transition: background 0.2s ease;
+      flex-shrink: 0;
     }
-    .tiny-buy-btn { color:#16c784; border-color:#16c784; background:rgba(22,199,132,0.11);}
-    .tiny-sell-btn { color:#ea3943; border-color:#ea3943; background:rgba(234,57,67,0.11);}
-    .blink { animation:blinky 0.7s steps(1) infinite; }
-    @keyframes blinky {0%{opacity:1;} 50%{opacity:.35;} 100%{opacity:1;}}
-    .dot-loader { display:inline-flex; gap:2px; user-select:none; }
-    .dot-loader span { background:#0ee; width:3px; height:3px; border-radius:50%;display:inline-block;animation:bounce 1.2s infinite ease-in-out;}
-    .dot-loader span:nth-child(2){animation-delay:.15s;}
-    .dot-loader span:nth-child(3){animation-delay:.3s;}
-    @keyframes bounce{0%,80%,100%{transform:scale(0);}40%{transform:scale(1);}
+
+    #connectWalletBtn:hover,
+    #disconnectWalletBtn:hover {
+      background: #00cc7a;
+      color: #121212;
     }
-    @media (max-width:900px){
-      .tokens-list {max-width:99vw;}
+
+    #disconnectWalletBtn {
+      background: transparent;
+      border: 1.5px solid #00ffa8;
+      color: #00ffa8;
     }
-    @media (max-width:700px){
-      .tokens-list {grid-template-columns:repeat(2,1fr);}
-      .token-item{padding:6px 1px 5px;min-height:30px;}
-      .token-symbol,.token-balance,.token-price{font-size:10px;}
+
+    #walletAddress {
+      font-size: 13px;
+      color: #00ffa8;
+      letter-spacing: 0.03em;
+      font-weight: 600;
+      user-select: text;
+      white-space: nowrap;
+      max-width: 130px;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
-    .tiny-button-bar {
-      position: fixed;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      z-index: 3000;
-      background: rgba(20,20,20,0.98);
-      box-shadow: 0 -1px 7px #00ffa84d;
+
+    main {
+      flex-grow: 1;
+      max-width: 900px;
+      margin: 15px auto 30px;
+      padding: 0 12px 20px;
+      width: 100%;
+      box-sizing: border-box;
+      user-select: text;
+      min-height: calc(100vh - 64px);
+      display: flex;
+      flex-direction: column;
+    }
+
+    #totalBalance {
+      font-size: 1.15rem;
+      margin-bottom: 14px;
+      font-weight: 700;
+      color: #00ff99;
+      text-align: center;
+      min-height: 1.8em;
+      letter-spacing: 0.05em;
+      user-select: text;
+    }
+
+    .tokens-list-holder {
+      width: 100%;
       display: flex;
       justify-content: center;
-      gap: 8px;
-      padding: 11px 4px 11px;
-      flex-wrap:wrap;
+      margin-bottom: 10px;
+      flex-grow: 1;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
     }
-    .tinybar-btn {
-      min-width:70px;
-      font-size:12px;
-      border-radius:5px;
-      font-weight:700;
-      background:#00ffa8;
-      color:#111;
-      border:none;
-      padding:4px 12px;
-      margin:2px 3px;
-      box-shadow:0 1px 6px #00ffa833;
-      transition:background .13s;
-      text-transform:uppercase;
+
+    .tokens-list {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
+      gap: 10px;
+      margin-bottom: 0;
+      max-width: 900px;
+      width: 100%;
+      justify-content: center;
+      align-items: center;
+      user-select: none;
     }
-    .tinybar-btn:hover { background:#fff; color:#111; }
+
+    .token-item {
+      background: #181c22;
+      border-radius: 10px;
+      box-shadow: 0 1px 8px #00ffa833 inset;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 12px 6px 10px;
+      min-height: 75px;
+      min-width: 80px;
+      max-width: 130px;
+      transition: box-shadow 0.10s ease, transform 0.15s ease;
+      font-size: 13px;
+      text-align: center;
+      cursor: default;
+      outline-offset: 2px;
+      user-select: none;
+    }
+
+    .token-item:focus-visible {
+      outline: 2px solid #00ffa8;
+      outline-offset: 2px;
+    }
+
+    .token-item:hover {
+      box-shadow: 0 1px 14px #00ffa8cc inset;
+      transform: scale(1.03);
+    }
+
+    .token-symbol {
+      font-weight: 700;
+      font-size: 14px;
+      color: #00ffaa;
+      margin-bottom: 6px;
+      letter-spacing: 0.07em;
+      user-select: text;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 100%;
+    }
+
+    .token-balance,
+    .token-price {
+      font-size: 11px;
+      white-space: nowrap;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      text-transform: uppercase;
+      user-select: text;
+      justify-content: center;
+    }
+
+    .tiny-buy-btn,
+    .tiny-sell-btn {
+      border: 1.5px solid;
+      border-radius: 8px;
+      padding: 2px 7px;
+      font-weight: 900;
+      font-size: 10px;
+      user-select: none;
+      min-width: 32px;
+      text-align: center;
+      background: transparent;
+      letter-spacing: 0.04em;
+      height: 22px;
+      line-height: 1;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.15s ease;
+      margin-top: 6px;
+      cursor: default;
+      color: #16c784;
+      border-color: #16c784;
+    }
+
+    .tiny-sell-btn {
+      color: #ea3943;
+      border-color: #ea3943;
+    }
+
+    /* blinking for buy/sell buttons */
+    .blink {
+      animation: blinky 0.75s steps(1) infinite;
+    }
+
+    @keyframes blinky {
+      0% {
+        opacity: 1;
+      }
+
+      50% {
+        opacity: 0.35;
+      }
+
+      100% {
+        opacity: 1;
+      }
+    }
+
+    .dot-loader {
+      display: inline-flex;
+      gap: 3px;
+      user-select: none;
+      justify-content: center;
+      align-items: center;
+      height: 12px;
+    }
+
+    .dot-loader span {
+      background: #0ee;
+      width: 4px;
+      height: 4px;
+      border-radius: 50%;
+      display: inline-block;
+      animation: bounce 1.3s infinite ease-in-out;
+    }
+
+    .dot-loader span:nth-child(2) {
+      animation-delay: 0.17s;
+    }
+
+    .dot-loader span:nth-child(3) {
+      animation-delay: 0.34s;
+    }
+
+    @keyframes bounce {
+      0%,
+      80%,
+      100% {
+        transform: scale(0);
+      }
+
+      40% {
+        transform: scale(1);
+      }
+    }
+
+    @media (max-width: 900px) {
+      .tokens-list {
+        max-width: 95vw;
+      }
+    }
+
+    @media (max-width: 700px) {
+      .tokens-list {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 10px;
+      }
+
+      .token-item {
+        padding: 9px 3px 7px;
+        min-height: 50px;
+      }
+
+      .token-symbol,
+      .token-balance,
+      .token-price {
+        font-size: 10px;
+      }
+
+      #walletAddress {
+        font-size: 11px;
+        max-width: 100px;
+      }
+
+      #connectWalletBtn,
+      #disconnectWalletBtn {
+        min-width: 70px;
+        padding: 5px 10px;
+        font-size: 11px;
+      }
+    }
+
+    .button-bar {
+      text-align: center;
+      margin-bottom: 10px;
+      user-select: none;
+    }
+
+    .button-bar button {
+      background: #00ffa8;
+      border: none;
+      color: #111;
+      font-weight: 700;
+      padding: 11px 28px;
+      border-radius: 8px;
+      font-size: 15px;
+      cursor: pointer;
+      transition: background 0.25s ease;
+      user-select: none;
+      min-width: 120px;
+      margin: 0 6px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      box-shadow: 0 3px 10px #00ffa833;
+    }
+
+    .button-bar button:hover {
+      background: #00cc7a;
+      color: #111;
+      box-shadow: 0 3px 12px #00cc7ac7;
+    }
+
+    .button-bar button:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+
+    .overlay-bg {
+      position: fixed;
+      inset: 0;
+      background: rgba(5, 10, 15, 0.85);
+      backdrop-filter: blur(4px);
+      z-index: 3000;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 30px 15px;
+      box-sizing: border-box;
+      overflow-y: auto;
+    }
+
+    .overlay-panel {
+      background: #0f1530;
+      border-radius: 18px;
+      box-shadow: 0 1em 3em rgba(0, 255, 102, 0.45);
+      padding: 28px 28px 34px;
+      width: 100%;
+      max-width: 460px;
+      max-height: 98vh;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      user-select: none;
+      font-size: 15px;
+    }
+
+    .overlay-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 18px;
+    }
+
+    .overlay-header h2 {
+      margin: 0;
+      font-weight: 800;
+      font-size: 1.65rem;
+      color: #00ff99;
+      user-select: text;
+      letter-spacing: 0.05em;
+    }
+
+    .overlay-close-btn {
+      background: transparent;
+      border: none;
+      color: #00ff99;
+      font-weight: 900;
+      font-size: 1.95rem;
+      line-height: 1;
+      cursor: pointer;
+      padding: 2px 8px 0 8px;
+      user-select: none;
+      transition: color 0.3s ease;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .overlay-close-btn:hover {
+      color: #00cca0;
+    }
+
+    form label {
+      display: block;
+      margin-top: 18px;
+      font-weight: 700;
+      font-size: 1.1rem;
+      user-select: text;
+      letter-spacing: 0.02em;
+      color: #00ffa8;
+    }
+
+    form input,
+    form select {
+      user-select: text;
+      margin-top: 8px;
+      font-size: 1rem;
+      padding: 12px 14px;
+      border-radius: 12px;
+      border: none;
+      width: 100%;
+      box-sizing: border-box;
+      background: #121b26;
+      color: #eee;
+      outline-offset: 2px;
+      outline-color: transparent;
+      transition: outline-color 0.2s ease;
+      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+      letter-spacing: 0.02em;
+    }
+
+    form input:focus,
+    form select:focus {
+      outline-color: #00ff9a;
+    }
+
+    .modal-btn {
+      margin-top: 28px;
+      cursor: pointer;
+      user-select: none;
+      background: linear-gradient(135deg, #00c77f 0%, #00ff99 100%);
+      border: none;
+      border-radius: 14px;
+      font-weight: 700;
+      font-size: 1.3rem;
+      padding: 16px;
+      color: #121212;
+      box-shadow: 0 6px 14px #004e3b;
+      width: 100%;
+      transition: background 0.3s ease;
+    }
+
+    .modal-btn:disabled {
+      opacity: 0.5;
+      cursor: default;
+    }
+
+    .modal-btn:hover:not(:disabled) {
+      background: linear-gradient(135deg, #00ff99 0%, #00c77f 100%);
+    }
+
+    .error {
+      background: #550000dd;
+      padding: 14px 20px;
+      margin-top: 16px;
+      border-radius: 14px;
+      color: #ff9999;
+      font-weight: 700;
+      text-align: center;
+      user-select: none;
+    }
+
+    .status {
+      background: #004400dd;
+      padding: 14px 20px;
+      margin-top: 16px;
+      border-radius: 14px;
+      color: #a8ffaa;
+      font-weight: 700;
+      text-align: center;
+      user-select: none;
+    }
+
+    #depositAddress {
+      font-family: monospace;
+      word-break: break-word;
+      user-select: text;
+      font-size: 1rem;
+      background: #121822;
+      border-radius: 14px;
+      padding: 14px 15px;
+      margin-bottom: 18px;
+      border: 1px solid #00ff99aa;
+    }
+
+    #qrcode {
+      max-width: 180px;
+      margin: 0 auto 10px;
+      display: block;
+      user-select: none;
+    }
   </style>
 </head>
+
 <body>
   <header>
-    <div id="logo-left">FIXORIUM WALLET</div>
-    <div id="wallet-row">
-      <button id="connectWalletBtn">CONNECT</button>
-      <button id="disconnectWalletBtn" style="display:none;">DISCONNECT</button>
-      <span id="walletAddress"></span>
+    <div id="logo-left" aria-label="FIXORIUM Wallet Logo">FIXORIUM WALLET</div>
+    <div id="wallet-row" role="region" aria-live="polite" aria-atomic="true" aria-label="Wallet controls and address">
+      <button id="connectWalletBtn" aria-label="Connect Wallet">CONNECT</button>
+      <button id="disconnectWalletBtn" aria-label="Disconnect Wallet" style="display:none;">DISCONNECT</button>
+      <span id="walletAddress" aria-live="polite" aria-atomic="true" role="text"></span>
     </div>
   </header>
   <main>
-    <div id="root"></div>
+    <div id="root" aria-live="polite" aria-atomic="true"></div>
   </main>
-  <div class="tiny-button-bar" id="tinyButtonBar">
-    <button class="tinybar-btn" onclick="window.location.href='https://htmlpreview.github.io/?https://github.com/fixorium/fixorium-wallet/blob/main/deposit.html'">DEPOSIT</button>
-    <button class="tinybar-btn" onclick="window.location.href='https://htmlpreview.github.io/?https://github.com/fixorium/fixorium-wallet/blob/main/withdraw.html'">WITHDRAW</button>
-    <button class="tinybar-btn" onclick="window.location.href='https://htmlpreview.github.io/?https://github.com/fixorium/fixorium-wallet/blob/main/swap.html'">SWAP</button>
-    <button class="tinybar-btn" onclick="window.location.href='https://htmlpreview.github.io/?https://github.com/fixorium/fixorium-wallet/blob/main/history.html'">HISTORY</button>
-  </div>
+
   <script type="text/javascript">
     (() => {
       const e = React.createElement;
       const { useState, useEffect, useRef } = React;
-      // Tokens config - 8 tokens, 2 more meme tokens!
+
       const tokensList = [
-        { symbol: "SOL", name: "SOLANA", decimals: 9, cg: "solana", mint: null, pump: null },
-        { symbol: "FIXERCOIN", name: "FIXERCOIN", decimals: 9, cg: "", mint: "D2mGkp5D43jirFeapx8UZmpiH7FaWeX1eUWy94q1F2hD", pump: null},
-        { symbol: "FARTCOIN", name: "FARTCOIN", decimals: 9, cg: "", mint: "4nq8Q2WCmkYj6p7VtM6oQk4uQdD8A1KfB1kJ2UuLtRKmM", pump: "4nq8Q2WCmkYj6p7VtM6oQk4uQdD8A1KfB1kJ2UuLtRKmM" },
-        { symbol: "PNUT", name: "PNUT", decimals: 6, cg: "peanut", mint: "HWrG8q1wP7a5gHCZcdp5Ew2d3p4h2mD8Ph7Qz5fE5Uj9", pump: "HWrG8q1wP7a5gHCZcdp5Ew2d3p4h2mD8Ph7Qz5fE5Uj9" },
-        { symbol: "RAYDIUM", name: "RAYDIUM", decimals: 6, cg: "raydium", mint: "4k3Dyjzvzp8e2nKk5QK8LBhEDuB7g6b8f9G8r5Xy5s52", pump: "4k3Dyjzvzp8e2nKk5QK8LBhEDuB7g6b8f9G8r5Xy5s52" },
-        { symbol: "PUMPFUN", name: "PUMPFUN", decimals: 9, cg: "", mint: "Gt4w6kWzv9mY5cQpJbYX3mLh6wC1g3LJrF3fM9W1tQzN", pump: "Gt4w6kWzv9mY5cQpJbYX3mLh6wC1g3LJrF3fM9W1tQzN" },
-        // Add two more meme tokens (examples, real mints/cg as needed)
-        { symbol: "BONK", name: "BONK", decimals: 5, cg: "bonk", mint: "DezXQSG3i7aJdj8nQdqA3rK8h8CwD5b4C5u6z3bGd3rG", pump: null },
-        { symbol: "WIF", name: "DOGWIFHAT", decimals: 8, cg: "dogwifcoin", mint: "Dq2QnC1q5ZpL4u6wR8c5d9fB1jQ2hN7pQ1wB5vZ9mT7g", pump: null }
+        { symbol: "SOL", name: "SOLANA", decimals: 9, cg: "solana", mint: null }
       ];
 
-      // Bot signal with continuous blink on signal until next candle
-      function useBotSignals(prices, pumpPrices) {
-        // signals: { SYMBOL: { type: "BUY" | "SELL" | "", since: timestamp|null } }
-        const [signals, setSignals] = useState({});
-        const lastSignalCandle = useRef({});
-        useEffect(() => {
-          const now = Date.now();
-          const candleStart = now - (now % (5*60*1000));
-          const newSignals = {};
-          tokensList.forEach(t => {
-            if (!window.priceHistoryState) window.priceHistoryState = {};
-            if (!window.priceHistoryState[t.symbol]) window.priceHistoryState[t.symbol] = [];
-            const price = prices[t.symbol] ?? pumpPrices[t.symbol];
-            if (price) window.priceHistoryState[t.symbol].push({ time: now, price });
-            window.priceHistoryState[t.symbol] = window.priceHistoryState[t.symbol].filter(x => now - x.time < 5*60*1000);
+      const SOL_MINT = "So11111111111111111111111111111111111111112";
 
-            const arr = window.priceHistoryState[t.symbol];
-            const latest = arr.length ? arr[arr.length-1].price : null;
-            const fiveMinAgo = arr.find(x => now-x.time > 4.5*60*1000) || arr[0];
-            let type = "";
-            if (arr.length > 1 && latest && fiveMinAgo && fiveMinAgo.price) {
-              const pct = ((latest - fiveMinAgo.price)/fiveMinAgo.price)*100;
-              if (pct >= 2) type = "BUY";
-              else if (pct <= -2) type = "SELL";
-            }
-            if (
-              signals[t.symbol] &&
-              signals[t.symbol].type === type &&
-              lastSignalCandle.current[t.symbol] === candleStart
-            ) {
-              newSignals[t.symbol] = { type, since: signals[t.symbol].since };
-            } else if (type !== "") {
-              lastSignalCandle.current[t.symbol] = candleStart;
-              newSignals[t.symbol] = { type, since: now };
-            } else {
-              newSignals[t.symbol] = { type: "", since: null };
-              lastSignalCandle.current[t.symbol] = candleStart;
-            }
-          });
-          setSignals(newSignals);
-        }, [JSON.stringify(prices), JSON.stringify(pumpPrices)]);
-        return signals;
+      async function findATA(walletAddress, tokenMintAddress) {
+        return (
+          await solanaWeb3.PublicKey.findProgramAddress(
+            [walletAddress.toBuffer(), solanaWeb3.TOKEN_PROGRAM_ID.toBuffer(), tokenMintAddress.toBuffer()],
+            solanaWeb3.ASSOCIATED_TOKEN_PROGRAM_ID
+          )
+        )[0];
+      }
+
+      function toBaseUnits(amountStr, decimals) {
+        try {
+          const val = parseFloat(amountStr);
+          if (isNaN(val) || val <= 0) return 0;
+          return Math.round(val * 10 ** decimals);
+        } catch {
+          return 0;
+        }
       }
 
       function App() {
         const [walletConnected, setWalletConnected] = useState(false);
-        const [publicKey, setPublicKey] = useState("");
-        const [balances, setBalances] = useState({});
-        const [prices, setPrices] = useState({});
-        const [pumpPrices, setPumpPrices] = useState({});
-        const [loading, setLoading] = useState(false);
-        const [loadingPrices, setLoadingPrices] = useState(false);
-        const signals = useBotSignals(prices, pumpPrices);
+        const [publicKey, setPublicKey] = useState(null);
+        const [balance, setBalance] = useState(0);
+        const [price, setPrice] = useState(null);
+        const [loadingBalance, setLoadingBalance] = useState(false);
+        const [loadingPrice, setLoadingPrice] = useState(false);
+        const [activeModal, setActiveModal] = useState(null);
+        const [withdrawAmount, setWithdrawAmount] = useState("");
+        const [withdrawRecvAddr, setWithdrawRecvAddr] = useState("");
+        const [error, setError] = useState("");
+        const [status, setStatus] = useState("");
+        const providerRef = useRef(null);
 
         useEffect(() => {
           const provider = window.solana && window.solana.isPhantom ? window.solana : null;
+          providerRef.current = provider;
+
+          async function tryAutoConnect() {
+            if (provider?.isConnected) {
+              try { await provider.disconnect(); } catch { }
+            }
+            try {
+              const resp = await provider?.connect({ onlyIfTrusted: true });
+              if (resp?.publicKey) {
+                setPublicKey(resp.publicKey);
+                setWalletConnected(true);
+              }
+            } catch {
+              setWalletConnected(false);
+              setPublicKey(null);
+            }
+          }
+          if (provider) {
+            tryAutoConnect();
+            provider.on("connect", pk => { setPublicKey(pk); setWalletConnected(true); });
+            provider.on("disconnect", () => {
+              setPublicKey(null);
+              setWalletConnected(false);
+              setBalance(0);
+              setStatus("");
+              setError("");
+            });
+          } else {
+            setWalletConnected(false);
+            setPublicKey(null);
+          }
+        }, []);
+
+        useEffect(() => {
           const connectBtn = document.getElementById("connectWalletBtn");
           const disconnectBtn = document.getElementById("disconnectWalletBtn");
           const addressSpan = document.getElementById("walletAddress");
+          const provider = providerRef.current;
+
           if (!walletConnected) {
-            connectBtn.innerText = "CONNECT";
             connectBtn.style.display = "";
-            addressSpan.textContent = "";
             disconnectBtn.style.display = "none";
-            connectBtn.onclick = () => {
+            connectBtn.innerText = "CONNECT";
+            addressSpan.textContent = "";
+            connectBtn.onclick = async () => {
               if (provider) {
-                provider.connect().then(({ publicKey }) => {
-                  setWalletConnected(true);
-                  setPublicKey(publicKey.toBase58());
-                });
+                try {
+                  const resp = await provider.connect();
+                  if (resp.publicKey) {
+                    setPublicKey(resp.publicKey);
+                    setWalletConnected(true);
+                  }
+                } catch {
+                  // silent
+                }
               } else {
-                // Phantom mobile deeplink
                 const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
                 if (!isMobile) {
                   window.open("https://phantom.app/", "_blank");
                   return;
                 }
-                const dlink = "https://phantom.app/ul/v1/connect?app_url="+encodeURIComponent(window.location.origin)+"&redirect_link="+encodeURIComponent(window.location.href);
+                const dlink = "https://phantom.app/ul/v1/connect?app_url=" + encodeURIComponent(window.location.origin) + "&redirect_link=" + encodeURIComponent(window.location.href);
                 window.location.href = dlink;
               }
             };
           } else {
             connectBtn.style.display = "none";
-            addressSpan.textContent = publicKey.slice(0,4)+"..."+publicKey.slice(-4);
             disconnectBtn.style.display = "";
-            disconnectBtn.onclick = () => {
-              if (provider) provider.disconnect();
+            let addrStr = publicKey?.toBase58() || "";
+            if (addrStr.length > 10) {
+              addrStr = addrStr.slice(0, 6) + "..." + addrStr.slice(-4);
+            }
+            addressSpan.textContent = addrStr;
+            disconnectBtn.onclick = async () => {
+              try {
+                await provider?.disconnect();
+              } catch { }
               setWalletConnected(false);
-              setPublicKey("");
-              setBalances({});
+              setPublicKey(null);
+              setBalance(0);
+              addressSpan.textContent = "";
+              connectBtn.style.display = "";
+              disconnectBtn.style.display = "none";
+              setStatus("");
+              setError("");
+              setActiveModal(null);
+              setWithdrawAmount("");
+              setWithdrawRecvAddr("");
             };
           }
         }, [walletConnected, publicKey]);
 
-        // Fetch Pump.fun price
-        async function fetchPumpPrices() {
-          try {
-            const pumpEntries = await Promise.all(tokensList
-              .filter(t => t.pump)
-              .map(async t => {
-                try {
-                  const resp = await axios.get(`https://api.pump.fun/api/tokens/${t.pump}`);
-                  return [t.symbol, resp.data.priceUi];
-                } catch {
-                  return [t.symbol, null];
-                }
-              })
-            );
-            setPumpPrices(Object.fromEntries(pumpEntries));
-          } catch {
-            setPumpPrices({});
+        async function fetchBalance() {
+          if (!walletConnected || !publicKey) {
+            setBalance(0);
+            return;
           }
-        }
-        // Fetch CoinGecko prices
-        async function fetchPrices() {
-          setLoadingPrices(true);
+          setLoadingBalance(true);
           try {
-            const ids = tokensList.map(t=>t.cg).filter(Boolean).join(",");
-            if(!ids) { setPrices({}); setLoadingPrices(false); return; }
-            const url = `https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&ids=${ids}`;
-            const {data} = await axios.get(url,{headers:{Accept:"application/json"}});
-            const p={};
-            for(const t of tokensList){
-              const obj = data.find(d => d.id===t.cg);
-              p[t.symbol] = obj ? obj.current_price : null;
+            const connection = new solanaWeb3.Connection("https://solana-api.projectserum.com", "confirmed");
+            const lamports = await connection.getBalance(publicKey);
+            setBalance(lamports / 1e9);
+          } catch {
+            setBalance(0);
+          }
+          setLoadingBalance(false);
+        }
+
+        async function fetchPrice() {
+          setLoadingPrice(true);
+          try {
+            const res = await axios.get("https://api.coingecko.com/api/v3/simple/price?ids=solana&vs_currencies=usd");
+            setPrice(res.data.solana.usd);
+          } catch {
+            setPrice(null);
+          }
+          setLoadingPrice(false);
+        }
+
+        useEffect(() => {
+          fetchPrice();
+        }, []);
+
+        useEffect(() => {
+          if (walletConnected) {
+            fetchBalance();
+            const iv = setInterval(fetchBalance, 30000);
+            return () => clearInterval(iv);
+          }
+        }, [walletConnected, publicKey]);
+
+        async function onWithdraw(ev) {
+          ev.preventDefault();
+          setError("");
+          setStatus("");
+          if (!walletConnected) {
+            setError("Connect wallet first.");
+            return;
+          }
+          if (!withdrawRecvAddr || !withdrawAmount) {
+            setError("Please fill in all fields.");
+            return;
+          }
+          const amountNum = parseFloat(withdrawAmount);
+          if (isNaN(amountNum) || amountNum <= 0) {
+            setError("Invalid amount.");
+            return;
+          }
+          if (amountNum > balance) {
+            setError("Amount exceeds wallet balance.");
+            return;
+          }
+          try {
+            const provider = providerRef.current;
+            if (!provider) {
+              setError("Wallet provider not found.");
+              return;
             }
-            setPrices(p);
-          } catch {
-            setPrices({});
+            const connection = new solanaWeb3.Connection("https://solana-api.projectserum.com", "confirmed");
+            const receiverPubkey = new solanaWeb3.PublicKey(withdrawRecvAddr);
+            const tx = new solanaWeb3.Transaction().add(solanaWeb3.SystemProgram.transfer({
+              fromPubkey: publicKey,
+              toPubkey: receiverPubkey,
+              lamports: Math.floor(amountNum * 1e9)
+            }));
+            tx.feePayer = publicKey;
+            const { blockhash } = await connection.getLatestBlockhash();
+            tx.recentBlockhash = blockhash;
+
+            const signed = await provider.signTransaction(tx);
+            const sig = await connection.sendRawTransaction(signed.serialize());
+            await connection.confirmTransaction(sig, "confirmed");
+
+            setStatus("Withdraw success! Tx: " + sig);
+            setWithdrawAmount("");
+            setWithdrawRecvAddr("");
+            fetchBalance();
+            setActiveModal(null);
+          } catch (e) {
+            setError("Withdraw failed: " + (e.message || e));
           }
-          setLoadingPrices(false);
         }
-        useEffect(() => { fetchPrices(); fetchPumpPrices(); }, []);
-        // Render always
-        let totalUSD = tokensList.reduce((sum, t) => {
-          const bal = balances[t.symbol] || 0;
-          const price = prices[t.symbol] || pumpPrices[t.symbol] || 0;
-          return sum + bal * price;
-        }, 0);
+
         return e(
           React.Fragment,
           null,
           e(
             "div",
-            { id: "totalBalance" },
+            { id: "totalBalance", "aria-label": "Total wallet balance in USD" },
             "BALANCE: $",
-            (walletConnected ? totalUSD : 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+            walletConnected
+              ? (loadingBalance
+                ? e("span", { className: "dot-loader", "aria-label": "Loading balance" }, e("span"), e("span"), e("span"))
+                : (balance * (price || 0)).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }))
+              : "0.00"
           ),
           e(
             "div",
             { className: "tokens-list-holder" },
             e(
               "div",
-              { className: "tokens-list", "aria-label": "Tokens list" },
+              { className: "tokens-list", role: "list", "aria-label": "Tokens list" },
               tokensList.map(token =>
                 e(
                   "div",
-                  { key: token.symbol, className: "token-item", tabIndex: 0 },
+                  {
+                    key: token.symbol,
+                    className: "token-item",
+                    tabIndex: 0,
+                    role: "listitem",
+                    "aria-label": `${token.name} token`
+                  },
                   e("div", { className: "token-symbol" }, token.name),
-                  e("div", { className: "token-balance" },
+                  e(
+                    "div",
+                    { className: "token-balance" },
                     walletConnected
-                      ? (balances[token.symbol] || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: token.decimals })
+                      ? loadingBalance
+                        ? e("span", { className: "dot-loader", "aria-label": `Loading balance for ${token.symbol}` }, e("span"), e("span"), e("span"))
+                        : balance.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: token.decimals })
                       : "0.00"
                   ),
-                  e("div", { className: "token-price" },
-                    loadingPrices
-                      ? e("span", { className: "dot-loader" }, e("span"), e("span"), e("span"))
-                      : (prices[token.symbol] != null
-                        ? "$" + prices[token.symbol].toLocaleString(undefined, { maximumFractionDigits: 6 })
-                        : (pumpPrices[token.symbol] != null
-                          ? e("span", { style:{color:"#ffdf00",fontWeight:600} }, "PUMP: $"+Number(pumpPrices[token.symbol]).toPrecision(6))
-                          : "N/A"
-                        )
-                      )
-                  ),
-                  // Tiny Buy/Sell signal buttons (blink for each candle while signal is active)
-                  e("div", { style: { display:"flex", gap:"3px", marginTop:"4px", justifyContent:"center" } },
-                    e("button", {
-                      className: "tiny-buy-btn" + (signals[token.symbol] && signals[token.symbol].type === "BUY" ? " blink" : ""),
-                      style: { fontWeight: "700" },
-                      tabIndex: -1,
-                      title: "Buy signal"
-                    }, "BUY"),
-                    e("button", {
-                      className: "tiny-sell-btn" + (signals[token.symbol] && signals[token.symbol].type === "SELL" ? " blink" : ""),
-                      style: { fontWeight: "700" },
-                      tabIndex: -1,
-                      title: "Sell signal"
-                    }, "SELL")
+                  e(
+                    "div",
+                    { className: "token-price" },
+                    loadingPrice
+                      ? e("span", { className: "dot-loader", "aria-label": "Loading token price" }, e("span"), e("span"), e("span"))
+                      : price !== null ? "$" + price.toLocaleString(undefined, { maximumFractionDigits: 6 }) : "N/A"
                   )
                 )
               )
             )
+          ),
+          walletConnected && e(
+            "div",
+            { className: "button-bar" },
+            e("button", { onClick: () => setActiveModal("deposit") }, "Deposit"),
+            e("button", { onClick: () => setActiveModal("withdraw") }, "Withdraw")
+          ),
+          activeModal === "deposit" &&
+          e(DepositModal, { address: publicKey?.toBase58() || "", onClose: () => setActiveModal(null) }),
+          activeModal === "withdraw" &&
+          e(WithdrawModal, {
+            balance,
+            decimals: tokensList[0].decimals,
+            onClose: () => setActiveModal(null),
+            withdrawAmount,
+            setWithdrawAmount,
+            withdrawRecvAddr,
+            setWithdrawRecvAddr,
+            onWithdraw,
+            error,
+            status
+          })
+        );
+      }
+
+      function DepositModal({ address, onClose }) {
+        const qrCanvasRef = useRef(null);
+        useEffect(() => {
+          if (qrCanvasRef.current && address) {
+            const qrString = `solana:${address}`;
+            if (window.QRCode) {
+              window.QRCode.toCanvas(qrCanvasRef.current, qrString, { width: 180 });
+            }
+          }
+        }, [address]);
+        return e(
+          "div",
+          {
+            className: "overlay-bg",
+            role: "dialog",
+            "aria-modal": "true",
+            "aria-labelledby": "depositTitle",
+            onClick: onClose
+          },
+          e(
+            "div",
+            { className: "overlay-panel", onClick: e => e.stopPropagation() },
+            e(
+              "div",
+              { className: "overlay-header" },
+              e("h2", { id: "depositTitle" }, "Deposit SOL"),
+              e("button", { className: "overlay-close-btn", "aria-label": "Close deposit modal", onClick: onClose }, "×")
+            ),
+            e("div", { id: "depositAddress", tabIndex: 0 }, address),
+            e("canvas", { ref: qrCanvasRef, id: "qrcode", "aria-hidden": "true", style: { margin: "auto", display: "block" } }),
+            e("small", null, "Send only SOL to this address")
           )
         );
       }
+
+      function WithdrawModal({
+        balance,
+        decimals,
+        onClose,
+        withdrawAmount,
+        setWithdrawAmount,
+        withdrawRecvAddr,
+        setWithdrawRecvAddr,
+        onWithdraw,
+        error,
+        status
+      }) {
+        return e(
+          "div",
+          {
+            className: "overlay-bg",
+            role: "dialog",
+            "aria-modal": "true",
+            "aria-labelledby": "withdrawTitle",
+            onClick: onClose
+          },
+          e(
+            "div",
+            { className: "overlay-panel", onClick: e => e.stopPropagation() },
+            e(
+              "div",
+              { className: "overlay-header" },
+              e("h2", { id: "withdrawTitle" }, "Withdraw SOL"),
+              e("button", { className: "overlay-close-btn", "aria-label": "Close withdraw modal", onClick: onClose }, "×")
+            ),
+            e(
+              "form",
+              { onSubmit: onWithdraw },
+              e(
+                "label",
+                { htmlFor: "withdrawAmount" },
+                `Amount (max ${balance.toFixed(decimals)} SOL)`
+              ),
+              e("input", {
+                id: "withdrawAmount",
+                type: "number",
+                min: "0",
+                max: balance,
+                step: "any",
+                required: true,
+                value: withdrawAmount,
+                onChange: e => setWithdrawAmount(e.target.value)
+              }),
+              e(
+                "label",
+                { htmlFor: "withdrawRecvAddr" },
+                "Recipient Solana Address"
+              ),
+              e("input", {
+                id: "withdrawRecvAddr",
+                type: "text",
+                required: true,
+                value: withdrawRecvAddr,
+                onChange: e => setWithdrawRecvAddr(e.target.value.trim()),
+                spellCheck: false,
+                autoComplete: "off",
+                placeholder: "Enter recipient SOL address"
+              }),
+              e(
+                "button",
+                {
+                  className: "modal-btn",
+                  type: "submit",
+                  disabled: !withdrawAmount || !withdrawRecvAddr,
+                },
+                "Confirm Withdraw"
+              )
+            ),
+            error && e("div", { className: "error", role: "alert" }, error),
+            status && e("div", { className: "status", role: "status" }, status)
+          )
+        );
+      }
+
       ReactDOM.render(e(App), document.getElementById("root"));
     })();
   </script>
