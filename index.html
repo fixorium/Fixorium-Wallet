@@ -3,101 +3,104 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>FIXORIUM Wallet</title>
+  <title>FIXORIUM WALLET</title>
   <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
   <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@solana/web3.js@1.95.2/lib/index.iife.min.js"></script>
   <style>
-    body { margin:0; background:#111; color:#fff; font-family:Arial,sans-serif; font-size:13px; }
-    header { display:flex; justify-content:space-between; align-items:center; background:#181818; padding:7px 12px; }
-    #logo-left { font-size:1.15rem; font-weight:700; color:#00ffa8; }
-    #wallet-row { display:flex; gap:7px; align-items:center; }
+    body { margin:0; background:#111; color:#fff; font-family:Arial,sans-serif; font-size:18px; letter-spacing:0.05em;}
+    header { display:flex; justify-content:space-between; align-items:center; background:#181818; padding:12px 20px; }
+    #logo-left { font-size:1.35rem; font-weight:900; color:#00ffa8; letter-spacing:0.1em;}
+    #wallet-row { display:flex; gap:11px; align-items:center; }
     #connectWalletBtn, #disconnectWalletBtn, .tinybar-btn {
-      background:#00ffa8; border:none; color:#111; font-weight:700; padding:5px 18px; border-radius:5px;
-      cursor:pointer; min-width:74px; font-size:13px; transition:background .18s;
+      background:#00ffa8; border:none; color:#111; font-weight:900; padding:7px 22px; border-radius:7px;
+      cursor:pointer; min-width:92px; font-size:18px; transition:background .18s;
       box-shadow:0 1px 6px #00ffa833;
       margin: 2px;
+      text-transform:uppercase;
     }
     #connectWalletBtn:hover, .tinybar-btn:hover { background:#fff; color:#111; }
     #disconnectWalletBtn { background: #2e2c47; color:#fff; border:1.3px solid #00ffa8; }
     #disconnectWalletBtn:hover { background:#00ffa8; color:#111; }
-    #walletAddress { font-size:12px; color:#00ffa8; padding-left:8px; }
-    main { max-width:900px; margin:0 auto; padding:16px 8px 64px; }
-    #totalBalance { font-size:1.1rem; margin-bottom:10px; font-weight:700; color:#00ff99; text-align:center; min-height:1.5em; }
+    #walletAddress { font-size:16px; color:#00ffa8; padding-left:10px; }
+    main { max-width:900px; margin:0 auto; padding:26px 8px 64px; }
+    #totalBalance { font-size:1.3rem; margin-bottom:18px; font-weight:900; color:#00ff99; text-align:center; min-height:1.8em; letter-spacing:0.09em;}
     .tokens-list-holder {
       width:100%; display:flex; justify-content:center; margin-bottom:0;
     }
     .tokens-list {
       display:grid;
-      grid-template-columns:repeat(auto-fit,minmax(110px,1fr));
-      gap:10px;
-      margin-bottom:13px;
-      max-width:700px;
+      grid-template-columns:repeat(auto-fit,minmax(160px,1fr));
+      gap:24px;
+      margin-bottom:18px;
+      max-width:900px;
       width:100%;
       justify-content:center;
       align-items:center;
     }
     .token-item {
       background:#181c22;
-      border-radius:9px;
-      box-shadow:0 1px 6px #00ffa824;
+      border-radius:12px;
+      box-shadow:0 2px 8px #00ffa824;
       display:flex;flex-direction:column;align-items:center;user-select:none;
-      padding:13px 2px 11px;
+      padding:21px 4px 17px;
       justify-content:center;
-      min-height:60px; min-width:80px; max-width:130px;
-      transition: box-shadow .10s;
-      font-size:12px;
+      min-height:90px; min-width:120px; max-width:170px;
+      transition: box-shadow .13s;
+      font-size:18px;
+      letter-spacing:0.07em;
     }
-    .token-item:hover { box-shadow:0 1px 12px #00ffa844; }
-    .token-symbol { font-weight:700; font-size:13px; color:#00ffa8; margin-bottom:3px; text-align:center; }
-    .token-balance, .token-price { font-size:12px; white-space:nowrap; display:flex;align-items:center;gap:2px; }
+    .token-item:hover { box-shadow:0 1px 18px #00ffa844; }
+    .token-symbol { font-weight:900; font-size:20px; color:#00ffa8; margin-bottom:7px; text-align:center; letter-spacing:0.11em;}
+    .token-balance, .token-price { font-size:18px; white-space:nowrap; display:flex;align-items:center;gap:7px; }
     .buy-btn, .sell-btn {
-      border:1.2px solid; border-radius:7px; padding:0px 4px;font-weight:700; font-size:11px;user-select:none;pointer-events:none;
-      margin-left:3px;
-      margin-top:1px;
-      min-width:34px;
+      border:2px solid; border-radius:13px; padding:2px 14px;font-weight:900; font-size:17px;user-select:none;cursor:pointer;
+      margin-left:7px;
+      margin-top:2px;
+      min-width:60px;
       text-align:center;
       background:transparent;
+      text-transform:uppercase;
+      letter-spacing:0.08em;
+      box-shadow:0 1px 6px #00ffa844;
+      opacity:1;
+      transition:opacity .2s;
     }
     .buy-btn { color:#16c784; border-color:#16c784; }
     .sell-btn { color:#ea3943; border-color:#ea3943; }
-    .blink { animation:blink 1.1s linear infinite; }
-    @keyframes blink {0%,100%{opacity:1;} 50%{opacity:.36;}}
-    .dot-loader { display:inline-flex; gap:2px; user-select:none; }
-    .dot-loader span { background:#0ee; width:4px; height:4px; border-radius:50%;display:inline-block;animation:bounce 1.2s infinite ease-in-out;}
+    .blink { animation:blink 1s linear infinite; }
+    @keyframes blink {0%,100%{opacity:1;} 50%{opacity:.22;}}
+    .dot-loader { display:inline-flex; gap:3px; user-select:none; }
+    .dot-loader span { background:#0ee; width:8px; height:8px; border-radius:50%;display:inline-block;animation:bounce 1.2s infinite ease-in-out;}
     .dot-loader span:nth-child(2){animation-delay:.15s;}
     .dot-loader span:nth-child(3){animation-delay:.3s;}
     @keyframes bounce{0%,80%,100%{transform:scale(0);}40%{transform:scale(1);}
     }
     /* Commercial banner */
     .commercial-banner-holder {
-      width:100%; display:flex; justify-content:center; margin-bottom:15px;
+      width:100%; display:flex; justify-content:center; margin-bottom:18px;
     }
     .commercial-banner {
       width:100%;
-      max-width:700px;
-      min-height:60px;
-      min-width:240px;
+      max-width:900px;
+      min-height:62px;
+      min-width:220px;
       background: linear-gradient(93deg,#ffe56e 0%,#fff9e5 80%);
       border-radius: 15px;
       box-shadow: 0 2px 12px #ffe56e33;
-      color: #222;
-      font-size: 1.10rem;
-      font-weight: bold;
+      color: #333;
+      font-size: 1.15rem;
+      font-weight: 900;
       text-align: center;
-      padding: 15px 22px;
+      padding: 20px 10px;
       display: flex;
       align-items: center;
       justify-content: center;
       flex-wrap:wrap;
       border: 2px solid #ffe56e;
-      letter-spacing: 0.02em;
-    }
-    .commercial-banner img {
-      max-height:42px; max-width:60px; border-radius:7px; margin-right:14px; box-shadow:0 0 4px #ffe56e99;
-      background:#fff; object-fit:contain;
-      flex-shrink:0;
+      letter-spacing: 0.09em;
+      text-transform:uppercase;
     }
     /* Bottom bar as connect-styled */
     .tiny-button-bar {
@@ -110,40 +113,42 @@
       box-shadow: 0 -1px 7px #00ffa84d;
       display: flex;
       justify-content: center;
-      gap: 8px;
-      padding: 11px 4px 11px;
+      gap: 18px;
+      padding: 19px 8px 19px;
       flex-wrap:wrap;
     }
     .tinybar-btn {
-      min-width:84px;
-      font-size:13px;
-      border-radius:5px;
-      font-weight:700;
+      min-width:124px;
+      font-size:18px;
+      border-radius:7px;
+      font-weight:900;
       background:#00ffa8;
       color:#111;
       border:none;
-      padding:5px 18px;
-      margin:2px 4px;
+      padding:7px 24px;
+      margin:4px 4px;
       box-shadow:0 1px 6px #00ffa833;
       transition:background .16s;
+      text-transform:uppercase;
+      letter-spacing:0.09em;
     }
     .tinybar-btn:hover { background:#fff; color:#111; }
-    @media (max-width:700px){
+    @media (max-width:900px){
       .tokens-list {grid-template-columns:repeat(2,1fr);max-width:99vw;}
       .commercial-banner, .tokens-list {max-width:99vw;}
-      .tinybar-btn{font-size:12px;min-width:60px;padding:5px 8px;}
-      .token-item{padding:8px 1px 7px;min-height:36px;}
-      .token-symbol,.token-balance,.token-price{font-size:11px;}
-      .commercial-banner{padding:8px 2vw;}
+      .tinybar-btn{font-size:16px;min-width:80px;padding:7px 10px;}
+      .token-item{padding:10px 1px 7px;min-height:54px;}
+      .token-symbol,.token-balance,.token-price{font-size:16px;}
+      .commercial-banner{padding:9px 2vw;}
     }
   </style>
 </head>
 <body>
   <header>
-    <div id="logo-left">FIXORIUM</div>
+    <div id="logo-left">FIXORIUM WALLET</div>
     <div id="wallet-row">
-      <button id="connectWalletBtn">Connect Wallet</button>
-      <button id="disconnectWalletBtn" style="display:none;">Disconnect</button>
+      <button id="connectWalletBtn">CONNECT WALLET</button>
+      <button id="disconnectWalletBtn" style="display:none;">DISCONNECT</button>
       <span id="walletAddress"></span>
     </div>
   </header>
@@ -151,49 +156,93 @@
     <div id="root"></div>
   </main>
   <div class="tiny-button-bar" id="tinyButtonBar">
-    <button class="tinybar-btn" onclick="window.location.href='deposit.html'">Deposit</button>
-    <button class="tinybar-btn" onclick="window.location.href='withdraw.html'">Withdraw</button>
-    <button class="tinybar-btn" onclick="window.location.href='swap.html'">Swap</button>
-    <button class="tinybar-btn" onclick="window.location.href='history.html'">History</button>
+    <button class="tinybar-btn" onclick="window.location.href='deposit.html'">DEPOSIT</button>
+    <button class="tinybar-btn" onclick="window.location.href='withdraw.html'">WITHDRAW</button>
+    <button class="tinybar-btn" onclick="window.location.href='swap.html'">SWAP</button>
+    <button class="tinybar-btn" onclick="window.location.href='history.html'">HISTORY</button>
   </div>
   <script type="text/javascript">
     (() => {
       const e = React.createElement;
-      const { useState, useEffect } = React;
+      const { useState, useEffect, useRef } = React;
       // Tokens config
       const tokensList = [
-        { symbol: "SOL", name: "Solana", decimals: 9, cg: "solana", mint: null, pump: null },
-        { symbol: "FIXERCOIN", name: "FixerCoin", decimals: 9, cg: "", mint: "D2mGkp5D43jirFeapx8UZmpiH7FaWeX1eUWy94q1F2hD", pump: "D2mGkp5D43jirFeapx8UZmpiH7FaWeX1eUWy94q1F2hD" },
-        { symbol: "FARTCOIN", name: "FartCoin", decimals: 9, cg: "", mint: "4nq8Q2WCmkYj6p7VtM6oQk4uQdD8A1KfB1kJ2UuLtRKmM", pump: "4nq8Q2WCmkYj6p7VtM6oQk4uQdD8A1KfB1kJ2UuLtRKmM" },
-        { symbol: "PNUT", name: "Peanut", decimals: 6, cg: "peanut", mint: "HWrG8q1wP7a5gHCZcdp5Ew2d3p4h2mD8Ph7Qz5fE5Uj9", pump: "HWrG8q1wP7a5gHCZcdp5Ew2d3p4h2mD8Ph7Qz5fE5Uj9" },
-        { symbol: "RAYDIUM", name: "Raydium", decimals: 6, cg: "raydium", mint: "4k3Dyjzvzp8e2nKk5QK8LBhEDuB7g6b8f9G8r5Xy5s52", pump: "4k3Dyjzvzp8e2nKk5QK8LBhEDuB7g6b8f9G8r5Xy5s52" },
-        { symbol: "PUMPFUN", name: "PumpFun", decimals: 9, cg: "", mint: "Gt4w6kWzv9mY5cQpJbYX3mLh6wC1g3LJrF3fM9W1tQzN", pump: "Gt4w6kWzv9mY5cQpJbYX3mLh6wC1g3LJrF3fM9W1tQzN" }
+        { symbol: "SOL", name: "SOLANA", decimals: 9, cg: "solana" },
+        { symbol: "FIXERCOIN", name: "FIXERCOIN", decimals: 9, cg: "" },
+        { symbol: "FARTCOIN", name: "FARTCOIN", decimals: 9, cg: "" },
+        { symbol: "PNUT", name: "PNUT", decimals: 6, cg: "peanut" },
+        { symbol: "RAYDIUM", name: "RAYDIUM", decimals: 6, cg: "raydium" },
+        { symbol: "PUMPFUN", name: "PUMPFUN", decimals: 9, cg: "" }
       ];
-      // Price bot state
-      const priceHistoryState = {}; // symbol -> [{time(priceTime), price}]
+      // --- Price bot state with persistent signal timer for 5min blinking ---
+      // For each token, store: {signal: "BUY"/"SELL"/"", start: Date or null}
+      const signalState = {};
       function useBotSignals(prices, pumpPrices) {
-        const [signals, setSignals] = React.useState({});
+        const [signals, setSignals] = useState({});
+        // timerRef keeps the blink state for each token
+        const timerRef = useRef({}); // { [symbol]: { signal, start: epochms } }
         useEffect(() => {
           const now = Date.now();
           tokensList.forEach(t => {
-            if (!priceHistoryState[t.symbol]) priceHistoryState[t.symbol] = [];
-            const price = prices[t.symbol] ?? pumpPrices[t.symbol];
-            if (price) priceHistoryState[t.symbol].push({ time: now, price });
-            priceHistoryState[t.symbol] = priceHistoryState[t.symbol].filter(x => now - x.time < 5*60*1000);
+            if (!signalState[t.symbol]) signalState[t.symbol] = [];
+            if (!timerRef.current[t.symbol]) timerRef.current[t.symbol] = { signal: "", start:null };
           });
-          const nextSignals = {};
+          // For each token, update signal and track start time if signal appears,
+          // keep blinking for 5min even if price changes in that period.
           tokensList.forEach(t => {
-            const arr = priceHistoryState[t.symbol]||[];
+            // Compute signal
+            if (!signalState[t.symbol]) signalState[t.symbol] = [];
+            if (!window._priceHist) window._priceHist = {};
+            const phist = window._priceHist;
+            if (!phist[t.symbol]) phist[t.symbol] = [];
+            const price = prices[t.symbol] ?? pumpPrices[t.symbol];
+            if (price) phist[t.symbol].push({ time: now, price });
+            phist[t.symbol] = phist[t.symbol].filter(x => now - x.time < 5*60*1000);
+            const arr = phist[t.symbol];
             const latest = arr.length ? arr[arr.length-1].price : null;
             const fiveMinAgo = arr.find(x => now-x.time > 4.5*60*1000) || arr[0];
+            let tokenSignal = "";
             if (arr.length > 1 && latest && fiveMinAgo && fiveMinAgo.price) {
               const pct = ((latest - fiveMinAgo.price)/fiveMinAgo.price)*100;
-              if (pct >= 2) nextSignals[t.symbol] = "BUY";
-              else if (pct <= -2) nextSignals[t.symbol] = "SELL";
-              else nextSignals[t.symbol] = "";
-            } else nextSignals[t.symbol] = "";
+              if (pct >= 2) tokenSignal = "BUY";
+              else if (pct <= -2) tokenSignal = "SELL";
+            }
+            // --- Persistent blinking logic ---
+            const prev = timerRef.current[t.symbol];
+            // If signal appears, record start time and keep blinking for 5 min
+            if (tokenSignal && (prev.signal !== tokenSignal || !prev.start || (now - prev.start > 5*60*1000))) {
+              timerRef.current[t.symbol] = { signal: tokenSignal, start: now };
+            }
+            // If signal ongoing, keep blinking for max 5min
+            if (prev.signal && prev.start && (now - prev.start < 5*60*1000)) {
+              // Do not clear
+            } else if (!tokenSignal) {
+              // Clear after 5min or if no signal
+              timerRef.current[t.symbol] = { signal: "", start:null };
+            }
           });
-          setSignals(nextSignals);
+          // Set signals for render
+          const out = {};
+          tokensList.forEach(t=>{
+            out[t.symbol] = timerRef.current[t.symbol]?.signal || "";
+          });
+          setSignals(out);
+          // Update every 10s to check for 5min expiry
+          const intv = setInterval(()=>{
+            const now2 = Date.now();
+            const sigs = {};
+            tokensList.forEach(t=>{
+              const prev = timerRef.current[t.symbol];
+              if (prev.signal && prev.start && (now2 - prev.start < 5*60*1000)) {
+                sigs[t.symbol] = prev.signal;
+              } else {
+                sigs[t.symbol] = "";
+                timerRef.current[t.symbol] = { signal:"", start:null };
+              }
+            });
+            setSignals(sigs);
+          }, 10000);
+          return ()=>clearInterval(intv);
         }, [JSON.stringify(prices), JSON.stringify(pumpPrices)]);
         return signals;
       }
@@ -213,7 +262,7 @@
           const disconnectBtn = document.getElementById("disconnectWalletBtn");
           const addressSpan = document.getElementById("walletAddress");
           if (!walletConnected) {
-            connectBtn.innerText = "Connect Wallet";
+            connectBtn.innerText = "CONNECT WALLET";
             connectBtn.style.display = "";
             addressSpan.textContent = "";
             disconnectBtn.style.display = "none";
@@ -246,24 +295,9 @@
             };
           }
         }, [walletConnected, publicKey]);
-        // Fetch Pump.fun price
+        // Fetch Pump.fun price (simulate as 0, demo only)
         async function fetchPumpPrices() {
-          try {
-            const pumpEntries = await Promise.all(tokensList
-              .filter(t => t.pump)
-              .map(async t => {
-                try {
-                  const resp = await axios.get(`https://api.pump.fun/api/tokens/${t.pump}`);
-                  return [t.symbol, resp.data.priceUi];
-                } catch {
-                  return [t.symbol, null];
-                }
-              })
-            );
-            setPumpPrices(Object.fromEntries(pumpEntries));
-          } catch {
-            setPumpPrices({});
-          }
+          setPumpPrices({});
         }
         // Fetch CoinGecko prices
         async function fetchPrices() {
@@ -297,7 +331,7 @@
           e(
             "div",
             { id: "totalBalance" },
-            "Balance: $",
+            "BALANCE: $",
             (walletConnected ? totalUSD : 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })
           ),
           e(
@@ -305,7 +339,7 @@
             { className: "tokens-list-holder" },
             e(
               "div",
-              { className: "tokens-list", "aria-label": "Tokens list" },
+              { className: "tokens-list", "aria-label": "TOKENS LIST" },
               tokensList.map(token =>
                 e(
                   "div",
@@ -322,14 +356,20 @@
                       : (prices[token.symbol] != null
                         ? "$" + prices[token.symbol].toLocaleString(undefined, { maximumFractionDigits: 6 })
                         : (pumpPrices[token.symbol] != null
-                          ? e("span", { style:{color:"#ffdf00",fontWeight:600} }, "Pump: $"+Number(pumpPrices[token.symbol]).toPrecision(6))
+                          ? e("span", { style:{color:"#ffdf00",fontWeight:600} }, "PUMP: $"+Number(pumpPrices[token.symbol]).toPrecision(6))
                           : "N/A"
                         )
-                      ),
-                    signals[token.symbol] === "BUY" &&
-                      e("button", { className: "buy-btn blink", tabIndex: -1 }, "BUY"),
-                    signals[token.symbol] === "SELL" &&
-                      e("button", { className: "sell-btn blink", tabIndex: -1 }, "SELL")
+                      )
+                  ),
+                  e("div", null,
+                    e("button", {
+                      className: "buy-btn" + (signals[token.symbol]==="BUY"?" blink":""), tabIndex: -1,
+                      style: {pointerEvents:'none'}
+                    }, "BUY"),
+                    e("button", {
+                      className: "sell-btn" + (signals[token.symbol]==="SELL"?" blink":""), tabIndex: -1,
+                      style: {pointerEvents:'none'}
+                    }, "SELL")
                   )
                 )
               )
@@ -339,11 +379,7 @@
             "div",
             { className: "commercial-banner-holder" },
             e("div", { className: "commercial-banner" },
-              e("img", {
-                src: "https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=120&q=80",
-                alt: "Ad",
-              }),
-              "Buy & HODL FIXERCOIN — Pump your crypto journey! Advertise your project here. Contact: contact@fixorium.com"
+              "THIS IS A SIMPLE COMMERCIAL AD. ADVERTISE HERE!"
             )
           )
         );
@@ -352,4 +388,4 @@
     })();
   </script>
 </body>
- </html>
+</html>
