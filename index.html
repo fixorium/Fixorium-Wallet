@@ -5,31 +5,25 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>FIXORIUM Advanced Wallet</title>
     
-    <!-- Tailwind CSS for styling -->
+    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     
     <!-- Solana Web3 Libraries -->
     <script src="https://cdn.jsdelivr.net/npm/@solana/web3.js@latest/lib/index.iife.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@project-serum/anchor@0.24.2/dist/browser/anchor.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@solana/spl-token@0.2.0/lib/index.iife.min.js"></script>
     
     <!-- Additional Libraries -->
     <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
     <style>
-        /* Custom styles */
         body {
             background-color: #121212;
             color: #ffffff;
         }
-        .modal {
-            background-color: rgba(0,0,0,0.5);
-        }
     </style>
 </head>
 <body class="bg-gray-900 text-white">
-    <div id="app" class="container mx-auto p-4">
-        <!-- Wallet Connection Section -->
+    <div class="container mx-auto p-4">
         <div id="wallet-connection" class="flex justify-between items-center mb-8">
             <h1 class="text-3xl font-bold text-green-400">FIXORIUM Wallet</h1>
             <button id="connect-wallet" class="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded">
@@ -37,9 +31,7 @@
             </button>
         </div>
 
-        <!-- Wallet Dashboard (Hidden by default) -->
         <div id="wallet-dashboard" class="hidden">
-            <!-- Wallet Summary -->
             <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
                 <div class="bg-gray-800 rounded-lg p-6">
                     <h2 class="text-xl font-semibold mb-4">Wallet Summary</h2>
@@ -47,97 +39,18 @@
                     <p>Address: <span id="wallet-address"></span></p>
                 </div>
 
-                <!-- Token List -->
                 <div class="md:col-span-2 bg-gray-800 rounded-lg p-6">
                     <h2 class="text-xl font-semibold mb-4">Tokens</h2>
                     <div id="token-list" class="grid grid-cols-3 gap-4"></div>
                 </div>
             </div>
-
-            <!-- Action Buttons -->
-            <div class="grid grid-cols-3 gap-6 mb-8">
-                <button id="swap-btn" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 px-4 rounded">
-                    Swap Tokens
-                </button>
-                <button id="send-btn" class="bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-3 px-4 rounded">
-                    Send Tokens
-                </button>
-                <button id="stake-btn" class="bg-purple-500 hover:bg-purple-600 text-white font-bold py-3 px-4 rounded">
-                    Stake Tokens
-                </button>
-            </div>
-
-            <!-- Transaction History -->
-            <div class="bg-gray-800 rounded-lg p-6">
-                <h2 class="text-xl font-semibold mb-4">Transaction History</h2>
-                <div id="transaction-history"></div>
-            </div>
-        </div>
-
-        <!-- Modals -->
-        <div id="modals">
-            <!-- Swap Modal -->
-            <div id="swap-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center">
-                <div class="bg-gray-800 rounded-lg p-8 w-full max-w-md">
-                    <h2 class="text-2xl font-bold mb-6">Token Swap</h2>
-                    <div class="mb-4">
-                        <label class="block mb-2">From Token</label>
-                        <select id="from-token" class="w-full p-2 bg-gray-700 rounded"></select>
-                    </div>
-                    <div class="mb-4">
-                        <label class="block mb-2">Amount</label>
-                        <input type="number" id="swap-amount" class="w-full p-2 bg-gray-700 rounded" placeholder="Enter amount">
-                    </div>
-                    <div class="mb-4">
-                        <label class="block mb-2">To Token</label>
-                        <select id="to-token" class="w-full p-2 bg-gray-700 rounded"></select>
-                    </div>
-                    <div id="swap-routes" class="mb-4"></div>
-                    <button id="execute-swap" class="w-full bg-green-500 hover:bg-green-600 text-white font-bold py-3 rounded">
-                        Execute Swap
-                    </button>
-                    <button id="close-swap-modal" class="w-full mt-2 bg-red-500 hover:bg-red-600 text-white font-bold py-3 rounded">
-                        Cancel
-                    </button>
-                </div>
-            </div>
-
-            <!-- Send Token Modal -->
-            <div id="send-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center">
-                <div class="bg-gray-800 rounded-lg p-8 w-full max-w-md">
-                    <h2 class="text-2xl font-bold mb-6">Send Tokens</h2>
-                    <div class="mb-4">
-                        <label class="block mb-2">Select Token</label>
-                        <select id="send-token" class="w-full p-2 bg-gray-700 rounded"></select>
-                    </div>
-                    <div class="mb-4">
-                        <label class="block mb-2">Recipient Address</label>
-                        <input type="text" id="recipient-address" class="w-full p-2 bg-gray-700 rounded" placeholder="Enter recipient address">
-                    </div>
-                    <div class="mb-4">
-                        <label class="block mb-2">Amount</label>
-                        <input type="number" id="send-amount" class="w-full p-2 bg-gray-700 rounded" placeholder="Enter amount">
-                    </div>
-                    <button id="execute-send" class="w-full bg-green-500 hover:bg-green-600 text-white font-bold py-3 rounded">
-                        Send Tokens
-                    </button>
-                    <button id="close-send-modal" class="w-full mt-2 bg-red-500 hover:bg-red-600 text-white font-bold py-3 rounded">
-                        Cancel
-                    </button>
-                </div>
-            </div>
         </div>
     </div>
 
-    <!-- Notification Container -->
-    <div id="notification-container" class="fixed top-4 right-4 z-50"></div>
-
-    <!-- Main Application Scripts -->
     <script>
-        // Wallet Configuration
+        // Advanced Wallet Configuration
         const WALLET_CONFIG = {
             SOLANA_RPC: 'https://api.mainnet-beta.solana.com',
-            JUPITER_API: 'https://quote-api.jup.ag/v6',
             TOKENS: [
                 {
                     symbol: 'SOL',
@@ -156,9 +69,17 @@
                     logo: 'https://cryptologos.cc/logos/usd-coin-usdc-logo.png'
                 },
                 {
+                    symbol: 'USDT',
+                    name: 'Tether',
+                    mint: 'Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB',
+                    coingeckoId: 'tether',
+                    decimals: 6,
+                    logo: 'https://cryptologos.cc/logos/tether-usdt-logo.png'
+                },
+                {
                     symbol: 'FIXR',
                     name: 'FIXORIUM Token',
-                    mint: 'FIXR_TOKEN_MINT_ADDRESS',
+                    mint: 'FIXRTokenMintAddressHere',
                     coingeckoId: 'fixorium',
                     decimals: 9,
                     logo: 'path/to/fixr/logo.png'
@@ -166,27 +87,7 @@
             ]
         };
 
-        // Utility Functions
-        function showNotification(type, message) {
-            const notificationContainer = document.getElementById('notification-container');
-            const notification = document.createElement('div');
-            notification.className = `
-                p-4 mb-2 rounded 
-                ${type === 'success' ? 'bg-green-500' : 
-                  type === 'error' ? 'bg-red-500' : 
-                  'bg-yellow-500'}
-                text-white
-            `;
-            notification.textContent = message;
-            notificationContainer.appendChild(notification);
-            
-            setTimeout(() => {
-                notification.remove();
-            }, 5000);
-        }
-
-        // Wallet Manager Class
-        class WalletManager {
+        class AdvancedWalletManager {
             constructor() {
                 this.connection = null;
                 this.wallet = null;
@@ -198,182 +99,189 @@
             }
 
             initializeEventListeners() {
-                // Connect Wallet
                 document.getElementById('connect-wallet').addEventListener('click', () => this.connectWallet());
-
-                // Swap Modal
-                document.getElementById('swap-btn').addEventListener('click', () => this.openSwapModal());
-                document.getElementById('close-swap-modal').addEventListener('click', () => this.closeSwapModal());
-                document.getElementById('execute-swap').addEventListener('click', () => this.executeSwap());
-
-                // Send Modal
-                document.getElementById('send-btn').addEventListener('click', () => this.openSendModal());
-                document.getElementById('close-send-modal').addEventListener('click', () => this.closeSendModal());
-                document.getElementById('execute-send').addEventListener('click', () => this.executeSendToken());
             }
 
             async connectWallet() {
                 try {
+                    // Check for Phantom wallet
                     if (!window.solana?.isPhantom) {
-                        showNotification('error', 'Phantom wallet not found');
+                        this.showNotification('error', 'Phantom wallet not found');
                         return;
                     }
 
+                    // Connect wallet
                     const wallet = window.solana;
                     await wallet.connect();
 
+                    // Set wallet details
                     this.wallet = wallet;
                     this.publicKey = wallet.publicKey;
-                    this.connection = new solanaWeb3.Connection(WALLET_CONFIG.SOLANA_RPC);
+                    this.connection = new solanaWeb3.Connection(
+                        solanaWeb3.clusterApiUrl('mainnet-beta'), 
+                        'confirmed'
+                    );
 
                     // Update UI
                     this.updateWalletUI();
-                    
-                    // Fetch data
+
+                    // Fetch comprehensive wallet data
                     await Promise.all([
-                        this.fetchTokenBalances(),
+                        this.fetchSolBalance(),
+                        this.fetchSPLTokenBalances(),
                         this.fetchTokenPrices()
                     ]);
 
-                    showNotification('success', 'Wallet connected successfully');
+                    // Render token list
+                    this.renderTokenList();
+
+                    this.showNotification('success', 'Wallet connected successfully');
                 } catch (error) {
-                    showNotification('error', `Wallet connection failed: ${error.message}`);
+                    this.showNotification('error', `Wallet connection failed: ${error.message}`);
+                    console.error(error);
                 }
             }
 
-            updateWalletUI() {
-                document.getElementById('wallet-connection').classList.add('hidden');
-                document.getElementById('wallet-dashboard').classList.remove('hidden');
-                document.getElementById('wallet-address').textContent = this.publicKey.toBase58();
+            async fetchSolBalance() {
+                try {
+                    // Fetch SOL balance
+                    const balance = await this.connection.getBalance(this.publicKey);
+                    const solBalance = balance / solanaWeb3.LAMPORTS_PER_SOL;
+                    
+                    // Store SOL balance
+                    this.tokenBalances['SOL'] = solBalance;
+                } catch (error) {
+                    this.showNotification('error', `SOL balance fetch failed: ${error.message}`);
+                }
             }
 
-            async fetchTokenBalances() {
-                // Implement token balance fetching logic
-                // Similar to previous implementations
+            async fetchSPLTokenBalances() {
+                try {
+                    // Fetch SPL token accounts
+                    const tokenAccounts = await this.connection.getParsedTokenAccountsByOwner(
+                        this.publicKey,
+                        { programId: solanaWeb3.TOKEN_PROGRAM_ID }
+                    );
+
+                    // Process token accounts
+                    tokenAccounts.value.forEach(account => {
+                        const mintAddress = account.account.data.parsed.info.mint;
+                        const balance = account.account.data.parsed.info.tokenAmount.uiAmount;
+                        
+                        // Find token by mint address
+                        const token = WALLET_CONFIG.TOKENS.find(t => t.mint === mintAddress);
+                        
+                        if (token) {
+                            this.tokenBalances[token.symbol] = balance;
+                        }
+                    });
+                } catch (error) {
+                    this.showNotification('error', `Token balances fetch failed: ${error.message}`);
+                }
             }
 
             async fetchTokenPrices() {
                 try {
-                    const ids = WALLET_CONFIG.TOKENS
-                        .map(t => t.coingeckoId)
+                    // Prepare token IDs for price fetch
+                    const tokenIds = WALLET_CONFIG.TOKENS
+                        .map(token => token.coingeckoId)
                         .filter(Boolean)
                         .join(',');
 
+                    // Fetch token prices
                     const response = await axios.get(
-                        `https://api.coingecko.com/api/v3/simple/price?ids=${ids}&vs_currencies=usd`
+                        `https://api.coingecko.com/api/v3/simple/price?ids=${tokenIds}&vs_currencies=usd`
                     );
 
-                    this.tokenPrices = Object.fromEntries(
-                        WALLET_CONFIG.TOKENS.map(token => [
-                            token.symbol, 
-                            response.data[token.coingeckoId]?.usd || 0
-                        ])
-                    );
+                    // Process token prices
+                    this.tokenPrices = {};
+                    WALLET_CONFIG.TOKENS.forEach(token => {
+                        if (token.coingeckoId && response.data[token.coingeckoId]) {
+                            this.tokenPrices[token.symbol] = response.data[token.coingeckoId].usd;
+                        }
+                    });
 
+                    // Update total balance
                     this.updateTotalBalance();
                 } catch (error) {
-                    showNotification('error', `Price fetch failed: ${error.message}`);
+                    this.showNotification('error', `Token prices fetch failed: ${error.message}`);
                 }
             }
 
             updateTotalBalance() {
-                const totalBalance = Object.entries(this.tokenBalances).reduce((total, [symbol, balance]) => {
+                // Calculate total balance
+                let totalBalance = 0;
+                Object.entries(this.tokenBalances).forEach(([symbol, balance]) => {
                     const price = this.tokenPrices[symbol] || 0;
-                    return total + (balance * price);
-                }, 0);
-
-                document.getElementById('total-balance').textContent = `$${totalBalance.toFixed(2)}`;
-            }
-
-            openSwapModal() {
-                const swapModal = document.getElementById('swap-modal');
-                const fromTokenSelect = document.getElementById('from-token');
-                const toTokenSelect = document.getElementById('to-token');
-
-                // Populate token selects
-                fromTokenSelect.innerHTML = '';
-                toTokenSelect.innerHTML = '';
-
-                WALLET_CONFIG.TOKENS.forEach(token => {
-                    const fromOption = document.createElement('option');
-                    fromOption.value = token.symbol;
-                    fromOption.textContent = token.symbol;
-                    fromTokenSelect.appendChild(fromOption);
-
-                    const toOption = document.createElement('option');
-                    toOption.value = token.symbol;
-                    toOption.textContent = token.symbol;
-                    toTokenSelect.appendChild(toOption);
+                    totalBalance += balance * price;
                 });
 
-                swapModal.classList.remove('hidden');
-                swapModal.classList.add('flex');
+                // Update UI
+                document.getElementById('total-balance').textContent = 
+                    `$${totalBalance.toFixed(2)}`;
             }
 
-            closeSwapModal() {
-                const swapModal = document.getElementById('swap-modal');
-                swapModal.classList.add('hidden');
-                swapModal.classList.remove('flex');
-            }
+            renderTokenList() {
+                const tokenList = document.getElementById('token-list');
+                tokenList.innerHTML = ''; // Clear previous tokens
 
-            async executeSwap() {
-                const fromToken = document.getElementById('from-token').value;
-                const toToken = document.getElementById('to-token').value;
-                const amount = parseFloat(document.getElementById('swap-amount').value);
-
-                try {
-                    // Implement swap logic using Jupiter API
-                    // Similar to previous advanced swap implementation
-                    showNotification('success', `Swapped ${amount} ${fromToken} to ${toToken}`);
-                    this.closeSwapModal();
-                } catch (error) {
-                    showNotification('error', `Swap failed: ${error.message}`);
-                }
-            }
-
-            openSendModal() {
-                const sendModal = document.getElementById('send-modal');
-                const sendTokenSelect = document.getElementById('send-token');
-
-                // Populate token select
-                sendTokenSelect.innerHTML = '';
+                // Render each token
                 WALLET_CONFIG.TOKENS.forEach(token => {
-                    const option = document.createElement('option');
-                    option.value = token.symbol;
-                    option.textContent = token.symbol;
-                    sendTokenSelect.appendChild(option);
+                    // Get balance and price
+                    const balance = this.tokenBalances[token.symbol] || 0;
+                    const price = this.tokenPrices[token.symbol] || 0;
+                    const totalValue = balance * price;
+
+                    // Create token card
+                    const tokenCard = document.createElement('div');
+                    tokenCard.className = 'bg-gray-700 p-4 rounded-lg';
+                    tokenCard.innerHTML = `
+                        <img src="${token.logo}" alt="${token.symbol}" class="w-12 h-12 mx-auto mb-2">
+                        <h3 class="text-center font-bold">${token.symbol}</h3>
+                        <p class="text-center">Balance: ${balance.toFixed(4)}</p>
+                        <p class="text-center">Price: $${price.toFixed(2)}</p>
+                        <p class="text-center">Value: $${totalValue.toFixed(2)}</p>
+                    `;
+
+                    tokenList.appendChild(tokenCard);
                 });
 
-                sendModal.classList.remove('hidden');
-                sendModal.classList.add('flex');
+                // Update wallet address
+                document.getElementById('wallet-address').textContent = 
+                    this.publicKey.toBase58();
+
+                // Show dashboard
+                document.getElementById('wallet-connection').classList.add('hidden');
+                document.getElementById('wallet-dashboard').classList.remove('hidden');
             }
 
-            closeSendModal() {
-                const sendModal = document.getElementById('send-modal');
-                sendModal.classList.add('hidden');
-                sendModal.classList.remove('flex');
+            updateWalletUI() {
+                document.getElementById('wallet-address').textContent = 
+                    this.publicKey.toBase58();
             }
 
-            async executeSendToken() {
-                const token = document.getElementById('send-token').value;
-                const recipient = document.getElementById('recipient-address').value;
-                const amount = parseFloat(document.getElementById('send-amount').value);
+            showNotification(type, message) {
+                // Create notification element
+                const notification = document.createElement('div');
+                notification.className = `
+                    fixed top-4 right-4 p-4 rounded z-50
+                    ${type === 'error' ? 'bg-red-500' : 'bg-green-500'}
+                    text-white
+                `;
+                notification.textContent = message;
 
-                try {
-                    // Implement token sending logic
-                    // Validate recipient address
-                    // Check balance
-                    // Create and send transaction
-                    showNotification('success', `Sent ${amount} ${token} to ${recipient}`);
-                    this.closeSendModal();
-                } catch (error) {
-                    showNotification('error', `Send failed: ${error.message}`);
-                }
+                // Add to body
+                document.body.appendChild(notification);
+
+                // Remove after 5 seconds
+                setTimeout(() => {
+                    document.body.removeChild(notification);
+                }, 5000);
             }
         }
 
         // Initialize Wallet Manager
-        const walletManager = new WalletManager();
+        const walletManager = new AdvancedWalletManager();
     </script>
 </body>
 </html>
