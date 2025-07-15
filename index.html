@@ -4,7 +4,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>FIXORIUM</title>
+  <title>FIXORIUM Wallet</title>
   <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
   <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
@@ -393,6 +393,7 @@
           setLoading(false);
         }
 
+        // Show tokens and buttons even while loading, but with loader for balance/price
         useEffect(() => {
           if (walletConnected) fetchAll();
         }, [walletConnected, publicKey, activeModal, status]);
@@ -441,13 +442,15 @@
                 : null)
               : null
           ),
-          walletConnected && !loading && e("div", { className: "tokens-list" },
+          walletConnected && e("div", { className: "tokens-list" },
             tokensList.map(token =>
               e("div", { key: token.symbol, className: "token-item" },
                 e("div", { className: "token-info" },
                   e("div", { className: "token-symbol" }, token.name),
                   e("div", { className: "token-balance" },
-                    (balances[token.symbol] || 0).toLocaleString(undefined, { maximumFractionDigits: token.decimals })
+                    loading
+                      ? e("span", { className: "dot-loader" }, e("span"), e("span"), e("span"))
+                      : (balances[token.symbol] || 0).toLocaleString(undefined, { maximumFractionDigits: token.decimals })
                   ),
                   e("div", { className: "token-price" },
                     loadingPrices
@@ -464,7 +467,7 @@
               )
             )
           ),
-          walletConnected && !loading && e("div", { className: "button-bar" },
+          walletConnected && e("div", { className: "button-bar" },
             e("button", { onClick: () => setActiveModal("swap") }, "Swap"),
             e("button", { onClick: () => setActiveModal("withdraw") }, "Withdraw"),
             e("button", { onClick: () => setActiveModal("deposit") }, "Deposit")
