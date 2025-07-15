@@ -1,636 +1,320 @@
  <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
-    <title>FIXORIUM WALLET</title>
-    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Solana Wallet</title>
+    <script src="https://cdn.jsdelivr.net/npm/@solana/web3.js@latest/lib/index.iife.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@solana/web3.js@1.95.2/lib/index.iife.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        /* Reset & base styles */
-        body, html {
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #121212;
+            color: #ffffff;
             margin: 0;
             padding: 0;
-            height: 100%;
-            background: #111;
-            color: #fff;
-            font-family: Arial, sans-serif;
-            font-size: 13px;
-            -webkit-font-smoothing: antialiased;
-            -moz-osx-font-smoothing: grayscale;
-            user-select: none;
-            overflow: hidden;
         }
-
-        /* Full screen layout */
         #app-container {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        #wallet-connect {
             display: flex;
-            flex-direction: column;
-            height: 100vh;
-        }
-
-        /* Header styles */
-        header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            background: #181818;
-            padding: 8px 12px;
-            box-shadow: 0 2px 8px #00ffa833;
-            flex-shrink: 0;
-        }
-
-        #logo-left {
-            font-size: 1.2rem;
-            font-weight: 700;
-            color: #00ffa8;
-            letter-spacing: 0.02em;
-            user-select: text;
-        }
-
-        #wallet-row {
-            display: flex;
-            gap: 7px;
-            align-items: center;
-            min-width: 200px;
-            justify-content: end;
-            flex-wrap: nowrap;
-        }
-
-        #connectWalletBtn,
-        #disconnectWalletBtn {
-            background: #00ffa8;
-            border: none;
-            color: #111;
-            font-weight: 700;
-            padding: 5px 18px;
-            border-radius: 6px;
-            cursor: pointer;
-            min-width: 90px;
-            font-size: 13px;
-            white-space: nowrap;
-            user-select: none;
-            text-transform: uppercase;
-            box-shadow: 0 1px 8px #00ffa844;
-            transition: background 0.2s ease;
-            flex-shrink: 0;
-        }
-
-        #connectWalletBtn:hover,
-        #disconnectWalletBtn:hover {
-            background: #00cc7a;
-            color: #121212;
-        }
-
-        #disconnectWalletBtn {
-            background: transparent;
-            border: 1.5px solid #00ffa8;
-            color: #00ffa8;
-        }
-
-        #walletAddress {
-            font-size: 13px;
-            color: #00ffa8;
-            letter-spacing: 0.03em;
-            font-weight: 600;
-            user-select: text;
-            white-space: nowrap;
-            max-width: 130px;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-
-        /* Main content area */
-        main {
-            flex-grow: 1;
-            display: flex;
-            flex-direction: column;
-            padding: 10px;
-            overflow: hidden;
-        }
-
-        #totalBalance {
-            font-size: 1.15rem;
-            margin-bottom: 14px;
-            font-weight: 700;
-            color: #00ff99;
-            text-align: center;
-            min-height: 1.8em;
-            letter-spacing: 0.05em;
-            user-select: text;
-            flex-shrink: 0;
-            padding-top: 10px;
-        }
-
-        .tokens-container {
-            flex: 1;
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 10px;
-            overflow: hidden;
-        }
-
-        .token-card {
-            background: #181c22;
-            border-radius: 10px;
-            box-shadow: 0 1px 8px #00ffa833 inset;
-            display: flex;
-            flex-direction: column;
-            padding: 12px;
-            position: relative;
-            transition: box-shadow 0.10s ease, transform 0.15s ease;
-            overflow: hidden;
-        }
-
-        .token-card:hover {
-            box-shadow: 0 1px 14px #00ffa8cc inset;
-            transform: scale(1.01);
-        }
-
-        .token-card.compact {
-            min-height: 100px;
-            max-height: 120px;
             justify-content: center;
+            margin-bottom: 20px;
         }
-
-        .token-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 10px;
-        }
-
-        .token-symbol {
-            font-weight: 700;
+        #connectWalletBtn {
+            background-color: #00ff99;
+            color: #000;
+            border: none;
+            padding: 10px 20px;
             font-size: 16px;
-            color: #00ffaa;
-            letter-spacing: 0.07em;
+            cursor: pointer;
+            border-radius: 5px;
         }
-
-        .token-price-info {
-            display: flex;
-            align-items: baseline;
-            gap: 5px;
+        #walletInfo {
+            text-align: center;
+            margin-bottom: 20px;
         }
-
-        .token-price {
-            font-size: 14px;
-            color: #fff;
-            font-weight: 600;
+        #tokenList {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 15px;
         }
-
-        .token-balance {
-            font-size: 24px;
-            font-weight: bold;
-            margin: 10px 0;
-            color: #00ff99;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
+        .token-card {
+            background-color: #1e1e1e;
+            border-radius: 10px;
+            padding: 15px;
+            text-align: center;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
         }
-
-        .price-change {
-            font-size: 12px;
-            padding: 3px 6px;
-            border-radius: 4px;
-            font-weight: bold;
-        }
-
-        .price-up {
-            background-color: rgba(22, 199, 132, 0.2);
-            color: #16c784;
-        }
-
-        .price-down {
-            background-color: rgba(234, 57, 67, 0.2);
-            color: #ea3943;
-        }
-
-        .chart-container {
-            flex: 1;
-            min-height: 80px;
-            margin-top: 10px;
-            overflow: hidden;
-            position: relative;
-        }
-
-        .price-chart {
-            width: 100% !important;
-            height: 100% !important;
-            max-height: unset !important;
-        }
-
-        /* Action buttons at bottom */
         .action-buttons {
             display: flex;
             justify-content: space-around;
-            padding: 10px;
-            background: #181818;
-            border-top: 1px solid #00ffa833;
-            flex-shrink: 0;
+            margin-top: 20px;
         }
-
         .action-btn {
-            background: #00ffa8;
+            background-color: #00ff99;
+            color: #000;
             border: none;
-            color: #111;
-            font-weight: 700;
-            padding: 12px 0;
-            border-radius: 8px;
-            font-size: 15px;
+            padding: 10px 20px;
+            font-size: 14px;
             cursor: pointer;
-            transition: background 0.25s ease;
-            width: 30%;
-            text-align: center;
-            text-transform: uppercase;
-            box-shadow: 0 3px 10px #00ffa833;
+            border-radius: 5px;
         }
-
-        .action-btn:hover {
-            background: #00cc7a;
-        }
-
         .action-btn:disabled {
-            opacity: 0.6;
+            background-color: #555;
             cursor: not-allowed;
         }
-
-        /* Signal indicators */
-        .signal-indicator {
-            position: absolute;
-            top: 10px;
-            right: 10px;
-            padding: 3px 8px;
-            border-radius: 4px;
-            font-size: 10px;
-            font-weight: bold;
-            text-transform: uppercase;
-            animation: blinky 0.75s steps(1) infinite;
-            z-index: 10;
+        #modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.7);
+            display: none;
+            justify-content: center;
+            align-items: center;
         }
-
-        .buy-signal {
-            background-color: rgba(22, 199, 132, 0.2);
-            color: #16c784;
-            border: 1px solid #16c784;
-        }
-
-        .sell-signal {
-            background-color: rgba(234, 57, 67, 0.2);
-            color: #ea3943;
-            border: 1px solid #ea3943;
-        }
-
-        @keyframes blinky {
-            0% { opacity: 1; }
-            50% { opacity: 0.35; }
-            100% { opacity: 1; }
-        }
-
-        /* Loading state */
-        .loading {
-            display: inline-block;
-            width: 12px;
-            height: 12px;
-            border: 2px solid rgba(255,255,255,.3);
-            border-radius: 50%;
-            border-top-color: #00ffa8;
-            animation: spin 1s ease-in-out infinite;
-        }
-
-        @keyframes spin {
-            to { transform: rotate(360deg); }
+        .modal-content {
+            background-color: #1e1e1e;
+            padding: 20px;
+            border-radius: 10px;
+            width: 80%;
+            max-width: 400px;
         }
     </style>
 </head>
 <body>
     <div id="app-container">
-        <header>
-            <div id="logo-left">FIXORIUM WALLET</div>
-            <div id="wallet-row">
-                <button id="connectWalletBtn">CONNECT</button>
-                <button id="disconnectWalletBtn" style="display:none;">DISCONNECT</button>
-                <span id="walletAddress"></span>
-            </div>
-        </header>
-
-        <main>
-            <div id="totalBalance" aria-live="polite" aria-atomic="true">Total Balance: $0.00</div>
-            <div class="tokens-container" id="tokensContainer">
-                <!-- Tokens will be rendered here -->
-            </div>
-        </main>
-
+        <div id="wallet-connect">
+            <button id="connectWalletBtn">Connect Wallet</button>
+        </div>
+        <div id="walletInfo" style="display:none;">
+            <p>Wallet Address: <span id="walletAddress"></span></p>
+            <p>Total Balance: <span id="totalBalance">$0.00</span></p>
+        </div>
+        <div id="tokenList"></div>
         <div class="action-buttons">
             <button id="depositBtn" class="action-btn" disabled>Deposit</button>
             <button id="withdrawBtn" class="action-btn" disabled>Withdraw</button>
-            <button id="exchangeBtn" class="action-btn">Exchange</button>
+            <button id="exchangeBtn" class="action-btn" disabled>Exchange</button>
+        </div>
+        <div id="modal">
+            <div class="modal-content">
+                <!-- Modal content will be dynamically added -->
+            </div>
         </div>
     </div>
 
     <script>
-        // Token configuration and state
-const tokens = [
-    // Token data here
-];
-
-const state = {
-    // App state here
-};
-
-// DOM elements cache
-const elements = {
-    // DOM elements here
-};
-
-// Utility functions
-function formatNumber(num, decimals = 4) {
-    // Format number function here
-}
-
-// Wallet connection logic
-async function connectWallet() {
-    // Connect wallet logic here
-}
-
-async function disconnectWallet() {
-    // Disconnect wallet logic here
-}
-
-// Balance fetching and price updates
-async function fetchBalances() {
-    // Fetch balances logic here
-}
-
-async function updatePrices() {
-    // Update prices logic here
-}
-
-// Signal logic and chart updates
-function checkSignals() {
-    // Check signals logic here
-}
-
-function updateChart(token) {
-    // Update chart logic here
-}
-
-// UI rendering and updates
-function renderTokens() {
-    // Render tokens logic here
-}
-
-function updateTokenDisplays() {
-    // Update token displays logic here
-}
-
-// Modal functions and handlers
-function openModal(type, data = null) {
-    // Open modal logic here
-}
-
-function closeModal() {
-    // Close modal logic here
-}
-
-function renderModal() {
-    // Render modal logic here
-}
-
-// Deposit, withdraw, and exchange handlers
-async function handleWithdraw(event) {
-    // Handle withdraw logic here
-}
-
-async function handleExchange(event) {
-    // Handle exchange logic here
-}
-
-// Initialization
-function initializeApp() {
-    // Initialize app logic here
-}
-
-// Run initialization when DOM is ready
-if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", initializeApp);
-} else {
-    initializeApp();
-}
-
-// Expose functions to global scope for onclick attributes in modals
-window.closeModal = closeModal;
-window.openExchangeModal = (tokenSymbol, actionType) => openModal('exchange', { tokenSymbol, actionType });
-window.handleWithdraw = handleWithdraw;
-window.handleExchange = handleExchange;
-```<|eot_id|><|start_header_id|>assistant<|end_header_id|>
-
-To provide the complete file, I will need to fill in the missing parts of the JavaScript code. Here is the complete file:
-
-```html
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <!-- Head content here -->
-</head>
-<body>
-    <div id="app-container">
-        <!-- App container content here -->
-    </div>
-
-    <script>
-        const solanaWeb3 = window.solanaWeb3;
-        const ChartJS = window.Chart;
-
-        // Token configuration and state
-        const tokens = [
+        // Solana and application configuration
+        const SOLANA_NETWORK = solanaWeb3.clusterApiUrl('mainnet-beta');
+        const TOKENS = [
             {
-                symbol: "SOL",
-                name: "Solana",
-                mint: null,
-                decimals: 9,
-                price: 0,
-                balance: 0,
-                priceHistory: [],
-                chart: null
+                symbol: 'SOL',
+                name: 'Solana',
+                mint: 'So11111111111111111111111111111111111111112',
+                logo: 'https://cryptologos.cc/logos/solana-sol-logo.png'
             },
             {
-                symbol: "USDC",
-                name: "USDC",
-                mint: "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
-                decimals: 6,
-                price: 0,
-                balance: 0,
-                priceHistory: [],
-                chart: null
+                symbol: 'USDC',
+                name: 'USD Coin',
+                mint: 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v',
+                logo: 'https://cryptologos.cc/logos/usd-coin-usdc-logo.png'
+            },
+            {
+                symbol: 'USDT',
+                name: 'Tether',
+                mint: 'Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB',
+                logo: 'https://cryptologos.cc/logos/tether-usdt-logo.png'
             }
         ];
 
+        // Application state
         const state = {
-            walletConnected: false,
+            connection: null,
+            wallet: null,
             publicKey: null,
-            provider: window.solana?.isPhantom ? window.solana : null,
-            connection: new solanaWeb3.Connection(solanaWeb3.clusterApiUrl("mainnet-beta")),
-            priceUpdateInterval: null,
-            balanceUpdateInterval: null
+            tokens: []
         };
 
-        // DOM elements cache
+        // DOM Elements
         const elements = {
-            connectBtn: document.getElementById("connectWalletBtn"),
-            disconnectBtn: document.getElementById("disconnectWalletBtn"),
-            walletAddress: document.getElementById("walletAddress"),
-            tokensContainer: document.getElementById("tokensContainer"),
-            totalBalance: document.getElementById("totalBalance"),
-            depositBtn: document.getElementById("depositBtn"),
-            withdrawBtn: document.getElementById("withdrawBtn"),
-            exchangeBtn: document.getElementById("exchangeBtn")
+            connectBtn: document.getElementById('connectWalletBtn'),
+            walletInfo: document.getElementById('walletInfo'),
+            walletAddress: document.getElementById('walletAddress'),
+            totalBalance: document.getElementById('totalBalance'),
+            tokenList: document.getElementById('tokenList'),
+            depositBtn: document.getElementById('depositBtn'),
+            withdrawBtn: document.getElementById('withdrawBtn'),
+            exchangeBtn: document.getElementById('exchangeBtn'),
+            modal: document.getElementById('modal')
         };
 
-        // Utility functions
-        function formatNumber(num, decimals = 4) {
-            if (typeof num !== "number" || isNaN(num)) return "-";
-            return num.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: decimals });
-        }
-
-        async function findATA(walletAddress, tokenMintAddress) {
-            return (await solanaWeb3.PublicKey.findProgramAddress(
-                [
-                    walletAddress.toBuffer(),
-                    solanaWeb3.TOKEN_PROGRAM_ID.toBuffer(),
-                    tokenMintAddress.toBuffer(),
-                ],
-                solanaWeb3.ASSOCIATED_TOKEN_PROGRAM_ID
-            ))[0];
-        }
-
-        // Wallet connection logic
+        // Wallet Connection
         async function connectWallet() {
-            if (!state.provider) {
-                alert("Phantom Wallet not found. Please install it to connect.");
-                return;
-            }
-
             try {
-                const response = await state.provider.connect();
-                state.publicKey = response.publicKey;
-                state.walletConnected = true;
-                updateUI();
-                fetchBalances();
-            } catch (error) {
-                console.error("Connection rejected or failed:", error);
-            }
-        }
-
-        async function disconnectWallet() {
-            if (state.provider && state.walletConnected) {
-                try {
-                    await state.provider.disconnect();
-                } catch (error) {
-                    console.error("Disconnect error:", error);
+                // Check if Phantom wallet is installed
+                if (!window.solana || !window.solana.isPhantom) {
+                    alert('Please install Phantom Wallet');
+                    window.open('https://phantom.app/', '_blank');
+                    return;
                 }
-            }
 
-            state.walletConnected = false;
-            state.publicKey = null;
-            updateUI();
+                // Request wallet connection with permission
+                const resp = await window.solana.connect({
+                    onlyIfTrusted: false
+                });
+
+                // Update application state
+                state.publicKey = resp.publicKey;
+                state.connection = new solanaWeb3.Connection(SOLANA_NETWORK, 'confirmed');
+                state.wallet = window.solana;
+
+                // Update UI
+                updateWalletUI();
+                fetchTokenBalances();
+            } catch (err) {
+                console.error('Wallet connection failed:', err);
+                alert('Wallet connection was rejected');
+            }
         }
 
-        function updateUI() {
-            if (state.walletConnected) {
-                elements.connectBtn.style.display = "none";
-                elements.disconnectBtn.style.display = "";
+        // Update Wallet UI
+        function updateWalletUI() {
+            if (state.publicKey) {
+                elements.connectBtn.style.display = 'none';
+                elements.walletInfo.style.display = 'block';
+                elements.walletAddress.textContent = state.publicKey.toBase58();
+                
+                // Enable action buttons
                 elements.depositBtn.disabled = false;
                 elements.withdrawBtn.disabled = false;
-
-                let addrStr = state.publicKey.toBase58();
-                addrStr = addrStr.length > 10 ? addrStr.slice(0, 6) + "..." + addrStr.slice(-4) : addrStr;
-                elements.walletAddress.textContent = addrStr;
-            } else {
-                elements.connectBtn.style.display = "";
-                elements.disconnectBtn.style.display = "none";
-                elements.depositBtn.disabled = true;
-                elements.withdrawBtn.disabled = true;
-                elements.walletAddress.textContent = "";
+                elements.exchangeBtn.disabled = false;
             }
         }
 
-        // Balance fetching and price updates
-        async function fetchBalances() {
-            if (!state.walletConnected || !state.publicKey) return;
+        // Fetch Token Balances
+        async function fetchTokenBalances() {
+            if (!state.publicKey || !state.connection) return;
 
             try {
+                // Fetch SOL balance
                 const solBalance = await state.connection.getBalance(state.publicKey);
-                tokens[0].balance = solBalance / 1e9;
-
-                // Fetch token balances
-                for (const token of tokens.slice(1)) {
-                    try {
-                        const mintPubKey = new solanaWeb3.PublicKey(token.mint);
-                        const ata = await findATA(state.publicKey, mintPubKey);
-                        const accountInfo = await state.connection.getParsedAccountInfo(ata);
-
-                        if (accountInfo.value) {
-                            token.balance = accountInfo.value.data.parsed.info.tokenAmount.uiAmount;
-                        } else {
-                            token.balance = 0;
+                
+                // Render tokens with balances
+                elements.tokenList.innerHTML = '';
+                
+                for (const token of TOKENS) {
+                    let balance = 0;
+                    
+                    if (token.symbol === 'SOL') {
+                        balance = solBalance / 10**9; // Convert lamports to SOL
+                    } else {
+                        // Fetch token balance for other tokens
+                        const tokenMint = new solanaWeb3.PublicKey(token.mint);
+                        const ata = await solanaWeb3.PublicKey.findProgramAddress(
+                            [
+                                state.publicKey.toBuffer(),
+                                solanaWeb3.TOKEN_PROGRAM_ID.toBuffer(),
+                                tokenMint.toBuffer()
+                            ],
+                            solanaWeb3.ASSOCIATED_TOKEN_PROGRAM_ID
+                        );
+                        
+                        try {
+                            const tokenAccount = await state.connection.getParsedAccountInfo(ata[0]);
+                            if (tokenAccount.value) {
+                                balance = tokenAccount.value.data.parsed.info.tokenAmount.uiAmount;
+                            }
+                        } catch (err) {
+                            console.warn(`No balance for ${token.symbol}`);
                         }
-                    } catch (error) {
-                        console.error(`Error fetching ${token.symbol} balance:`, error);
-                        token.balance = 0;
                     }
+
+                    // Create token card
+                    const tokenCard = document.createElement('div');
+                    tokenCard.className = 'token-card';
+                    tokenCard.innerHTML = `
+                        <img src="${token.logo}" width="50" height="50">
+                        <h3>${token.symbol}</h3>
+                        <p>Balance: ${balance.toFixed(4)}</p>
+                    `;
+                    elements.tokenList.appendChild(tokenCard);
                 }
 
-                updateTokenDisplays();
+                // Update total balance (simplified)
                 updateTotalBalance();
-            } catch (error) {
-                console.error("Error fetching balances:", error);
+            } catch (err) {
+                console.error('Balance fetch error:', err);
             }
         }
 
-        async function updatePrices() {
-            try {
-                // Update token prices here
-            } catch (error) {
-                console.error("Error updating prices:", error);
-            }
+        // Update Total Balance
+        function updateTotalBalance() {
+            // This is a placeholder. In a real app, you'd fetch current prices
+            const totalBalance = 100; // Example value
+            elements.totalBalance.textContent = `$${totalBalance.toFixed(2)}`;
         }
 
-        // Signal logic and chart updates
-        function checkSignals() {
-            // Check signals logic here
+        // Deposit Function
+        function openDepositModal() {
+            if (!state.publicKey) return;
+            
+            elements.modal.style.display = 'flex';
+            const modalContent = elements.modal.querySelector('.modal-content');
+            modalContent.innerHTML = `
+                <h2>Deposit SOL</h2>
+                <p>Your deposit address: ${state.publicKey.toBase58()}</p>
+                <button onclick="closeModal()">Close</button>
+            `;
         }
 
-        function updateChart(token) {
-            // Update chart logic here
+        // Withdraw Function
+        function openWithdrawModal() {
+            if (!state.publicKey) return;
+            
+            elements.modal.style.display = 'flex';
+            const modalContent = elements.modal.querySelector('.modal-content');
+            modalContent.innerHTML = `
+                <h2>Withdraw SOL</h2>
+                <input type="text" id="withdrawAddress" placeholder="Recipient Address">
+                <input type="number" id="withdrawAmount" placeholder="Amount">
+                <button onclick="performWithdraw()">Withdraw</button>
+                <button onclick="closeModal()">Cancel</button>
+            `;
         }
 
-        // UI rendering and updates
-        function renderTokens() {
-            elements.tokensContainer.innerHTML = "";
-
-            for (const token of tokens) {
-                const tokenCard = document.createElement("div");
-                tokenCard.className = "token-card";
-
-                const tokenSymbol = document.createElement("h2");
-                tokenSymbol.textContent = token.symbol;
-                tokenCard.appendChild(tokenSymbol);
-
-                const tokenBalance = document.createElement("p");
-                tokenBalance.textContent = `Balance: ${formatNumber(token.balance, 4)}`;
-                tokenCard.appendChild(tokenBalance);
-
-                elements.tokensContainer.appendChild(tokenCard);
-            }
+        // Close Modal
+        function closeModal() {
+            elements.modal.style.display = 'none';
         }
 
-        function updateTokenDisplays() {
-            for (const token of tokens) {
-                const card = document.querySelector(`.token-card-${
+        // Event Listeners
+        elements.connectBtn.addEventListener('click', connectWallet);
+        elements.depositBtn.addEventListener('click', openDepositModal);
+        elements.withdrawBtn.addEventListener('click', openWithdrawModal);
+
+        // Initial render of token list before wallet connect
+        function renderInitialTokenList() {
+            elements.tokenList.innerHTML = '';
+            TOKENS.forEach(token => {
+                const tokenCard = document.createElement('div');
+                tokenCard.className = 'token-card';
+                tokenCard.innerHTML = `
+                    <img src="${token.logo}" width="50" height="50">
+                    <h3>${token.symbol}</h3>
+                    <p>Balance: Connect Wallet</p>
+                `;
+                elements.tokenList.appendChild(tokenCard);
+            });
+        }
+
+        // Initialize app
+        renderInitialTokenList();
     </script>
 </body>
- </html>
+</html>
