@@ -205,7 +205,7 @@
           symbol: "SOL",
           name: "Solana",
           decimals: 9,
-          logoURI: "https://htmlpreview.github.io/?https://github.com/fixorium/fixorium-wallet/blob/main/sol.png",
+          logoURI: "",
           
         },
         {
@@ -213,24 +213,24 @@
           symbol: "USDC",
           name: "USD Coin",
           decimals: 6,
-          logoURI: "https://cryptologos.cc/logos/usd-coin-usdc-logo.svg?v=014",
-          metadataUri: "https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v/logo.png"
+          logoURI: "",
+          
         },
         {
           mint: new PublicKey("Es9vMFrzaCER7N1TvjVqauDziYbPEmxW5M9VpX1TTd8C"),
           symbol: "USDT",
           name: "Tether USD",
           decimals: 6,
-          logoURI: "https://cryptologos.cc/logos/tether-usdt-logo.svg?v=014",
-          metadataUri: "https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/Es9vMFrzaCER7N1TvjVqauDziYbPEmxW5M9VpX1TTd8C/logo.png"
+          logoURI: "",
+          
         },
         {
           mint: new PublicKey("D2mGkp5D43jirFeapx8UZmpiH7FaWeX1eUWy94q1F2hD"),
           symbol: "FIXR",
           name: "FixerCoin",
           decimals: 9,
-          logoURI: "https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/solana/assets/D2mGkp5D43jirFeapx8UZmpiH7FaWeX1eUWy94q1F2hD/logo.png",
-          metadataUri: "https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/solana/assets/D2mGkp5D43jirFeapx8UZmpiH7FaWeX1eUWy94q1F2hD/info.json"
+          logoURI: "",
+          
         }
       ];
 
@@ -239,7 +239,7 @@
         SOL: "solana",
         USDC: "usd-coin",
         USDT: "tether",
-        FIXR: "" // <-- Provide your real CoinGecko ID here if available!
+        FIXERCOIN: "FIXERCOIN" // <-- Provide your real CoinGecko ID here if available!
       };
 
       async function findAssociatedTokenAddress(walletAddress, tokenMintAddress) {
