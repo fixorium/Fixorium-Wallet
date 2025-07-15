@@ -9,426 +9,49 @@
   <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@solana/web3.js@1.95.2/lib/index.iife.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/bn.js/5.2.0/bn.min.js" crossorigin="anonymous"></script>
   <script src="https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js"></script>
   <style>
-    /* Responsive and clean styles */
-    body {
-      margin: 0;
-      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
-      background: #0e1217;
-      color: #eee;
-      display: flex;
-      flex-direction: column;
-      min-height: 100vh;
-    }
-
-    header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      background: #0b1015;
-      padding: 10px 20px;
-      box-shadow: 0 0 8px rgba(0, 0, 0, 0.5);
-      flex-shrink: 0;
-    }
-
-    #logo-left {
-      font-size: 1.5rem;
-      font-weight: 700;
-      color: #00ffa8;
-      user-select: none;
-    }
-
-    #connectWalletBtn {
-      background: #00ffa8;
-      border: none;
-      color: #121212;
-      font-weight: 700;
-      padding: 8px 20px;
-      border-radius: 6px;
-      cursor: pointer;
-      min-width: 90px;
-      transition: background 0.3s ease;
-      user-select: none;
-    }
-
-    #connectWalletBtn:hover {
-      background: #00cc7a;
-    }
-
-    main {
-      flex-grow: 1;
-      padding: 15px 20px 40px;
-      max-width: 900px;
-      margin: 0 auto;
-      width: 100%;
-      box-sizing: border-box;
-    }
-
-    #totalBalance {
-      font-size: 1.3rem;
-      margin-bottom: 15px;
-      font-weight: 700;
-      color: #00ff99;
-      user-select: text;
-      min-height: 1.9em;
-      text-align: center;
-    }
-
-    .tokens-list {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
-      gap: 12px;
-      margin-bottom: 20px;
-    }
-
-    .token-item {
-      background: #121b26;
-      border-radius: 10px;
-      padding: 14px 12px;
-      box-shadow: inset 2px 2px 6px #0a0e12, inset -2px -2px 6px #1e2734;
-      display: flex;
-      flex-direction: column;
-      justify-content: space-between;
-      user-select: none;
-      cursor: default;
-      outline-offset: 2px;
-    }
-
-    .token-item:focus {
-      outline: 2px solid #00ff99;
-      outline-offset: 2px;
-    }
-
-    .token-info {
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-    }
-
-    .token-symbol {
-      font-weight: 700;
-      font-size: 1.1rem;
-      color: #00ffa8;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      user-select: text;
-    }
-
-    .token-balance,
-    .token-price {
-      font-size: 0.9rem;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      user-select: text;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-
-    .buy-btn,
-    .sell-btn {
-      background: transparent;
-      border: 1.5px solid;
-      border-radius: 12px;
-      padding: 2px 8px;
-      font-weight: 700;
-      font-size: 0.75rem;
-      user-select: none;
-      pointer-events: none;
-      color: #00ff99;
-      &.sell-btn {
-        color: #ff5757;
-        border-color: #ff5757;
-      }
-    }
-    .buy-btn {
-      color: #00ff99;
-      border-color: #00ff99;
-    }
-    .sell-btn {
-      color: #ff5757;
-      border-color: #ff5757;
-    }
-    .blink {
-      animation: blink 1.5s linear infinite;
-    }
-    @keyframes blink {
-      0%,
-      100% {
-        opacity: 1;
-      }
-      50% {
-        opacity: 0.4;
-      }
-    }
-
-    .button-bar {
-      display: flex;
-      justify-content: center;
-      gap: 22px;
-      margin-bottom: 30px;
-      flex-wrap: wrap;
-    }
-
-    .button-bar button {
-      cursor: pointer;
-      user-select: none;
-      background: linear-gradient(135deg, #00c77f 0%, #00ff99 100%);
-      border: none;
-      border-radius: 12px;
-      font-weight: 700;
-      font-size: 1.05rem;
-      padding: 12px 28px;
-      color: #121212;
-      box-shadow: 0 3px 6px #004e3b;
-      transition: background 0.3s ease;
-      min-width: 120px;
-      max-width: 160px;
-    }
-    .button-bar button:hover:not(:disabled) {
-      background: linear-gradient(135deg, #00ff99 0%, #00c77f 100%);
-    }
-    .button-bar button:disabled {
-      opacity: 0.5;
-      cursor: default;
-    }
-
-    /* Overlays for modals */
-    .overlay-bg {
-      position: fixed;
-      inset: 0;
-      background: rgba(5, 10, 15, 0.8);
-      backdrop-filter: blur(4px);
-      z-index: 1500;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      padding: 25px 15px;
-      box-sizing: border-box;
-      overflow-y: auto;
-    }
-
-    .overlay-panel {
-      background: #0f1530;
-      border-radius: 18px;
-      box-shadow: 0 1em 3em rgba(0, 255, 102, 0.45);
-      padding: 25px 25px 30px;
-      width: 100%;
-      max-width: 460px;
-      max-height: 98vh;
-      overflow-y: auto;
-      display: flex;
-      flex-direction: column;
-      user-select: none;
-    }
-
-    .overlay-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 14px;
-    }
-
-    .overlay-header h2 {
-      margin: 0;
-      font-weight: 700;
-      font-size: 1.5rem;
-      color: #00ff99;
-      user-select: text;
-    }
-
-    .overlay-close-btn {
-      background: transparent;
-      border: none;
-      color: #00ff99;
-      font-weight: 900;
-      font-size: 1.8rem;
-      line-height: 1;
-      cursor: pointer;
-      padding: 2px 6px 0 6px;
-      user-select: none;
-    }
-    .overlay-close-btn:hover {
-      color: #00cca0;
-    }
-
-    form label {
-      display: block;
-      margin-top: 14px;
-      font-weight: 700;
-      font-size: 1rem;
-      user-select: text;
-      letter-spacing: 0.02em;
-      color: #00ffa8;
-    }
-
-    form input,
-    form select {
-      user-select: text;
-      margin-top: 6px;
-      font-size: 1rem;
-      padding: 8px 12px;
-      border-radius: 10px;
-      border: none;
-      width: 100%;
-      box-sizing: border-box;
-      background: #121b26;
-      color: #eee;
-      outline-offset: 2px;
-      outline-color: transparent;
-      transition: outline-color 0.2s ease;
-    }
-
-    form input:focus,
-    form select:focus {
-      outline-color: #00ff9a;
-    }
-
-    .modal-btn {
-      margin-top: 26px;
-      cursor: pointer;
-      user-select: none;
-      background: linear-gradient(135deg, #00c77f 0%, #00ff99 100%);
-      border: none;
-      border-radius: 12px;
-      font-weight: 700;
-      font-size: 1.1rem;
-      padding: 14px;
-      color: #121212;
-      box-shadow: 0 4px 9px #004e3b;
-      width: 100%;
-      transition: background 0.3s ease;
-    }
-
-    .modal-btn:disabled {
-      opacity: 0.5;
-      cursor: default;
-    }
-
-    .modal-btn:hover:not(:disabled) {
-      background: linear-gradient(135deg, #00ff99 0%, #00c77f 100%);
-    }
-
-    #depositAddress,
-    #withdrawReceiveAddress {
-      font-family: monospace;
-      word-break: break-all;
-      margin-top: 6px;
-      margin-bottom: 12px;
-      font-size: 0.95rem;
-      border-radius: 8px;
-      background: #151c2b;
-      padding: 8px 10px;
-      user-select: text;
-    }
-
-    #qrcode {
-      margin: 14px auto 0;
-      display: block;
-      max-width: 180px;
-      width: 100%;
-      height: auto;
-      user-select: none;
-    }
-
-    .error {
-      background: #550000dd;
-      padding: 10px 16px;
-      margin-bottom: 14px;
-      border-radius: 10px;
-      color: #ff9999;
-      font-weight: 700;
-      text-align: center;
-      user-select: none;
-    }
-
-    .status {
-      background: #004400dd;
-      padding: 10px 16px;
-      margin-bottom: 14px;
-      border-radius: 10px;
-      color: #a8ffaa;
-      font-weight: 700;
-      text-align: center;
-      user-select: none;
-    }
-
-    .dot-loader {
-      display: inline-flex;
-      gap: 6px;
-      user-select: none;
-      span {
-        background: #0ee;
-        width: 8px;
-        height: 8px;
-        border-radius: 50%;
-        display: inline-block;
-        animation: bounce 1.2s infinite ease-in-out;
-      }
-      span:nth-child(1) {
-        animation-delay: 0s;
-      }
-      span:nth-child(2) {
-        animation-delay: 0.15s;
-      }
-      span:nth-child(3) {
-        animation-delay: 0.3s;
-      }
-    }
-    @keyframes bounce {
-      0%,
-      80%,
-      100% {
-        transform: scale(0);
-      }
-      40% {
-        transform: scale(1);
-      }
-    }
-
-    .route-option {
-      background: #15202b;
-      padding: 10px 12px;
-      margin-top: 10px;
-      border-radius: 12px;
-      cursor: pointer;
-      user-select: none;
-      outline-offset: 2px;
-      display: flex;
-      justify-content: space-between;
-      font-weight: 700;
-      color: #00ffa8;
-      font-size: 0.95rem;
-    }
-
-    .route-option.selected,
-    .route-option:focus {
-      box-shadow: 0 0 10px #00ffa8;
-      outline: 2px solid #00ffaa;
-    }
-
-    /* Responsive tweaks */
-    @media (max-width: 520px) {
-      .button-bar button {
-        width: 100%;
-        max-width: none;
-        font-size: 1rem;
-      }
-      .tokens-list {
-        grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
-        gap: 10px;
-      }
-      #totalBalance {
-        font-size: 1.15rem;
-      }
-    }
+    body { margin:0; background:#0e1217; color:#eee; font-family:Arial,sans-serif; }
+    header { display:flex; justify-content:space-between; align-items:center; background:#0b1015; padding:10px 20px; }
+    #logo-left { font-size:1.5rem; font-weight:700; color:#00ffa8; }
+    #connectWalletBtn { background:#00ffa8; border:none; color:#121212; font-weight:700; padding:8px 20px; border-radius:6px; cursor:pointer; min-width:90px; }
+    #connectWalletBtn:hover { background:#00cc7a; }
+    main { max-width:900px; margin:0 auto; padding:18px 12px 30px; }
+    #totalBalance { font-size:1.3rem; margin-bottom:15px; font-weight:700; color:#00ff99; text-align:center; min-height:2em; }
+    .tokens-list { display:grid; grid-template-columns:repeat(auto-fill,minmax(190px,1fr)); gap:13px; margin-bottom:20px; }
+    .token-item { background:#121b26; border-radius:10px; padding:14px 12px; box-shadow:inset 2px 2px 6px #0a0e12,inset -2px -2px 6px #1e2734; display:flex;flex-direction:column;user-select:none; }
+    .token-info { display:flex; flex-direction:column; gap:6px; }
+    .token-symbol { font-weight:700; font-size:1.1rem; color:#00ffa8; white-space:nowrap; }
+    .token-balance, .token-price { font-size:0.94rem; white-space:nowrap; display:flex;align-items:center;gap:7px; }
+    .buy-btn, .sell-btn { border:1.7px solid; border-radius:12px; padding:2px 9px;font-weight:700; font-size:0.83rem;user-select:none;pointer-events:none;}
+    .buy-btn { color:#16c784; border-color:#16c784; background:transparent; }
+    .sell-btn { color:#ea3943; border-color:#ea3943; background:transparent; }
+    .blink { animation:blink 1.3s linear infinite; }
+    @keyframes blink {0%,100%{opacity:1;} 50%{opacity:.35;}}
+    .button-bar {display:flex;justify-content:center;gap:22px;margin-bottom:30px;flex-wrap:wrap;}
+    .button-bar button { cursor:pointer; background:linear-gradient(135deg,#00c77f 0%,#00ff99 100%); border:none; border-radius:12px; font-weight:700; font-size:1.05rem; padding:12px 28px; color:#121212; box-shadow:0 3px 6px #004e3b;min-width:120px; }
+    .button-bar button:hover:not(:disabled) { background:linear-gradient(135deg,#00ff99 0%,#00c77f 100%);}
+    .button-bar button:disabled{opacity:.5;cursor:default;}
+    .dot-loader { display:inline-flex; gap:6px; user-select:none; }
+    .dot-loader span { background:#0ee; width:8px; height:8px; border-radius:50%;display:inline-block;animation:bounce 1.2s infinite ease-in-out;}
+    .dot-loader span:nth-child(2){animation-delay:.15s;}
+    .dot-loader span:nth-child(3){animation-delay:.3s;}
+    @keyframes bounce{0%,80%,100%{transform:scale(0);}40%{transform:scale(1);}}
+    .overlay-bg {position:fixed;inset:0;background:rgba(5,10,15,0.83);backdrop-filter:blur(3px);z-index:1500;display:flex;justify-content:center;align-items:center;}
+    .overlay-panel {background:#0f1530;border-radius:18px;box-shadow:0 1em 3em rgba(0,255,102,0.35);padding:22px 23px 28px;width:98%;max-width:430px;max-height:97vh;overflow-y:auto;}
+    .overlay-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;}
+    .overlay-header h2{margin:0;font-weight:700;font-size:1.37rem;color:#00ff99;}
+    .overlay-close-btn{background:transparent;border:none;color:#00ff99;font-weight:900;font-size:1.65rem;cursor:pointer;}
+    .modal-btn {margin-top:19px;cursor:pointer;background:linear-gradient(135deg,#00c77f 0%,#00ff99 100%);border:none;border-radius:12px;font-weight:700;font-size:1.1rem;padding:13px;color:#121212;width:100%;}
+    .modal-btn:disabled{opacity:0.5;}
+    .modal-btn:hover:not(:disabled){background:linear-gradient(135deg,#00ff99 0%,#00c77f 100%);}
+    .error{background:#550000b3;padding:10px 16px;margin-bottom:14px;border-radius:10px;color:#ff9999;font-weight:700;text-align:center;}
+    .status{background:#004400b3;padding:10px 16px;margin-bottom:14px;border-radius:10px;color:#a8ffaa;font-weight:700;text-align:center;}
+    #depositAddress { font-family:monospace;word-break:break-all;margin-top:6px;margin-bottom:12px;font-size:0.95rem;border-radius:8px;background:#151c2b;padding:8px 10px;user-select:text;}
+    #qrcode { margin:14px auto 0; display:block; max-width:180px; width:100%; height:auto; user-select:none; }
+    @media (max-width:520px){.button-bar button{width:100%;max-width:none;font-size:1rem;}.tokens-list{grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:8px;}#totalBalance{font-size:1.09rem;}}
   </style>
 </head>
-
 <body>
   <header>
     <div id="logo-left">FIXORIUM</div>
@@ -441,28 +64,20 @@
   <script type="text/javascript">
     (() => {
       const e = React.createElement;
-      const { useState, useEffect, useCallback, useRef, useMemo } = React;
-
-      // --- CONFIG ---
+      const { useState, useEffect, useCallback, useRef } = React;
+      // Add .pump field for mint string!
       const tokensList = [
-        { symbol: "SOL", name: "Solana", decimals: 9, mint: null },
-        { symbol: "USDC", name: "USD Coin", decimals: 6, mint: new solanaWeb3.PublicKey("EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v") },
-        { symbol: "USDT", name: "Tether USD", decimals: 6, mint: new solanaWeb3.PublicKey("Es9vMFrzaCER7N1TvjVqauDziYbPEmxW5M9VpX1TTd8C") },
-        { symbol: "FIXR", name: "FixerCoin", decimals: 9, mint: new solanaWeb3.PublicKey("D2mGkp5D43jirFeapx8UZmpiH7FaWeX1eUWy94q1F2hD") }
+        { symbol: "SOL", name: "Solana", decimals: 9, cg: "solana", mint: null, pump: null },
+        { symbol: "USDC", name: "USD Coin", decimals: 6, cg: "usd-coin", mint: new solanaWeb3.PublicKey("EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"), pump: "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v" },
+        { symbol: "USDT", name: "Tether USD", decimals: 6, cg: "tether", mint: new solanaWeb3.PublicKey("Es9vMFrzaCER7N1TvjVqauDziYbPEmxW5M9VpX1TTd8C"), pump: "Es9vMFrzaCER7N1TvjVqauDziYbPEmxW5M9VpX1TTd8C" },
+        { symbol: "FIXR", name: "FixerCoin", decimals: 9, cg: "", mint: new solanaWeb3.PublicKey("D2mGkp5D43jirFeapx8UZmpiH7FaWeX1eUWy94q1F2hD"), pump: "D2mGkp5D43jirFeapx8UZmpiH7FaWeX1eUWy94q1F2hD" }
       ];
-      const cgMap = {
-        SOL: "solana",
-        USDC: "usd-coin",
-        USDT: "tether",
-        FIXR: "fixercoin" // Placeholder Coingecko ID, change if FIXR is listed.
-      };
-
+      const cgMap = Object.fromEntries(tokensList.map(t=>[t.symbol,t.cg]));
       const connection = new solanaWeb3.Connection("https://solana-api.projectserum.com", "confirmed");
       const TOKEN_PROGRAM_ID = new solanaWeb3.PublicKey("TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA");
       const ASSOCIATED_TOKEN_PROGRAM_ID = new solanaWeb3.PublicKey("ATokenGPvR1HuTRHqpPDp7HHTRmAg3zRk6USH3UUZsM");
       const SOL_MINT = "So11111111111111111111111111111111111111112";
       const JUPITER_API_BASE = "https://quote-api.jup.ag/v6";
-
       async function findAssociatedTokenAddress(walletAddress, tokenMintAddress) {
         return (
           await solanaWeb3.PublicKey.findProgramAddress(
@@ -480,304 +95,61 @@
           return 0;
         }
       }
-
-      // Phantom mobile auto-detection: opens phantom app if needed (for mobile dapps)
-      function attemptPhantomMobileConnect() {
-        if (typeof window === "undefined") return;
-        if (window.solana && window.solana.isPhantom) {
-          // not mobile but phantom installed
-          return false;
-        }
-        // Mobile deep link attempt (iOS / Android)
-        // This triggers phantom app install or open if available
-        const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
-        if (!isMobile) return false;
-
-        // We can trigger phantom protocol uri for wallet connection on mobile devices
-        // Deep link for phantom connection
-        const phantomDeepLink = "https://phantom.app/ul/v1/connect?app_url=" + encodeURIComponent(window.location.origin) + "&redirect_link=" + encodeURIComponent(window.location.href);
-
-        window.location.href = phantomDeepLink;
-        return true;
+      function useBotSignals(prices, changes) {
+        return Object.fromEntries(tokensList.map(t => {
+          const ch = changes[t.symbol];
+          if (typeof ch !== "number") return [t.symbol, ""];
+          if (ch >= 2) return [t.symbol, "BUY"];
+          if (ch <= -2) return [t.symbol, "SELL"];
+          return [t.symbol, ""];
+        }));
       }
-
-      function useBotSignals(prices) {
-        const [signals, setSignals] = useState({});
+      // Deposit modal
+      function DepositModal({ publicKey, onClose }) {
+        const qrCanvasRef = useRef(null);
         useEffect(() => {
-          const interval = setInterval(() => {
-            setSignals({
-              SOL: Math.random() > 0.7 ? "BUY" : Math.random() > 0.7 ? "SELL" : "",
-              USDC: "",
-              USDT: "",
-              FIXR: Math.random() > 0.5 ? "BUY" : ""
-            });
-          }, 4000);
-          return () => clearInterval(interval);
-        }, []);
-        return signals;
+          if (qrCanvasRef.current && publicKey) {
+            const qrString = `solana:${publicKey.toBase58()}`;
+            window.QRCode.toCanvas(qrCanvasRef.current, qrString, { width: 180 });
+          }
+        }, [publicKey]);
+        return e(
+          "div",
+          { className: "overlay-bg", onClick: onClose },
+          e(
+            "div",
+            { className: "overlay-panel", onClick: e => e.stopPropagation() },
+            e("div", { className: "overlay-header" },
+              e("h2", null, "Deposit"),
+              e("button", { className: "overlay-close-btn", onClick: onClose }, "×")
+            ),
+            e("div", null,
+              publicKey && e("div", { id: "depositAddress" }, publicKey.toBase58()),
+              e("canvas", { ref: qrCanvasRef, id: "qrcode" }),
+              e("small", null, "Send only SOL or SPL tokens to this address on Solana.")
+            )
+          )
+        );
       }
-
-      function App() {
-        const [provider, setProvider] = useState(null);
-        const [walletConnected, setWalletConnected] = useState(false);
-        const [publicKey, setPublicKey] = useState(null);
-        const [balances, setBalances] = useState({});
-        const [prices, setPrices] = useState({});
-        const [loading, setLoading] = useState(false);
-        const [loadingPrices, setLoadingPrices] = useState(false);
-        const [activeModal, setActiveModal] = useState(null);
-        const [error, setError] = useState("");
-        const [status, setStatus] = useState("");
-        const [swapFromToken, setSwapFromToken] = useState(tokensList[0]);
-        const [swapToToken, setSwapToToken] = useState(tokensList[1]);
-        const [swapAmount, setSwapAmount] = useState("");
-        const [routes, setRoutes] = useState([]);
-        const [selectedRoute, setSelectedRoute] = useState(null);
-        const [swapping, setSwapping] = useState(false);
-        const [loadingQuotes, setLoadingQuotes] = useState(false);
-
+      // Withdraw modal
+      function WithdrawModal({
+        tokensList, balances, publicKey, provider, connection, prices, onClose, fetchBalancesAndPrices, ASSOCIATED_TOKEN_PROGRAM_ID, TOKEN_PROGRAM_ID
+      }) {
         const [withdrawToken, setWithdrawToken] = useState(tokensList[0]);
         const [withdrawAmount, setWithdrawAmount] = useState("");
         const [withdrawReceiveAddress, setWithdrawReceiveAddress] = useState("");
-        const [withdrawNetwork, setWithdrawNetwork] = useState("sol"); // 'sol' or 'token'
+        const [withdrawNetwork, setWithdrawNetwork] = useState("sol");
         const [withdrawing, setWithdrawing] = useState(false);
-
-        const signals = useBotSignals(prices);
-
-        // Phantom detection and mobile auto-detect connect attempt
-        useEffect(() => {
-          function detectProvider() {
-            if (window.solana && window.solana.isPhantom) {
-              setProvider(window.solana);
-            } else {
-              setProvider(null);
-            }
-          }
-          detectProvider();
-          window.addEventListener("photon#initialized", detectProvider);
-          return () => window.removeEventListener("photon#initialized", detectProvider);
-        }, []);
-
-        // Connect wallet
-        const connectWallet = useCallback(async () => {
-          setError("");
-          if (!provider) {
-            // Attempt mobile phantom auto connect
-            const mobileTriggered = attemptPhantomMobileConnect();
-            if (!mobileTriggered) {
-              setError("Phantom Wallet not found. Please install Phantom.");
-            }
-            return;
-          }
-          try {
-            const resp = await provider.connect();
-            setPublicKey(new solanaWeb3.PublicKey(resp.publicKey.toString()));
-            setWalletConnected(true);
-            setError("");
-            setStatus("");
-          } catch (err) {
-            setError("Wallet connection rejected or failed.");
-          }
-        }, [provider]);
-
-        const disconnectWallet = async () => {
-          if (!provider) return;
-          try {
-            await provider.disconnect();
-          } catch { }
-          setWalletConnected(false);
-          setPublicKey(null);
-          setBalances({});
-          setPrices({});
-          setRoutes([]);
-          setSelectedRoute(null);
-          setStatus("");
-          setError("");
-          setSwapAmount("");
-          setActiveModal(null);
-          setWithdrawAmount("");
-          setWithdrawReceiveAddress("");
-          setWithdrawing(false);
-        };
-
-        // Update wallet connect button text and onclick
-        useEffect(() => {
-          const btn = document.getElementById("connectWalletBtn");
-          if (!btn) return;
-          btn.innerText = walletConnected && publicKey
-            ? publicKey.toBase58().slice(0, 6) + "..." + publicKey.toBase58().slice(-6)
-            : "Connect";
-          btn.onclick = () => {
-            if (walletConnected) disconnectWallet();
-            else connectWallet();
-          };
-        }, [walletConnected, publicKey, connectWallet]);
-
-        // Phantom event handling
-        useEffect(() => {
-          if (!provider) return;
-          const onConnect = (pk) => {
-            const addr = typeof pk.toBase58 === "function" ? pk.toBase58() : pk.toString();
-            setPublicKey(new solanaWeb3.PublicKey(addr));
-            setWalletConnected(true);
-            setError("");
-            setStatus("");
-            const btn = document.getElementById("connectWalletBtn");
-            if (btn) btn.innerText = addr.slice(0, 6) + "..." + addr.slice(-6);
-          };
-          const onDisconnect = () => {
-            setWalletConnected(false);
-            setPublicKey(null);
-            setBalances({});
-            setPrices({});
-            setRoutes([]);
-            setSelectedRoute(null);
-            setError("");
-            setStatus("");
-            setSwapAmount("");
-            setActiveModal(null);
-            setWithdrawAmount("");
-            setWithdrawReceiveAddress("");
-            setWithdrawing(false);
-          };
-          provider.on("connect", onConnect);
-          provider.on("disconnect", onDisconnect);
-          if (provider.isConnected && provider.publicKey) onConnect(provider.publicKey);
-          return () => {
-            provider.removeListener && provider.removeListener("connect", onConnect);
-            provider.removeListener && provider.removeListener("disconnect", onDisconnect);
-          };
-        }, [provider]);
-
-        // Fetch all prices always (even without connected wallet)
-        async function fetchPricesOnly() {
-          setLoadingPrices(true);
-          try {
-            let pricesObj = {};
-            const cgIds = Object.values(cgMap).filter(Boolean).join(",");
-            if (cgIds) {
-              const resp = await axios.get(
-                `https://api.coingecko.com/api/v3/simple/price?ids=${cgIds}&vs_currencies=usd`,
-                { headers: { Accept: "application/json" } }
-              );
-              Object.entries(cgMap).forEach(([sym, id]) => {
-                if (id && resp.data[id]?.usd !== undefined && resp.data[id]?.usd !== null) {
-                  pricesObj[sym] = resp.data[id].usd;
-                } else {
-                  pricesObj[sym] = null;
-                }
-              });
-            } else {
-              Object.keys(cgMap).forEach((sym) => (pricesObj[sym] = null));
-            }
-            setPrices(pricesObj);
-            setError("");
-          } catch {
-            setError("Unable to fetch token prices");
-          }
-          setLoadingPrices(false);
+        const [error, setError] = useState("");
+        const [status, setStatus] = useState("");
+        async function innerFindAssociatedTokenAddress(walletAddress, tokenMintAddress) {
+          return (
+            await solanaWeb3.PublicKey.findProgramAddress(
+              [walletAddress.toBuffer(), TOKEN_PROGRAM_ID.toBuffer(), tokenMintAddress.toBuffer()],
+              ASSOCIATED_TOKEN_PROGRAM_ID
+            )
+          )[0];
         }
-
-        // Fetch balances and prices when connected
-        async function fetchBalancesAndPrices() {
-          setLoading(true);
-          setError("");
-          try {
-            if (!walletConnected || !publicKey) {
-              setBalances({});
-              await fetchPricesOnly();
-              setLoading(false);
-              return;
-            }
-            // SOL balance fetch
-            const solLamports = await connection.getBalance(publicKey);
-            const newBalances = { SOL: solLamports / 1e9 };
-
-            // SPL tokens
-            await Promise.all(
-              tokensList.map(async (t) => {
-                if (!t.mint) return;
-                try {
-                  const ata = await findAssociatedTokenAddress(publicKey, t.mint);
-                  const info = await connection.getParsedAccountInfo(ata);
-                  newBalances[t.symbol] = info.value?.data?.parsed?.info?.tokenAmount?.uiAmount || 0;
-                } catch {
-                  newBalances[t.symbol] = 0;
-                }
-              })
-            );
-
-            setBalances(newBalances);
-
-            // Prices
-            await fetchPricesOnly();
-          } catch (err) {
-            setError("Error loading balances or prices.");
-          }
-          setLoading(false);
-        }
-
-        // On mount: fetch prices regardless of wallet connected or not
-        useEffect(() => {
-          fetchPricesOnly();
-        }, []);
-
-        // Poll balances/prices if wallet connected
-        useEffect(() => {
-          if (walletConnected) {
-            fetchBalancesAndPrices();
-            const intervalId = setInterval(fetchBalancesAndPrices, 45000);
-            return () => clearInterval(intervalId);
-          }
-        }, [walletConnected, publicKey]);
-
-        // --- SWAP ---
-        const slippage = 0.05;
-
-        useEffect(() => {
-          async function fetchQuotes() {
-            setLoadingQuotes(true);
-            setRoutes([]);
-            setSelectedRoute(null);
-            if (!swapAmount || isNaN(Number(swapAmount)) || Number(swapAmount) <= 0) {
-              setLoadingQuotes(false);
-              return;
-            }
-            try {
-              const inputMint = swapFromToken.mint ? swapFromToken.mint.toString() : SOL_MINT;
-              const outputMint = swapToToken.mint ? swapToToken.mint.toString() : SOL_MINT;
-              const amount = toBaseUnits(swapAmount, swapFromToken.decimals);
-              const { data } = await axios.get(
-                `${JUPITER_API_BASE}/quote?inputMint=${inputMint}&outputMint=${outputMint}&amount=${amount}&slippageBps=${Math.floor(
-                  slippage * 100
-                )}`
-              );
-              setRoutes(data.data || []);
-              setSelectedRoute(data.data?.[0] || null);
-            } catch {
-              setRoutes([]);
-              setSelectedRoute(null);
-            }
-            setLoadingQuotes(false);
-          }
-          if (activeModal === "swap" && swapFromToken && swapToToken && swapFromToken.symbol !== swapToToken.symbol) fetchQuotes();
-          else {
-            setRoutes([]);
-            setSelectedRoute(null);
-          }
-        }, [swapFromToken, swapToToken, swapAmount, activeModal]);
-
-        // Total USD Value calc
-        const totalUSDValue = useMemo(() => {
-          if (!prices || !balances) return 0;
-          return tokensList.reduce((sum, t) => {
-            const bal = balances[t.symbol] || 0;
-            const price = prices[t.symbol] || 0;
-            return sum + bal * price;
-          }, 0);
-        }, [prices, balances]);
-
-        // Withdraw modal confirm implementation
         async function handleWithdrawConfirm(ev) {
           ev.preventDefault();
           setWithdrawing(true);
@@ -788,13 +160,10 @@
             if (!publicKey) throw new Error("Wallet not connected");
             if (!withdrawReceiveAddress || withdrawReceiveAddress.trim().length === 0) throw new Error("Receiver address required");
             if (!withdrawAmount || isNaN(parseFloat(withdrawAmount)) || parseFloat(withdrawAmount) <= 0) throw new Error("Invalid withdraw amount");
-
             const amountFloat = parseFloat(withdrawAmount);
             const decimals = withdrawToken.decimals;
-            let amountBaseUnits = toBaseUnits(amountFloat, decimals);
-
+            let amountBaseUnits = Math.round(amountFloat * Math.pow(10, decimals));
             if (withdrawNetwork === "sol") {
-              // SOL transfer
               if (withdrawToken.symbol !== "SOL") throw new Error("Network mismatch: SOL network selected but token not SOL");
               const tx = new solanaWeb3.Transaction().add(
                 solanaWeb3.SystemProgram.transfer({
@@ -805,33 +174,20 @@
               );
               tx.feePayer = publicKey;
               tx.recentBlockhash = (await connection.getLatestBlockhash()).blockhash;
-
               const signed = await provider.signTransaction(tx);
               const signature = await connection.sendRawTransaction(signed.serialize());
               await connection.confirmTransaction(signature, "confirmed");
               setStatus("Withdraw successful. Tx: " + signature);
-              setActiveModal(null);
-              setWithdrawAmount("");
-              setWithdrawReceiveAddress("");
-              setWithdrawing(false);
-              fetchBalancesAndPrices();
+              onClose();
+              fetchBalancesAndPrices && fetchBalancesAndPrices();
               return;
             } else {
-              // SPL token transfer
-
-              if (!withdrawToken.mint)
-                throw new Error("Selected token not supported for token transfer network.");
-
-              // Check associated token accounts
-              const fromATA = await findAssociatedTokenAddress(publicKey, withdrawToken.mint);
-              const toATA = await findAssociatedTokenAddress(new solanaWeb3.PublicKey(withdrawReceiveAddress), withdrawToken.mint);
-
-              // Confirm if receiver's ATA exists
+              if (!withdrawToken.mint) throw new Error("Selected token not supported for token transfer network.");
+              const fromATA = await innerFindAssociatedTokenAddress(publicKey, withdrawToken.mint);
+              const toATA = await innerFindAssociatedTokenAddress(new solanaWeb3.PublicKey(withdrawReceiveAddress), withdrawToken.mint);
               const toATAInfo = await connection.getAccountInfo(toATA);
-
               const instructions = [];
               if (!toATAInfo) {
-                // Create associated token account for receiver
                 instructions.push(
                   solanaWeb3.Token.createAssociatedTokenAccountInstruction(
                     ASSOCIATED_TOKEN_PROGRAM_ID,
@@ -843,8 +199,6 @@
                   )
                 );
               }
-
-              // Token transfer instruction
               instructions.push(
                 solanaWeb3.Token.createTransferInstruction(
                   TOKEN_PROGRAM_ID,
@@ -855,27 +209,269 @@
                   amountBaseUnits
                 )
               );
-
               const tx = new solanaWeb3.Transaction().add(...instructions);
               tx.feePayer = publicKey;
               tx.recentBlockhash = (await connection.getLatestBlockhash()).blockhash;
-
               const signed = await provider.signTransaction(tx);
               const signature = await connection.sendRawTransaction(signed.serialize());
-
               await connection.confirmTransaction(signature, "confirmed");
               setStatus("Withdraw successful. Tx: " + signature);
-              setActiveModal(null);
-              setWithdrawAmount("");
-              setWithdrawReceiveAddress("");
-              setWithdrawing(false);
-              fetchBalancesAndPrices();
+              onClose();
+              fetchBalancesAndPrices && fetchBalancesAndPrices();
             }
           } catch (e) {
             setError(e.message || "Withdrawal failed.");
-            setWithdrawing(false);
+          }
+          setWithdrawing(false);
+        }
+        const userBal = (balances[withdrawToken.symbol] || 0).toFixed(withdrawToken.decimals);
+        return e(
+          "div",
+          { className: "overlay-bg", onClick: onClose },
+          e(
+            "div",
+            { className: "overlay-panel", onClick: e => e.stopPropagation() },
+            e("div", { className: "overlay-header" },
+              e("h2", null, "Withdraw"),
+              e("button", { className: "overlay-close-btn", onClick: onClose }, "×")
+            ),
+            e(
+              "form",
+              { onSubmit: handleWithdrawConfirm, noValidate: true },
+              e("label", { htmlFor: "withdrawTokenSelect" }, "Select Token / Coin"),
+              e("select", {
+                id: "withdrawTokenSelect",
+                value: withdrawToken.symbol,
+                onChange: e => {
+                  const tok = tokensList.find(t => t.symbol === e.target.value);
+                  setWithdrawToken(tok);
+                  setWithdrawAmount("");
+                  setError("");
+                  setWithdrawNetwork(tok.symbol === "SOL" ? "sol" : "token");
+                }
+              }, tokensList.map(t => e("option", { key: t.symbol, value: t.symbol }, t.symbol))),
+              e("label", { htmlFor: "networkSelect" }, "Network"),
+              e("select", {
+                id: "networkSelect",
+                value: withdrawNetwork,
+                onChange: e => setWithdrawNetwork(e.target.value)
+              },
+                e("option", { value: "sol" }, "Solana Network (SOL transfer)"),
+                e("option", { value: "token" }, "Token Transfer (SPL Token)")
+              ),
+              e("label", { htmlFor: "withdrawAmount" }, `Amount (Max: ${userBal} ${withdrawToken.symbol})`),
+              e("input", {
+                id: "withdrawAmount",
+                type: "number",
+                min: "0",
+                max: userBal,
+                step: "any",
+                required: true,
+                value: withdrawAmount,
+                onChange: e => {
+                  let val = e.target.value;
+                  if (parseFloat(val) > parseFloat(userBal)) val = userBal;
+                  setWithdrawAmount(val);
+                  setError("");
+                }
+              }),
+              e("label", { htmlFor: "withdrawReceiveAddress" }, "Receive Address"),
+              e("input", {
+                id: "withdrawReceiveAddress",
+                type: "text",
+                placeholder: "Enter recipient wallet address",
+                value: withdrawReceiveAddress,
+                onChange: e => setWithdrawReceiveAddress(e.target.value.trim()),
+                required: true,
+                spellCheck: false,
+                autoComplete: "off"
+              }),
+              e("small", null, "Destination address must be valid on selected network."),
+              e(
+                "div",
+                { style: { marginTop: "10px", fontWeight: "700", userSelect: "text" } },
+                "Wallet Balance: ",
+                userBal,
+                " ",
+                withdrawToken.symbol,
+                prices && prices[withdrawToken.symbol] ? " ≈ $" + (userBal * prices[withdrawToken.symbol]).toFixed(2) : ""
+              ),
+              e("button", { className: "modal-btn", type: "submit", disabled: withdrawing || !withdrawAmount || !withdrawReceiveAddress },
+                withdrawing ? e("span", { className: "dot-loader" }, e("span"), e("span"), e("span")) : "Confirm Transaction"
+              )
+            ),
+            error && e("div", { className: "error" }, error),
+            status && e("div", { className: "status" }, status)
+          )
+        );
+      }
+
+      function App() {
+        const [provider,setProvider]=useState(null);
+        const [walletConnected,setWalletConnected]=useState(false);
+        const [publicKey,setPublicKey]=useState(null);
+        const [balances,setBalances]=useState({});
+        const [prices,setPrices]=useState({});
+        const [priceChanges,setPriceChanges]=useState({});
+        const [pumpPrices, setPumpPrices] = useState({});
+        const [loading,setLoading]=useState(false);
+        const [loadingPrices,setLoadingPrices]=useState(false);
+        const [activeModal,setActiveModal]=useState(null);
+        const [error,setError]=useState("");
+        const [status,setStatus]=useState("");
+        const [swapFromToken,setSwapFromToken]=useState(tokensList[0]);
+        const [swapToToken,setSwapToToken]=useState(tokensList[1]);
+        const [swapAmount,setSwapAmount]=useState("");
+        const [routes,setRoutes]=useState([]);
+        const [selectedRoute,setSelectedRoute]=useState(null);
+        const [swapping,setSwapping]=useState(false);
+        const [loadingQuotes,setLoadingQuotes]=useState(false);
+
+        const signals = useBotSignals(prices, priceChanges);
+
+        // Phantom detection, connect/disconnect, etc.
+        useEffect(() => {
+          function detectProvider() {
+            if (window.solana && window.solana.isPhantom) {
+              setProvider(window.solana);
+            } else {
+              setProvider(null);
+            }
+          }
+          detectProvider();
+          window.addEventListener('photon#initialized', detectProvider);
+          return () => window.removeEventListener('photon#initialized', detectProvider);
+        }, []);
+        const connectWallet = useCallback(async () => {
+          setError("");
+          if (!provider) { setError("Phantom Wallet not found."); return; }
+          try {
+            const resp = await provider.connect();
+            setPublicKey(new solanaWeb3.PublicKey(resp.publicKey.toString()));
+            setWalletConnected(true); setError(""); setStatus("");
+          } catch (err) { setError("Wallet connection rejected or failed."); }
+        },[provider]);
+        const disconnectWallet = async () => {
+          if (!provider) return;
+          try { await provider.disconnect(); } catch { }
+          setWalletConnected(false); setPublicKey(null); setBalances({}); setPrices({}); setRoutes([]); setSelectedRoute(null); setStatus(""); setError(""); setSwapAmount(""); setActiveModal(null);
+        };
+        useEffect(() => {
+          const btn = document.getElementById("connectWalletBtn");
+          if (!btn) return;
+          btn.innerText = walletConnected && publicKey ? (publicKey.toBase58().slice(0,6)+"..."+publicKey.toBase58().slice(-6)) : "Connect";
+          btn.onclick = () => { if(walletConnected) disconnectWallet(); else connectWallet(); };
+        }, [walletConnected,publicKey,connectWallet]);
+        useEffect(() => {
+          if (!provider) return;
+          const onConnect = (pk) => {
+            const addr = typeof pk.toBase58==="function"?pk.toBase58():pk.toString();
+            setPublicKey(new solanaWeb3.PublicKey(addr));
+            setWalletConnected(true); setError(""); setStatus("");
+            const btn = document.getElementById("connectWalletBtn");
+            if (btn) btn.innerText = addr.slice(0,6)+"..."+addr.slice(-6);
+          };
+          const onDisconnect = () => {
+            setWalletConnected(false); setPublicKey(null); setBalances({}); setPrices({}); setRoutes([]); setSelectedRoute(null); setError(""); setStatus(""); setSwapAmount(""); setActiveModal(null);
+          };
+          provider.on("connect",onConnect);
+          provider.on("disconnect",onDisconnect);
+          if(provider.isConnected && provider.publicKey) onConnect(provider.publicKey);
+          return ()=>{ provider.removeListener&&provider.removeListener("connect",onConnect); provider.removeListener&&provider.removeListener("disconnect",onDisconnect); }
+        },[provider]);
+        // Fetch pump.fun prices for all tokens with a pump field
+        async function fetchPumpPrices() {
+          try {
+            const pumpEntries = await Promise.all(tokensList
+              .filter(t => t.pump)
+              .map(async t => {
+                try {
+                  const resp = await axios.get(`https://api.pump.fun/api/tokens/${t.pump}`);
+                  return [t.symbol, resp.data.priceUi];
+                } catch {
+                  return [t.symbol, null];
+                }
+              })
+            );
+            setPumpPrices(Object.fromEntries(pumpEntries));
+          } catch {
+            setPumpPrices({});
           }
         }
+        async function fetchPrices() {
+          setLoadingPrices(true);
+          try {
+            const ids = tokensList.map(t=>t.cg).filter(Boolean).join(",");
+            if(!ids) { setPrices({}); setLoadingPrices(false); return; }
+            const url = `https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&ids=${ids}&price_change_percentage=24h`;
+            const {data} = await axios.get(url,{headers:{Accept:"application/json"}});
+            const p={}, ch={};
+            for(const t of tokensList){
+              const obj = data.find(d => d.id===t.cg);
+              p[t.symbol] = obj ? obj.current_price : null;
+              ch[t.symbol] = obj && typeof obj.price_change_percentage_24h === "number" ? obj.price_change_percentage_24h : null;
+            }
+            setPrices(p);
+            setPriceChanges(ch);
+          } catch {
+            setError("Unable to fetch token prices.");
+          }
+          setLoadingPrices(false);
+        }
+        async function fetchAll() {
+          setLoading(true);
+          setError("");
+          try {
+            await fetchPrices();
+            await fetchPumpPrices();
+            if (walletConnected && publicKey) {
+              const solLamports = await connection.getBalance(publicKey);
+              const newBalances = { SOL: solLamports / 1e9 };
+              await Promise.all(tokensList.map(async t => {
+                if (!t.mint) return;
+                try {
+                  const ata = await findAssociatedTokenAddress(publicKey, t.mint);
+                  const info = await connection.getParsedAccountInfo(ata);
+                  newBalances[t.symbol] = info.value?.data?.parsed?.info?.tokenAmount?.uiAmount || 0;
+                } catch { newBalances[t.symbol]=0; }
+              }));
+              setBalances(newBalances);
+            } else {
+              setBalances({});
+            }
+          } catch (err) {
+            setError("Error loading balances or prices.");
+          }
+          setLoading(false);
+        }
+        useEffect(() => { fetchAll(); const intv1 = setInterval(fetchPrices,60000); const intv2 = setInterval(fetchPumpPrices,60000); return ()=>{clearInterval(intv1);clearInterval(intv2);}; }, []);
+        useEffect(() => { fetchAll(); }, [walletConnected,publicKey,activeModal,status]);
+        useEffect(() => { fetchPumpPrices(); }, []);
+        // --- Jupiter swap/quotes (full API integration) ---
+        useEffect(() => {
+          async function fetchQuotes() {
+            setLoadingQuotes(true); setRoutes([]); setSelectedRoute(null);
+            if (!swapAmount || isNaN(Number(swapAmount)) || Number(swapAmount) <= 0) { setLoadingQuotes(false); return; }
+            try {
+              const inputMint = swapFromToken.mint ? swapFromToken.mint.toString() : SOL_MINT;
+              const outputMint = swapToToken.mint ? swapToToken.mint.toString() : SOL_MINT;
+              const amount = toBaseUnits(swapAmount, swapFromToken.decimals);
+              const { data } = await axios.get(
+                `${JUPITER_API_BASE}/quote?inputMint=${inputMint}&outputMint=${outputMint}&amount=${amount}&slippageBps=5`
+              );
+              setRoutes(data.data || []);
+              setSelectedRoute(data.data?.[0] || null);
+            } catch { setRoutes([]); setSelectedRoute(null);}
+            setLoadingQuotes(false);
+          }
+          if (activeModal === "swap" && swapFromToken && swapToToken && swapFromToken.symbol !== swapToToken.symbol) fetchQuotes();
+          else { setRoutes([]); setSelectedRoute(null);}
+        }, [swapFromToken, swapToToken, swapAmount, activeModal]);
+        const totalUSDValue = tokensList.reduce((sum, t) => {
+          const bal = balances[t.symbol] || 0;
+          const price = prices[t.symbol] || pumpPrices[t.symbol] || 0;
+          return sum + bal * price;
+        }, 0);
 
         return e(
           React.Fragment,
@@ -885,18 +481,9 @@
           e(
             "div",
             { id: "totalBalance", "aria-live": "polite", "aria-atomic": "true" },
-            walletConnected
-              ? loading
-                ? e(
-                  "span",
-                  null,
-                  "Loading balances… ",
-                  e("span", { className: "dot-loader", "aria-hidden": true }, e("span"), e("span"), e("span"))
-                )
-                : totalUSDValue !== null
-                  ? `$${totalUSDValue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
-                  : "-"
-              : `$0.00`
+            loading
+              ? e("span", null, "Loading… ", e("span", { className: "dot-loader" }, e("span"), e("span"), e("span")))
+              : "$" + totalUSDValue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })
           ),
           e(
             "div",
@@ -904,50 +491,45 @@
             tokensList.map((token) =>
               e(
                 "div",
-                {
-                  key: token.symbol,
-                  className: "token-item",
-                  tabIndex: 0,
-                  role: "group",
-                  "aria-labelledby": `token-name-${token.symbol}`,
-                  "aria-describedby": `token-balance-${token.symbol} token-price-${token.symbol}`,
-                },
+                { key: token.symbol, className: "token-item", tabIndex: 0 },
                 e(
                   "div",
                   { className: "token-info" },
-                  e(
-                    "div",
-                    { id: `token-name-${token.symbol}`, className: "token-symbol" },
-                    token.name,
-                    ` (${token.symbol})`
+                  e("div", { className: "token-symbol" }, token.name, ` (${token.symbol})`),
+                  e("div", { className: "token-balance" },
+                    loading && walletConnected
+                      ? e("span", { className: "dot-loader" }, e("span"), e("span"), e("span"))
+                      : walletConnected
+                        ? (balances[token.symbol] || 0).toLocaleString(undefined, { maximumFractionDigits: token.decimals })
+                        : "0"
                   ),
-                  e(
-                    "div",
-                    { id: `token-balance-${token.symbol}`, className: "token-balance" },
-                    loading
-                      ? e("span", { className: "dot-loader", "aria-label": "Loading balance" }, e("span"), e("span"), e("span"))
-                      : (balances[token.symbol] || 0).toLocaleString(undefined, { maximumFractionDigits: token.decimals })
-                  ),
-                  e(
-                    "div",
-                    { id: `token-price-${token.symbol}`, className: "token-price" },
+                  e("div", { className: "token-price" },
                     loadingPrices
-                      ? e("span", { className: "dot-loader", "aria-label": "Loading price" }, e("span"), e("span"), e("span"))
-                      : prices[token.symbol] === null
+                      ? e("span", { className: "dot-loader" }, e("span"), e("span"), e("span"))
+                      : prices[token.symbol] == null
                         ? "N/A"
-                        : prices[token.symbol]
-                          ? `$${prices[token.symbol]}`
-                          : "-",
+                        : "$" + prices[token.symbol].toLocaleString(undefined, { maximumFractionDigits: 6 }),
+                    pumpPrices[token.symbol] !== undefined && pumpPrices[token.symbol] !== null &&
+                      e("span", { style:{color:"#ffdf00",fontWeight:600,marginLeft:10}, title:"Pump.fun Price"}, 
+                        "Pump: $"+Number(pumpPrices[token.symbol]).toPrecision(6)
+                      ),
+                    priceChanges[token.symbol] != null &&
+                      e("span", {
+                        style: {
+                          color: priceChanges[token.symbol] > 0 ? "#16c784" : (priceChanges[token.symbol] < 0 ? "#ea3943" : "#eee"),
+                          marginLeft: 4,
+                          fontWeight: 700,
+                        }
+                      }, (priceChanges[token.symbol] > 0 ? "+" : "") + priceChanges[token.symbol].toFixed(2) + "%"),
                     signals[token.symbol] === "BUY" &&
-                    e("button", { className: "buy-btn blink", tabIndex: -1, "aria-label": "Buy signal" }, "BUY"),
+                      e("button", { className: "buy-btn blink", tabIndex: -1 }, "BUY"),
                     signals[token.symbol] === "SELL" &&
-                    e("button", { className: "sell-btn blink", tabIndex: -1, "aria-label": "Sell signal" }, "SELL")
+                      e("button", { className: "sell-btn blink", tabIndex: -1 }, "SELL")
                   )
                 )
               )
             )
           ),
-          walletConnected &&
           e(
             "div",
             { className: "button-bar" },
@@ -955,336 +537,129 @@
             e("button", { onClick: () => setActiveModal("withdraw") }, "Withdraw"),
             e("button", { onClick: () => setActiveModal("deposit") }, "Deposit")
           ),
-
-          // Deposit Modal
-          activeModal === "deposit" &&
-          e(() => {
-            const qrCanvasRef = useRef(null);
-            useEffect(() => {
-              if (qrCanvasRef.current && publicKey) {
-                const qrString = `solana:${publicKey.toBase58()}`;
-                window.QRCode.toCanvas(qrCanvasRef.current, qrString, { width: 180 });
-              }
-            }, [publicKey]);
-            return e(
-              "div",
-              {
-                className: "overlay-bg",
-                onClick: () => setActiveModal(null),
-                role: "dialog",
-                "aria-modal": "true",
-                "aria-labelledby": "depositTitle"
-              },
-              e(
-                "div",
-                { className: "overlay-panel", onClick: (e) => e.stopPropagation() },
-                e(
-                  "div",
-                  { className: "overlay-header" },
-                  e("h2", { id: "depositTitle" }, "Deposit"),
-                  e("button", { className: "overlay-close-btn", "aria-label": "Close deposit modal", onClick: () => setActiveModal(null) }, "×")
-                ),
-                e("div", null,
-                  e("div", { id: "depositAddress", tabIndex: 0 }, publicKey ? publicKey.toBase58() : ""),
-                  e("canvas", { ref: qrCanvasRef, id: "qrcode", "aria-hidden": "true" }),
-                  e("small", null, "Send only SOL or SPL tokens to this address on Solana.")
-                )
-              )
-            );
+          // Deposit modal
+          activeModal === "deposit" && e(DepositModal, {
+            publicKey, onClose: () => setActiveModal(null)
           }),
-
-          // Withdraw Modal - full implementation as requested
-          activeModal === "withdraw" &&
-          e(() => {
-            // User balance for selected token
-            const userBal = (balances[withdrawToken.symbol] || 0).toFixed(withdrawToken.decimals);
-
+          // Withdraw modal
+          activeModal === "withdraw" && e(WithdrawModal, {
+            tokensList, balances, publicKey, provider, connection, prices,
+            onClose: () => setActiveModal(null),
+            fetchBalancesAndPrices: fetchAll,
+            ASSOCIATED_TOKEN_PROGRAM_ID, TOKEN_PROGRAM_ID
+          }),
+          // Jupiter Swap modal (real swap)
+          activeModal === "swap" && e(() => {
+            const [swapError, setSwapError] = useState("");
+            const [swapStatus, setSwapStatus] = useState("");
+            async function handleSwap(ev) {
+              ev.preventDefault();
+              setSwapping(true);
+              setSwapError("");
+              setSwapStatus("");
+              try {
+                if (!provider) throw new Error("Phantom wallet not detected");
+                if (!publicKey) throw new Error("No wallet connected");
+                if (!selectedRoute) throw new Error("No swap route selected.");
+                // POST to Jupiter swap endpoint
+                const swapResp = await axios.post(
+                  `${JUPITER_API_BASE}/swap`,
+                  {
+                    route: selectedRoute,
+                    userPublicKey: publicKey.toString(),
+                    wrapUnwrapSOL: true,
+                  }
+                );
+                if (!swapResp.data?.swapTransaction) throw new Error("Jupiter did not return a transaction.");
+                const tx = solanaWeb3.Transaction.from(Buffer.from(swapResp.data.swapTransaction, "base64"));
+                tx.feePayer = publicKey;
+                tx.recentBlockhash = (await connection.getLatestBlockhash()).blockhash;
+                const signed = await provider.signTransaction(tx);
+                const sig = await connection.sendRawTransaction(signed.serialize());
+                setSwapStatus("Swapped! Tx: " + sig);
+                setSwapAmount("");
+                setTimeout(()=>setActiveModal(null), 2000);
+                fetchAll();
+              } catch (err) {
+                setSwapError(err.message || "Swap failed.");
+              }
+              setSwapping(false);
+            }
             return e(
               "div",
-              {
-                className: "overlay-bg",
-                onClick: () => setActiveModal(null),
-                role: "dialog",
-                "aria-modal": "true",
-                "aria-labelledby": "withdrawTitle"
-              },
+              { className: "overlay-bg", onClick: () => setActiveModal(null) },
               e(
                 "div",
                 { className: "overlay-panel", onClick: e => e.stopPropagation() },
-                e(
-                  "div",
-                  { className: "overlay-header" },
-                  e("h2", { id: "withdrawTitle" }, "Withdraw"),
-                  e("button", { className: "overlay-close-btn", "aria-label": "Close withdraw modal", onClick: () => setActiveModal(null) }, "×")
+                e("div", { className: "overlay-header" },
+                  e("h2", null, "Swap (Jupiter)"),
+                  e("button", { className: "overlay-close-btn", onClick: () => setActiveModal(null) }, "×")
                 ),
                 e(
                   "form",
-                  { onSubmit: handleWithdrawConfirm, noValidate: true },
-                  e(
-                    "label",
-                    { htmlFor: "withdrawTokenSelect" },
-                    "Select Token / Coin"
-                  ),
-                  e(
-                    "select",
-                    {
-                      id: "withdrawTokenSelect",
-                      value: withdrawToken.symbol,
-                      onChange: (e) => {
-                        const tok = tokensList.find(t => t.symbol === e.target.value);
-                        setWithdrawToken(tok);
-                        setWithdrawAmount("");
-                        setError("");
-                        // Reset network to sol if token is SOL else token
-                        setWithdrawNetwork(tok.symbol === "SOL" ? "sol" : "token");
-                      }
-                    },
-                    tokensList.map(t => e("option", { key: t.symbol, value: t.symbol }, t.symbol))
-                  ),
-                  e(
-                    "label",
-                    { htmlFor: "networkSelect" },
-                    "Network"
-                  ),
-                  e(
-                    "select",
-                    {
-                      id: "networkSelect",
-                      value: withdrawNetwork,
-                      onChange: (e) => setWithdrawNetwork(e.target.value)
-                    },
-                    e("option", { value: "sol" }, "Solana Network (SOL transfer)"),
-                    e("option", { value: "token" }, "Token Transfer (SPL Token)")
-                  ),
-                  e(
-                    "label",
-                    { htmlFor: "withdrawAmount" },
-                    `Amount (Max: ${userBal} ${withdrawToken.symbol})`
-                  ),
-                  e("input", {
-                    id: "withdrawAmount",
-                    type: "number",
-                    min: "0",
-                    max: userBal,
-                    step: "any",
-                    required: true,
-                    value: withdrawAmount,
-                    onChange: e => {
-                      let val = e.target.value;
-                      if (parseFloat(val) > parseFloat(userBal)) val = userBal;
-                      setWithdrawAmount(val);
-                      setError("");
-                    }
-                  }),
-                  e(
-                    "label",
-                    { htmlFor: "withdrawReceiveAddress" },
-                    "Receive Address"
-                  ),
-                  e("input", {
-                    id: "withdrawReceiveAddress",
-                    type: "text",
-                    placeholder: "Enter recipient wallet address",
-                    value: withdrawReceiveAddress,
-                    onChange: e => setWithdrawReceiveAddress(e.target.value.trim()),
-                    required: true,
-                    spellCheck: false,
-                    autoComplete: "off",
-                    "aria-describedby": "withdrawAddressHint"
-                  }),
-                  e("small", { id: "withdrawAddressHint" }, "Destination address must be valid on selected network."),
-                  e(
-                    "div",
-                    { style: { marginTop: "18px", fontWeight: "700", userSelect: "text" } },
-                    "Wallet Balance: ",
-                    userBal,
-                    " ", withdrawToken.symbol,
-                    " ≈ ",
-                    prices[withdrawToken.symbol] ? `$${(userBal * prices[withdrawToken.symbol]).toFixed(2)}` : "N/A"
-                  ),
-                  e(
-                    "button",
-                    { className: "modal-btn", type: "submit", disabled: withdrawing || !withdrawAmount || !withdrawReceiveAddress },
-                    withdrawing ? e("span", { className: "dot-loader", "aria-hidden": "true" }, e("span"), e("span"), e("span")) : "Confirm Transaction"
-                  )
-                ),
-                error && e("div", { className: "error", role: "alert" }, error),
-                status && e("div", { className: "status", role: "status" }, status)
-              )
-            );
-          }),
-
-          // Swap Modal
-          activeModal === "swap" &&
-          e(() => {
-            return e(
-              "div",
-              {
-                className: "overlay-bg",
-                onClick: () => setActiveModal(null),
-                role: "dialog",
-                "aria-modal": "true",
-                "aria-labelledby": "swapTitle"
-              },
-              e(
-                "div",
-                { className: "overlay-panel", onClick: (e) => e.stopPropagation() },
-                e(
-                  "div",
-                  { className: "overlay-header" },
-                  e("h2", { id: "swapTitle" }, "Swap"),
-                  e(
-                    "button", {
-                      className: "overlay-close-btn",
-                      "aria-label": "Close swap modal",
-                      onClick: () => setActiveModal(null)
-                    },
-                    "×"
-                  )
-                ),
-                e(
-                  "form",
-                  {
-                    onSubmit: async (ev) => {
-                      ev.preventDefault();
-                      setSwapping(true);
-                      setError("");
-                      setStatus("");
-                      try {
-                        if (!provider) throw new Error("Wallet provider not found.");
-                        if (!selectedRoute) throw new Error("No swap route selected.");
-
-                        const swapResp = await axios.post(
-                          `${JUPITER_API_BASE}/swap`,
-                          {
-                            route: selectedRoute,
-                            userPublicKey: publicKey.toString(),
-                            wrapUnwrapSOL: true,
-                            computeUnitPriceMicroLamports: 0,
-                            maxComputeUnitLimit: 0,
-                            skipPreflight: false,
-                            feeAccount: null,
-                            dynamicComputeUnitLimit: true
-                          }
-                        );
-
-                        if (!swapResp.data?.swapTransaction) throw new Error("No swap transaction returned.");
-
-                        const tx = solanaWeb3.Transaction.from(Buffer.from(swapResp.data.swapTransaction, "base64"));
-                        tx.feePayer = publicKey;
-                        tx.recentBlockhash = (await connection.getLatestBlockhash()).blockhash;
-
-                        const signed = await provider.signTransaction(tx);
-                        const sig = await connection.sendRawTransaction(signed.serialize());
-                        await connection.confirmTransaction(sig, "confirmed");
-
-                        setStatus("Swapped! Tx: " + sig);
-                        await fetchBalancesAndPrices();
-                        setSwapAmount("");
-                      } catch (err) {
-                        setError(err.message || "Swap failed.");
-                      }
-                      setSwapping(false);
-                    }
-                  },
+                  { onSubmit: handleSwap },
                   e("label", null, "From"),
-                  e(
-                    "select",
-                    {
-                      value: swapFromToken.symbol,
-                      onChange: (e) => {
-                        const tok = tokensList.find(t => t.symbol === e.target.value);
-                        setSwapFromToken(tok);
-                        if (tok.symbol === swapToToken.symbol) {
-                          const nextTo = tokensList.find(t => t.symbol !== tok.symbol) || tokensList[0];
-                          setSwapToToken(nextTo);
-                        }
+                  e("select", {
+                    value: swapFromToken.symbol,
+                    onChange: e => {
+                      const tok = tokensList.find(t => t.symbol === e.target.value);
+                      setSwapFromToken(tok);
+                      if (tok.symbol === swapToToken.symbol) {
+                        const nextTo = tokensList.find(t => t.symbol !== tok.symbol) || tokensList[0];
+                        setSwapToToken(nextTo);
                       }
-                    },
-                    tokensList.filter(t => t.symbol !== swapToToken.symbol).map(t => e("option", { key: t.symbol, value: t.symbol }, t.symbol))
-                  ),
+                    }
+                  }, tokensList.filter(t => t.symbol !== swapToToken.symbol).map(t => e("option", { key: t.symbol, value: t.symbol }, t.symbol))),
                   e("label", null, "To"),
-                  e(
-                    "select",
-                    {
-                      value: swapToToken.symbol,
-                      onChange: (e) => {
-                        const tok = tokensList.find(t => t.symbol === e.target.value);
-                        setSwapToToken(tok);
-                        if (tok.symbol === swapFromToken.symbol) {
-                          setSwapFromToken(tokensList.find(t => t.symbol !== tok.symbol) || tokensList[0]);
-                        }
+                  e("select", {
+                    value: swapToToken.symbol,
+                    onChange: e => {
+                      const tok = tokensList.find(t => t.symbol === e.target.value);
+                      setSwapToToken(tok);
+                      if (tok.symbol === swapFromToken.symbol) {
+                        setSwapFromToken(tokensList.find(t => t.symbol !== tok.symbol) || tokensList[0]);
                       }
-                    },
-                    tokensList.filter(t => t.symbol !== swapFromToken.symbol).map(t => e("option", { key: t.symbol, value: t.symbol }, t.symbol))
-                  ),
+                    }
+                  }, tokensList.filter(t => t.symbol !== swapFromToken.symbol).map(t => e("option", { key: t.symbol, value: t.symbol }, t.symbol))),
                   e("label", null, "Amount"),
                   e("input", {
-                    type: "number",
-                    min: "0",
-                    required: true,
-                    step: "any",
-                    value: swapAmount,
-                    onChange: (e) => setSwapAmount(e.target.value)
+                    type: "number", min: "0", required: true, step: "any", value: swapAmount,
+                    onChange: e => setSwapAmount(e.target.value)
                   }),
-                  loadingQuotes
-                    ? e("div", null, e("span", { className: "dot-loader", "aria-label": "Loading swap routes" }, e("span"), e("span"), e("span")))
-                    : routes.length > 0
-                      ? e(
+                  loadingQuotes ? e("div", null, e("span", { className: "dot-loader" }, e("span"), e("span"), e("span"))) : null,
+                  routes.length > 0 && e("div", null,
+                    routes.map((route, idx) =>
+                      e(
                         "div",
-                        null,
-                        routes.map((route, idx) =>
-                          e(
-                            "div",
-                            {
-                              className: "route-option" + (selectedRoute === route ? " selected" : ""),
-                              key: idx,
-                              tabIndex: 0,
-                              onClick: () => setSelectedRoute(route),
-                              onKeyDown: (evt) => {
-                                if (evt.key === "Enter" || evt.key === " ") {
-                                  evt.preventDefault();
-                                  setSelectedRoute(route);
-                                }
-                              },
-                              role: "button",
-                              "aria-pressed": selectedRoute === route
-                            },
-                            e(
-                              "div",
-                              { className: "route-info" },
-                              "Output: ",
-                              (route.outAmount / 10 ** swapToToken.decimals).toLocaleString(undefined, { maximumFractionDigits: swapToToken.decimals }),
-                              " ",
-                              swapToToken.symbol
-                            ),
-                            e(
-                              "div",
-                              null,
-                              "Best route: ",
-                              route.marketInfos && route.marketInfos[0]?.amm?.label ? route.marketInfos[0].amm.label : "-"
-                            )
-                          )
-                        )
+                        {
+                          className: "route-option" + (selectedRoute === route ? " selected" : ""),
+                          key: idx,
+                          tabIndex: 0,
+                          onClick: () => setSelectedRoute(route),
+                          onKeyDown: evt => { if (evt.key === "Enter") setSelectedRoute(route); }
+                        },
+                        e("div", { className: "route-info" },
+                          "Output: ",
+                          (route.outAmount / 10 ** swapToToken.decimals).toLocaleString(undefined, { maximumFractionDigits: swapToToken.decimals }),
+                          " ", swapToToken.symbol
+                        ),
+                        e("div", null, "Best route: ", route.marketInfos && route.marketInfos[0]?.amm?.label ? route.marketInfos[0].amm.label : "-")
                       )
-                      : e("div", { style: { marginTop: 8, userSelect: "none" } }, "No route available"),
-                  e(
-                    "button",
-                    { className: "modal-btn", type: "submit", disabled: swapping || !selectedRoute },
-                    swapping ? e("span", { className: "dot-loader", "aria-hidden": "true" }, e("span"), e("span"), e("span")) : "Confirm Swap"
+                    )
+                  ),
+                  e("button", { className: "modal-btn", type: "submit", disabled: swapping || !selectedRoute },
+                    swapping ? e("span", { className: "dot-loader" }, e("span"), e("span"), e("span")) : "Swap Now"
                   )
                 ),
-                error && e("div", { className: "error", role: "alert" }, error),
-                status && e("div", { className: "status", role: "status" }, status)
+                swapError && e("div", { className: "error" }, swapError),
+                swapStatus && e("div", { className: "status" }, swapStatus)
               )
             );
           })
         );
       }
-
       ReactDOM.render(e(App), document.getElementById("root"));
     })();
   </script>
 </body>
-
 </html>
