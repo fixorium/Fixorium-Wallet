@@ -1,0 +1,131 @@
+ <!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Fixorium Wallet</title>
+  <style>
+    /* App.css */
+    .app-container {
+      max-width: 800px;
+      margin: 40px auto;
+      padding: 20px;
+      background-color: #f9f9f9;
+      border: 1px solid #ddd;
+      border-radius: 10px;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    }
+
+    .logo {
+      width: 100px;
+      height: 100px;
+      margin: 20px auto;
+      display: block;
+      border-radius: 50%;
+    }
+
+    h1 {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+
+    .swap-button {
+      background-color: #4CAF50;
+      color: #fff;
+      padding: 10px 20px;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      margin: 20px auto;
+      display: block;
+    }
+
+    .swap-button:hover {
+      background-color: #3e8e41;
+    }
+
+    .tokens-list {
+      margin-top: 20px;
+    }
+
+    .token-item {
+      padding: 10px;
+      border-bottom: 1px solid #ccc;
+    }
+
+    .token-item:last-child {
+      border-bottom: none;
+    }
+  </style>
+</head>
+<body>
+  <div class="app-container">
+    <img src="https:                                                              
+    <h1>FIXERCOIN</h1>
+    <button class="swap-button" id="swap-button">Swap SOL for Meme Tokens</button>
+    <div class="tokens-list" id="tokens-list"></div>
+    <div id="signature"></div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@solana/web3.js@1.43.3/dist/solanaWeb3.min.js"></script>
+  <script src="https://unpkg.com/@solana/wallet-adapter-wallets@latest/dist/index.iife.js"></script>
+  <script>
+    const swapButton = document.getElementById('swap-button');
+    const tokensList = document.getElementById('tokens-list');
+    const signatureDiv = document.getElementById('signature');
+
+    swapButton.addEventListener('click', async () => {
+      try {
+        // Solana connection
+        const connection = new solanaWeb3.Connection('https:                                
+
+                                               
+        if (!window.solana) {
+          alert('Please install Phantom wallet');
+          return;
+        }
+
+                                    
+        await window.solana.connect();
+
+                         
+        const publicKey = window.solana.publicKey;
+
+                               
+        const jupiterApiEndpoint = 'https://quote-api.jup.ag/v1';
+
+        // Token addresses
+        const solMintAddress = 'So11111111111111111111111111111111111111112';
+        const memeTokenMintAddress = 'MEMETOKEN_MINT_ADDRESS'; // Replace with the actual meme token mint address
+
+        // Get quote from Jupiter API
+        const quoteResponse = await fetch(`${jupiterApiEndpoint}/quote?inputMint=${solMintAddress}&outputMint=${memeTokenMintAddress}&amount=1`);
+        const quote = await quoteResponse.json();
+
+        // Get swap transaction from Jupiter API
+        const swapResponse = await fetch(`${jupiterApiEndpoint}/swap`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            route: quote.route,
+            userPublicKey: publicKey.toString(),
+            wrapUnwrapSOL: true,
+          }),
+        });
+        const swapTransaction = await swapResponse.json();
+
+        // Sign and send the transaction
+        const transaction = solanaWeb3.Transaction.from(Buffer.from(swapTransaction.swapTransaction, 'base64'));
+        const signature = await window.solana.signAndSendTransaction(transaction);
+        signatureDiv.innerText = `Signature: ${signature}`;
+
+        console.log('Swap transaction:', swapTransaction);
+      } catch (error) {
+        console.error('Error swapping tokens:', error);
+      }
+    });
+  </script>
+</body>
+</html>
