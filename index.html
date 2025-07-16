@@ -14,6 +14,7 @@
       border: 1px solid #ddd;
       border-radius: 10px;
       box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+      position: relative;
     }
 
     .logo {
@@ -49,6 +50,11 @@
       cursor: pointer;
       margin: 20px auto;
       display: block;
+      position: absolute;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 100px;
     }
 
     .swap-button:hover {
@@ -67,13 +73,32 @@
     .token-item:last-child {
       border-bottom: none;
     }
+
+    .swap-form {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      margin: 20px 0;
+    }
+
+    .swap-input {
+      padding: 10px;
+      margin: 10px 0;
+      width: 100%;
+      max-width: 300px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+    }
   </style>
 </head>
 <body>
   <div class="app-container">
     <h1>FIXERCOIN</h1>
     <button class="connect-button" id="connect-button">Connect Wallet</button>
-    <button class="swap-button" id="swap-button" disabled>Swap SOL for Meme Tokens</button>
+    <div class="swap-form">
+      <input type="number" class="swap-input" id="amount" placeholder="Amount to swap" />
+      <button class="swap-button" id="swap-button" disabled>Swap SOL for Meme Tokens</button>
+    </div>
     <div class="tokens-list" id="tokens-list"></div>
     <div id="signature"></div>
     <div id="error-message"></div>
@@ -87,6 +112,7 @@
     const walletStatusDiv = document.getElementById('wallet-status');
     const signatureDiv = document.getElementById('signature');
     const errorMessageDiv = document.getElementById('error-message');
+    const amountInput = document.getElementById('amount');
 
     let publicKey;
 
@@ -108,11 +134,12 @@
 
     swapButton.addEventListener('click', async () => {
       try {
-        const jupiterApiEndpoint = 'https:                       
+        const jupiterApiEndpoint = 'https://api.jupiter.exchange/v1';
         const solMintAddress = 'So11111111111111111111111111111111111111112';
-        const memeTokenMintAddress = '4k3Dyjzvzp8eMZWUXbBCjEvwSkkk59S5iCNLY3QrkX6R';                                                   
+        const memeTokenMintAddress = '4k3Dyjzvzp8eMZWUXbBCjEvwSkkk59S5iCNLY3QrkX6R';
+        const amount = amountInput.value;
 
-        const quoteResponse = await fetch(`${jupiterApiEndpoint}/quote?inputMint=${solMintAddress}&outputMint=${memeTokenMintAddress}&amount=1`);
+        const quoteResponse = await fetch(`${jupiterApiEndpoint}/quote?inputMint=${solMintAddress}&outputMint=${memeTokenMintAddress}&amount=${amount}`);
         const quote = await quoteResponse.json();
 
         const swapResponse = await fetch(`${jupiterApiEndpoint}/swap`, {
@@ -130,4 +157,11 @@
 
         const transaction = solanaWeb3.Transaction.from(Buffer.from(swapTransaction.swapTransaction, 'base64'));
         const signature = await window.solana.signAndSendTransaction(transaction);
-        signature
+        signatureDiv.innerText = `Transaction signature: ${signature}`;
+      } catch (error) {
+        errorMessageDiv.innerText = `Error during swap: ${error.message}`;
+      }
+    });
+  </script>
+</body>
+</html>
