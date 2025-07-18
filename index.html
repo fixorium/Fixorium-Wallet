@@ -292,7 +292,6 @@
       'EKpQGSJtjMFqKZ9KQanSqYXRcF8fBtUk6goG7zcX3New': 'WIF'
     };
 
-    // ONLY these three tokens in the signal bot at bottom (small fonts)
     const SIGNAL_BOT_SMALL_TOKENS = ["BTC", "SOL", "FIXERCOIN"];
 
     let wallet = null;
@@ -318,12 +317,8 @@
       } else {
         el.innerHTML = `
           <button id="connectPhantom" class="swap-btn" type="button" style="width:auto;padding:6px 16px;font-size:14px;">Connect Phantom</button>
-          <button id="connectSolflare" class="swap-btn" type="button" style="width:auto;padding:6px 16px;font-size:14px;">Connect Solflare</button>
-          <button id="connectBackpack" class="swap-btn" type="button" style="width:auto;padding:6px 16px;font-size:14px;">Connect Backpack</button>
         `;
         document.getElementById("connectPhantom").onclick = () => connectWallet("phantom");
-        document.getElementById("connectSolflare").onclick = () => connectWallet("solflare");
-        document.getElementById("connectBackpack").onclick = () => connectWallet("backpack");
       }
     }
 
@@ -338,18 +333,7 @@
           const resp = await window.solana.connect();
           wallet = window.solana;
           publicKey = resp.publicKey.toString();
-        }
-        else if (type === "solflare" && window.solflare?.isSolflare) {
-          const resp = await window.solflare.connect();
-          wallet = window.solflare;
-          publicKey = resp.publicKey.toString();
-        }
-        else if (type === "backpack" && window.backpack?.solana) {
-          const resp = await window.backpack.solana.connect();
-          wallet = window.backpack.solana;
-          publicKey = resp.publicKey.toString();
-        }
-        else {
+        } else {
           alert(`${type} wallet not installed!`);
           return;
         }
@@ -389,9 +373,7 @@
       if (saved) {
         try {
           const { publicKey: pk, walletType: wt } = JSON.parse(saved);
-          if ((wt === "phantom" && window.solana?.isPhantom) ||
-            (wt === "solflare" && window.solflare?.isSolflare) ||
-            (wt === "backpack" && window.backpack?.solana)) {
+          if (wt === "phantom" && window.solana?.isPhantom) {
             walletType = wt;
             await connectWallet(wt);
           }
@@ -537,10 +519,6 @@
         let sendResult;
         if (walletType === "phantom") {
           sendResult = await window.solana.signAndSendTransaction(tx);
-        } else if (walletType === "solflare") {
-          sendResult = await window.solflare.signAndSendTransaction(tx);
-        } else if (walletType === "backpack") {
-          sendResult = await window.backpack.solana.signAndSendTransaction(tx);
         } else {
           throw new Error("Wallet not found for sending transaction.");
         }
@@ -555,7 +533,6 @@
       }
     }
 
-    // Signal bot showing ONLY BTC, SOL, FIXERCOIN in small fonts
     function renderSignalBot() {
       const smallTokens = ["BTC", "SOL", "FIXERCOIN"];
       const signalBot = document.getElementById("signalBot");
