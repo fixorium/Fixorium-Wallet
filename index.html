@@ -15,7 +15,7 @@
       font-family: sans-serif;
       background: #181A20;
       min-height: 100vh;
-      padding-bottom: 64px; /* for signal bot fixed bottom */
+      padding-bottom: 64px;
     }
 
     .fixorium-header {
@@ -129,15 +129,15 @@
       gap: 24px;
       user-select: none;
       flex-wrap: wrap;
+      font-size: 18px;
+      color: #fff;
     }
 
     .signal {
       display: flex;
       align-items: center;
       gap: 8px;
-      font-size: 18px;
       white-space: nowrap;
-      color: #fff;
     }
 
     .signal-buy {
@@ -150,6 +150,14 @@
       color: #F73E3E;
       font-weight: 700;
       animation: blinkSell 1s linear infinite;
+    }
+
+    .signal-small {
+      font-size: 10px;
+      opacity: 0.6;
+      user-select: none;
+      font-weight: 600;
+      letter-spacing: 0.05em;
     }
 
     @keyframes blinkBuy {
@@ -207,7 +215,6 @@
       font-size: 13px;
     }
 
-    /* Responsive */
     @media (max-width: 480px) {
       .swap-card {
         width: 90%;
@@ -217,6 +224,17 @@
       .wallet-section {
         justify-content: center;
         min-width: auto;
+      }
+
+      .signal-bot {
+        font-size: 14px;
+        gap: 12px;
+        padding: 12px 4px;
+      }
+
+      .signal {
+        font-size: 14px;
+        gap: 4px;
       }
     }
   </style>
@@ -260,21 +278,22 @@
   <script>
     const SOLANA_RPC = "https://api.mainnet-beta.solana.com";
 
-    // SOL & known popular meme tokens mint addresses for swap:
     const MEME_TOKEN_MINTS = [
-      'So11111111111111111111111111111111111111112', // SOL (native)
-      'DezXAZ8z7PnrnRJjz3wXBoRhwTLdMPkqhuBczetogeoK', // BONK token (example)
-      'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v', // USDC, widely used on Solana
-      'EKpQGSJtjMFqKZ9KQanSqYXRcF8fBtUk6goG7zcX3New'  // WIF token (example)
+      'So11111111111111111111111111111111111111112', // SOL
+      'DezXAZ8z7PnrnRJjz3wXBoRhwTLdMPkqhuBczetogeoK', // BONK
+      'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v', // USDC (widely used)
+      'EKpQGSJtjMFqKZ9KQanSqYXRcF8fBtUk6goG7zcX3New'  // WIF
     ];
 
-    // Mapping for display names
     const MEME_TOKEN_NAMES = {
       'So11111111111111111111111111111111111111112': 'SOL',
       'DezXAZ8z7PnrnRJjz3wXBoRhwTLdMPkqhuBczetogeoK': 'BONK',
       'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v': 'USDC',
       'EKpQGSJtjMFqKZ9KQanSqYXRcF8fBtUk6goG7zcX3New': 'WIF'
     };
+
+    // Added for signal bot in small font
+    const SIGNAL_BOT_SMALL_TOKENS = ["BTC", "SOL", "FIXERCOIN"];
 
     let wallet = null;
     let publicKey = null;
@@ -370,7 +389,6 @@
       if (saved) {
         try {
           const { publicKey: pk, walletType: wt } = JSON.parse(saved);
-          // Validate wallet availability before reconnect
           if ((wt === "phantom" && window.solana?.isPhantom) ||
             (wt === "solflare" && window.solflare?.isSolflare) ||
             (wt === "backpack" && window.backpack?.solana)) {
@@ -383,6 +401,7 @@
       renderSignalBot();
     });
 
+    // Fetch balances with retry and safe fallbacks
     async function fetchBalances() {
       if (!connected || !publicKey) return;
       const conn = new solanaWeb3.Connection(SOLANA_RPC, "confirmed");
@@ -392,16 +411,13 @@
       try {
         const ownerPk = new solanaWeb3.PublicKey(publicKey);
 
-        // Fetch SOL balance with retries for rare failures
         let solBalance = await retry(async () => await conn.getBalance(ownerPk), 3, 300);
         balances["SOL"] = solBalance / solanaWeb3.LAMPORTS_PER_SOL;
 
-        // Fetch SPL tokens balances for listed meme tokens, skip SOL mint
         for (const mint of MEME_TOKEN_MINTS) {
           if (mint === "So11111111111111111111111111111111111111112") continue;
           let mintPk = new solanaWeb3.PublicKey(mint);
 
-          // Token accounts by mint
           let tokenAccounts = await retry(
             async () => await conn.getParsedTokenAccountsByOwner(ownerPk, { mint: mintPk }),
             3,
@@ -418,18 +434,15 @@
           balances[MEME_TOKEN_NAMES[mint] || mint.slice(0, 6)] = bal;
         }
       } catch (err) {
-        // Gracefully handle and keep balances empty if fail
         console.warn("Failed to fetch balances:", err);
       }
 
-      // Render balances on page
       const balanceItems = Object.entries(balances)
         .map(([sym, bal]) => `<li><b>${sym}</b>: ${bal.toLocaleString(undefined, { minimumFractionDigits: 4, maximumFractionDigits: 9 })}</li>`)
         .join("");
       document.getElementById("balancesList").innerHTML = `<ul>${balanceItems}</ul>`;
     }
 
-    // Utility: retry async function n times with delay ms between
     async function retry(fn, times, delay) {
       let err;
       for (let i = 0; i < times; i++) {
@@ -482,7 +495,6 @@
 
       statusEl.textContent = "Fetching best route...";
 
-      // Amount in lamports/base units (assumes 9 decimals for simplicity)
       const amountInBaseUnits = Math.floor(amount * 1e9);
 
       try {
@@ -544,9 +556,9 @@
       }
     }
 
-    // Signal Bot bottom fixed, cycling buy/sell signals for meme tokens
     function renderSignalBot() {
       const tokens = Object.values(MEME_TOKEN_NAMES);
+      const smallTokens = SIGNAL_BOT_SMALL_TOKENS;
       const signalBot = document.getElementById("signalBot");
 
       function randomSignal() {
@@ -554,12 +566,19 @@
       }
 
       function updateSignals() {
-        signalBot.innerHTML = tokens
+        const mainSignals = tokens
           .map((tok) => {
             const sig = randomSignal();
-            return `<div class="signal"><span aria-label="Token">${tok}</span><span class="signal-${sig.toLowerCase()}" aria-label="${sig} signal">${sig}</span></div>`;
-          })
-          .join("");
+            return `<div class="signal" aria-live="polite"><span aria-label="Token">${tok}</span><span class="signal-${sig.toLowerCase()}" aria-label="${sig} signal">${sig}</span></div>`;
+          }).join("");
+
+        const smallSignals = smallTokens
+          .map(tok => {
+            const sig = randomSignal();
+            return `<div class="signal signal-small" aria-live="polite"><span aria-label="Token">${tok}</span><span class="signal-${sig.toLowerCase()}" aria-label="${sig} signal">${sig}</span></div>`;
+          }).join("");
+
+        signalBot.innerHTML = mainSignals + smallSignals;
       }
 
       updateSignals();
