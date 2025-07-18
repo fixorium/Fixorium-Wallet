@@ -5,10 +5,15 @@
   <meta charset="UTF-8" />
   <title>FIXORIUM Swap System</title>
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <!-- Solana Wallet Adapters (browser CDN) -->
-  <script src="https://cdn.jsdelivr.net/npm/@solana/wallet-adapter-wallets@0.21.0/lib/index.umd.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@solana/wallet-adapter-base@0.21.0/lib/index.umd.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@solana/web3.js@1.92.1/lib/index.iife.min.js"></script>
+  <!-- Import React, ReactDOM and required Solana wallet libraries via CDN -->
+  <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <script src="https://unpkg.com/@solana/web3.js@1.92.1/lib/index.iife.min.js"></script>
+  <script src="https://unpkg.com/@solana/wallet-adapter-base@0.21.0/lib/index.umd.min.js"></script>
+  <script src="https://unpkg.com/@solana/wallet-adapter-react@0.21.0/lib/index.umd.min.js"></script>
+  <script src="https://unpkg.com/@solana/wallet-adapter-react-ui@0.21.0/lib/index.umd.min.js"></script>
+  <script src="https://unpkg.com/@solana/wallet-adapter-wallets@0.21.0/lib/index.umd.min.js"></script>
+
   <style>
     body {
       margin: 0;
@@ -16,6 +21,7 @@
       background: #181A20;
       min-height: 100vh;
       padding-bottom: 64px;
+      color: white;
     }
 
     .fixorium-header {
@@ -52,6 +58,22 @@
       justify-content: flex-end;
       min-width: 225px;
       font-size: 14px;
+    }
+
+    button.wallet-button {
+      cursor: pointer;
+      background: #29D6B6;
+      border: none;
+      border-radius: 6px;
+      padding: 6px 12px;
+      font-weight: bold;
+      color: #23272F;
+      font-size: 14px;
+      transition: background-color 0.3s ease;
+    }
+
+    button.wallet-button:hover {
+      background-color: #22bca7;
     }
 
     .swap-card {
@@ -166,7 +188,7 @@
       }
 
       50% {
-        opacity: .3;
+        opacity: 0.3;
       }
 
       100% {
@@ -180,32 +202,12 @@
       }
 
       50% {
-        opacity: .3;
+        opacity: 0.3;
       }
 
       100% {
         opacity: 1;
       }
-    }
-
-    .copy-btn {
-      color: #29D6B6;
-      background: none;
-      border: none;
-      cursor: pointer;
-      font-size: 12px;
-      padding: 0 6px;
-      text-decoration: underline;
-    }
-
-    .disconnect-btn {
-      color: #F73E3E;
-      background: none;
-      border: none;
-      cursor: pointer;
-      font-size: 12px;
-      padding: 0 6px;
-      text-decoration: underline;
     }
 
     a.swap-link {
@@ -241,190 +243,64 @@
 </head>
 
 <body>
-  <div class="fixorium-header">
-    <div style="display:flex;align-items:center;">
-      <svg class="fixorium-logo" viewBox="0 0 64 64" aria-hidden="true" focusable="false">
-        <circle cx="32" cy="32" r="32" fill="#29D6B6" />
-        <text x="32" y="42" text-anchor="middle" font-size="28" fill="#23272F" font-family="Arial" font-weight="bold">F</text>
-      </svg>
-      <span class="fixorium-title">FIXORIUM</span>
-    </div>
-    <div id="walletSection" class="wallet-section" aria-live="polite" aria-label="Wallet connection status"></div>
-  </div>
+  <div id="root"></div>
 
-  <main>
-    <section class="swap-card" role="main" aria-label="Token swap interface">
-      <form id="swapForm" onsubmit="return false" aria-describedby="swapStatus">
-        <label for="fromToken" class="swap-label">From Token</label>
-        <select id="fromToken" name="fromToken" aria-required="true" aria-describedby="fromTokenDesc"></select>
+  <script type="text/javascript">
+    const {
+      React,
+      ReactDOM
+    } = window;
+    const {
+      useState,
+      useEffect,
+      useMemo,
+      useCallback,
+      Fragment
+    } = React;
 
-        <label for="toToken" class="swap-label">To Token</label>
-        <select id="toToken" name="toToken" aria-required="true" aria-describedby="toTokenDesc"></select>
+    const {
+      PublicKey,
+      Transaction,
+      Connection
+    } = solanaWeb3;
 
-        <label for="swapAmount" class="swap-label">Amount</label>
-        <input id="swapAmount" name="swapAmount" class="swap-input"
-          type="number" min="0" step="any" placeholder="Enter amount" aria-required="true" />
+    const {
+      PhantomWalletAdapter
+    } = window.WalletAdapterWallets;
+    const {
+      WalletProvider,
+      useWallet,
+      useConnection
+    } = window.WalletAdapterReact;
+    const {
+      WalletModalProvider,
+      WalletMultiButton
+    } = window.WalletAdapterReactUi;
 
-        <button id="swapBtn" class="swap-btn" disabled aria-live="polite" aria-busy="false" type="submit">Swap</button>
-
-        <div id="swapStatus" role="status" aria-live="polite" style="color:#29D6B6;margin-top:12px;"></div>
-      </form>
-      <div class="balances-list" id="balancesList" aria-label="Wallet balances"></div>
-    </section>
-  </main>
-
-  <div class="signal-bot" id="signalBot" aria-label="Market signals"></div>
-
-  <script>
+    // Constants
     const SOLANA_RPC = "https://api.mainnet-beta.solana.com";
 
     const MEME_TOKEN_MINTS = [
-      'So11111111111111111111111111111111111111112', // SOL
-      'DezXAZ8z7PnrnRJjz3wXBoRhwTLdMPkqhuBczetogeoK', // BONK
-      'H4qKn8FMFha8jJuj8xMryMqRhH3h7GjLuxw7TVixpump', // FIXERCOIN 
-      'EKpQGSJtjMFqKZ9KQanSqYXRcF8fBtUk6goG7zcX3New'  // WIF
+      "So11111111111111111111111111111111111111112",
+      "DezXAZ8z7PnrnRJjz3wXBoRhwTLdMPkqhuBczetogeoK",
+      "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+      "EKpQGSJtjMFqKZ9KQanSqYXRcF8fBtUk6goG7zcX3New",
     ];
 
     const MEME_TOKEN_NAMES = {
-      'So11111111111111111111111111111111111111112': 'SOL',
-      'DezXAZ8z7PnrnRJjz3wXBoRhwTLdMPkqhuBczetogeoK': 'BONK',
-      'H4qKn8FMFha8jJuj8xMryMqRhH3h7GjLuxw7TVixpump': 'FIXERCOIN',
-      'EKpQGSJtjMFqKZ9KQanSqYXRcF8fBtUk6goG7zcX3New': 'WIF'
+      So11111111111111111111111111111111111111112: "SOL",
+      DezXAZ8z7PnrnRJjz3wXBoRhwTLdMPkqhuBczetogeoK: "BONK",
+      EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v: "USDC",
+      EKpQGSJtjMFqKZ9KQanSqYXRcF8fBtUk6goG7zcX3New: "WIF"
     };
 
     const SIGNAL_BOT_SMALL_TOKENS = ["BTC", "SOL", "FIXERCOIN"];
 
-    let wallet = null;
-    let publicKey = null;
-    let balances = {};
-    let connected = false;
-    const persistKey = "fixorium_connected_wallet";
-    let walletType = null;
-
-    const shortenAddress = addr => addr.slice(0, 4) + "..." + addr.slice(-4);
-
-    function renderWalletSection() {
-      const el = document.getElementById("walletSection");
-      el.innerHTML = "";
-      if (connected && publicKey) {
-        el.innerHTML = `
-          <span aria-label="Connected wallet address" title="${publicKey}" style="color:#fff;font-size:14px;">
-            ${shortenAddress(publicKey)}
-          </span>
-          <button class="copy-btn" aria-label="Copy wallet address" onclick="copyToClipboard('${publicKey}')">Copy</button>
-          <button class="disconnect-btn" aria-label="Disconnect wallet" onclick="disconnectWallet()">Disconnect</button>
-        `;
-      } else {
-        el.innerHTML = `
-          <button id="connectPhantom" class="swap-btn" type="button" style="width:auto;padding:6px 16px;font-size:14px;">Connect Phantom</button>
-        `;
-        document.getElementById("connectPhantom").onclick = () => connectWallet("phantom");
-      }
+    function shortenAddress(addr) {
+      return addr.slice(0, 4) + "..." + addr.slice(-4);
     }
 
-    function copyToClipboard(text) {
-      navigator.clipboard.writeText(text).then(() => alert("Wallet address copied!"));
-    }
-
-    async function connectWallet(type) {
-      walletType = type;
-      try {
-        if (type === "phantom" && window.solana?.isPhantom) {
-          const resp = await window.solana.connect();
-          wallet = window.solana;
-          publicKey = resp.publicKey.toString();
-        } else {
-          alert(`${type} wallet not installed!`);
-          return;
-        }
-
-        connected = true;
-        localStorage.setItem(persistKey, JSON.stringify({ publicKey, walletType }));
-
-        renderWalletSection();
-        await fetchBalances();
-        renderSwapForm();
-
-        wallet.on("disconnect", () => disconnectWallet());
-      }
-      catch (e) {
-        alert("Wallet connection failed: " + (e.message || e));
-      }
-    }
-
-    function disconnectWallet() {
-      if (wallet) {
-        wallet.disconnect();
-      }
-      connected = false;
-      publicKey = null;
-      wallet = null;
-      balances = {};
-      localStorage.removeItem(persistKey);
-
-      renderWalletSection();
-      renderSwapForm();
-      document.getElementById("balancesList").innerHTML = "";
-      document.getElementById("swapStatus").textContent = "";
-    }
-
-    window.addEventListener("DOMContentLoaded", async () => {
-      const saved = localStorage.getItem(persistKey);
-      if (saved) {
-        try {
-          const { publicKey: pk, walletType: wt } = JSON.parse(saved);
-          if (wt === "phantom" && window.solana?.isPhantom) {
-            walletType = wt;
-            await connectWallet(wt);
-          }
-        } catch { }
-      }
-      renderWalletSection();
-      renderSignalBot();
-    });
-
-    async function fetchBalances() {
-      if (!connected || !publicKey) return;
-      const conn = new solanaWeb3.Connection(SOLANA_RPC, "confirmed");
-
-      balances = {};
-
-      try {
-        const ownerPk = new solanaWeb3.PublicKey(publicKey);
-
-        let solBalance = await retry(async () => await conn.getBalance(ownerPk), 3, 300);
-        balances["SOL"] = solBalance / solanaWeb3.LAMPORTS_PER_SOL;
-
-        for (const mint of MEME_TOKEN_MINTS) {
-          if (mint === "So11111111111111111111111111111111111111112") continue;
-          let mintPk = new solanaWeb3.PublicKey(mint);
-
-          let tokenAccounts = await retry(
-            async () => await conn.getParsedTokenAccountsByOwner(ownerPk, { mint: mintPk }),
-            3,
-            300
-          );
-
-          let bal = 0;
-          if (tokenAccounts.value.length > 0) {
-            bal = tokenAccounts.value.reduce((acc, item) => {
-              const tokenAmount = item.account.data.parsed.info.tokenAmount;
-              return acc + (tokenAmount.uiAmount || 0);
-            }, 0);
-          }
-          balances[MEME_TOKEN_NAMES[mint] || mint.slice(0, 6)] = bal;
-        }
-      } catch (err) {
-        console.warn("Failed to fetch balances:", err);
-      }
-
-      const balanceItems = Object.entries(balances)
-        .map(([sym, bal]) => `<li><b>${sym}</b>: ${bal.toLocaleString(undefined, { minimumFractionDigits: 4, maximumFractionDigits: 9 })}</li>`)
-        .join("");
-      document.getElementById("balancesList").innerHTML = `<ul>${balanceItems}</ul>`;
-    }
-
-    async function retry(fn, times, delay) {
+    async function retry(fn, times = 3, delay = 300) {
       let err;
       for (let i = 0; i < times; i++) {
         try {
@@ -437,125 +313,397 @@
       throw err;
     }
 
-    function renderSwapForm() {
-      const fromSel = document.getElementById("fromToken");
-      const toSel = document.getElementById("toToken");
-
-      fromSel.innerHTML = "";
-      toSel.innerHTML = "";
-
-      MEME_TOKEN_MINTS.forEach(mint => {
-        const name = MEME_TOKEN_NAMES[mint] || mint.slice(0, 6);
-        fromSel.appendChild(new Option(name, mint));
-        toSel.appendChild(new Option(name, mint));
-      });
-      fromSel.value = MEME_TOKEN_MINTS[0];
-      toSel.value = MEME_TOKEN_MINTS[1];
-
-      const swapBtn = document.getElementById("swapBtn");
-      swapBtn.disabled = !(connected && publicKey);
-
-      swapBtn.onclick = handleSwap;
-    }
-
-    async function handleSwap() {
-      const fromMint = document.getElementById("fromToken").value;
-      const toMint = document.getElementById("toToken").value;
-      const amountInput = document.getElementById("swapAmount").value;
-      const statusEl = document.getElementById("swapStatus");
-
-      let amount = parseFloat(amountInput);
-      if (!amount || amount <= 0) {
-        alert("Enter a valid swap amount.");
-        return;
-      }
-      if (fromMint === toMint) {
-        alert("Swap tokens must be different.");
-        return;
-      }
-
-      statusEl.textContent = "Fetching best route...";
-
-      const amountInBaseUnits = Math.floor(amount * 1e9);
-
-      try {
-        const quoteRes = await fetch(
-          `https://quote-api.jup.ag/v6/quote?inputMint=${fromMint}&outputMint=${toMint}&amount=${amountInBaseUnits}&slippageBps=50`
-        );
-        const quote = await quoteRes.json();
-
-        if (!quote.routes || quote.routes.length === 0) {
-          statusEl.textContent = "No swap route found.";
-          return;
-        }
-
-        const bestRoute = quote.routes[0];
-
-        statusEl.textContent = "Building swap transaction...";
-
-        const swapRes = await fetch("https://quote-api.jup.ag/v6/swap", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            route: bestRoute,
-            userPublicKey: publicKey,
-            wrapAndUnwrapSol: true,
-          }),
-        });
-
-        const swapTx = await swapRes.json();
-
-        if (!swapTx.swapTransaction) {
-          statusEl.textContent = "Failed to build swap transaction.";
-          return;
-        }
-
-        statusEl.textContent = "Signing and sending transaction...";
-
-        const txBase64 = swapTx.swapTransaction;
-        const txBuffer = Uint8Array.from(atob(txBase64), (c) => c.charCodeAt(0));
-        const tx = solanaWeb3.Transaction.from(txBuffer);
-
-        let sendResult;
-        if (walletType === "phantom") {
-          sendResult = await window.solana.signAndSendTransaction(tx);
-        } else {
-          throw new Error("Wallet not found for sending transaction.");
-        }
-
-        const signature = sendResult.signature || sendResult;
-
-        statusEl.innerHTML = `Swap transaction sent! <a class="swap-link" href="https://solscan.io/tx/${signature}" target="_blank" rel="noopener noreferrer">View on Solscan</a>`;
-
-        await fetchBalances();
-      } catch (err) {
-        statusEl.textContent = "Error during swap: " + (err.message || err);
-      }
-    }
-
-    function renderSignalBot() {
-      const smallTokens = ["BTC", "SOL", "FIXERCOIN"];
-      const signalBot = document.getElementById("signalBot");
+    const SignalBot = () => {
+      const [signals, setSignals] = useState([]);
 
       function randomSignal() {
         return Math.random() > 0.5 ? "BUY" : "SELL";
       }
 
-      function updateSignals() {
-        signalBot.innerHTML = smallTokens
-          .map(tok => {
-            const sig = randomSignal();
-            return `<div class="signal signal-small" aria-live="polite">
-              <span aria-label="Token">${tok}</span>
-              <span class="signal-${sig.toLowerCase()}" aria-label="${sig} signal">${sig}</span>
-            </div>`;
-          })
-          .join("");
-      }
+      useEffect(() => {
+        function updateSignals() {
+          setSignals(SIGNAL_BOT_SMALL_TOKENS.map(tok => ({
+            token: tok,
+            signal: randomSignal()
+          })));
+        }
+        updateSignals();
+        const interval = setInterval(updateSignals, 2000);
+        return () => clearInterval(interval);
+      }, []);
 
-      updateSignals();
-      setInterval(updateSignals, 2000);
+      return React.createElement("div", {
+        className: "signal-bot",
+        "aria-label": "Market signals",
+        style: {
+          position: "fixed",
+          bottom: 0,
+          left: 0,
+          width: "100%",
+          background: "#23272F",
+          padding: 16,
+          display: "flex",
+          justifyContent: "center",
+          borderTop: "1px solid #23272F",
+          gap: 24,
+          userSelect: "none",
+          flexWrap: "wrap",
+          fontSize: 18,
+          color: "white",
+          zIndex: 1000
+        }
+      }, signals.map(({ token, signal }) =>
+        React.createElement("div", {
+          key: token,
+          className: "signal signal-small",
+          "aria-live": "polite",
+          style: {
+            fontSize: 10,
+            opacity: 0.6,
+            fontWeight: 600,
+            letterSpacing: "0.05em",
+            display: "flex",
+            alignItems: "center",
+            gap: 8,
+            whiteSpace: "nowrap"
+          }
+        }, React.createElement("span", {
+          "aria-label": "Token"
+        }, token), React.createElement("span", {
+          className: `signal-${signal.toLowerCase()}`,
+          "aria-label": `${signal} signal`,
+          style: {
+            fontWeight: "700",
+            animation: "blink 1s linear infinite",
+            color: signal === "BUY" ? "#29D6B6" : "#F73E3E"
+          }
+        }, signal))
+      ));
+    };
+
+    function App() {
+      const wallets = useMemo(() => [new PhantomWalletAdapter()], []);
+      return React.createElement(WalletProvider, { wallets: wallets, autoConnect: true },
+        React.createElement(WalletModalProvider, null,
+          React.createElement(SwapApp)
+        )
+      );
     }
+
+    function SwapApp() {
+      const { connection } = useConnection();
+      const { publicKey, connected, sendTransaction, disconnect } = useWallet();
+
+      const [balances, setBalances] = useState({});
+      const [fromToken, setFromToken] = useState(MEME_TOKEN_MINTS[0]);
+      const [toToken, setToToken] = useState(MEME_TOKEN_MINTS[1]);
+      const [amount, setAmount] = useState("");
+      const [swapRatio, setSwapRatio] = useState("");
+      const [swapStatus, setSwapStatus] = useState("");
+      const [loading, setLoading] = useState(false);
+
+      const fetchBalances = useCallback(async () => {
+        if (!connected || !publicKey) return;
+        try {
+          const ownerPubkey = publicKey;
+          let solBalance = await retry(() => connection.getBalance(ownerPubkey));
+          const newBalances = {
+            SOL: solBalance / 1e9,
+          };
+          for (const mintAddress of MEME_TOKEN_MINTS) {
+            if (mintAddress === "So11111111111111111111111111111111111111112") continue;
+            const mintPubKey = new PublicKey(mintAddress);
+            const tokenAccounts = await retry(() =>
+              connection.getParsedTokenAccountsByOwner(ownerPubkey, { mint: mintPubKey })
+            );
+            let totalBal = 0;
+            if (tokenAccounts.value.length > 0) {
+              totalBal = tokenAccounts.value.reduce((acc, item) => {
+                const uiAmount = item.account.data.parsed.info.tokenAmount.uiAmount || 0;
+                return acc + uiAmount;
+              }, 0);
+            }
+            newBalances[MEME_TOKEN_NAMES[mintAddress] || mintAddress.slice(0, 6)] = totalBal;
+          }
+          setBalances(newBalances);
+        } catch (e) {
+          console.warn("Failed to fetch balances:", e);
+        }
+      }, [connection, connected, publicKey]);
+
+      useEffect(() => {
+        if (connected) fetchBalances();
+      }, [connected, fetchBalances]);
+
+      useEffect(() => {
+        async function updateRatio() {
+          setSwapRatio("");
+          if (!amount || amount <= 0) return;
+          if (fromToken === toToken) {
+            setSwapRatio("From and To tokens cannot be the same.");
+            return;
+          }
+          try {
+            const amountInBase = Math.floor(parseFloat(amount) * 1e9);
+            const res = await fetch(
+              `https://quote-api.jup.ag/v6/quote?inputMint=${fromToken}&outputMint=${toToken}&amount=${amountInBase}&slippageBps=50`
+            );
+            const data = await res.json();
+            if (!data.routes || data.routes.length === 0) {
+              setSwapRatio("No swap route found.");
+              return;
+            }
+            const outAmountUi = data.routes[0].outAmountUI;
+            const rate = outAmountUi / parseFloat(amount);
+            setSwapRatio(`Estimated rate: 1 ${MEME_TOKEN_NAMES[fromToken] || fromToken} ≈ ${rate.toFixed(6)} ${MEME_TOKEN_NAMES[toToken] || toToken}`);
+          } catch {
+            setSwapRatio("Failed to fetch swap rate.");
+          }
+        }
+        updateRatio();
+      }, [amount, fromToken, toToken]);
+
+      const handleSwap = async () => {
+        if (!connected || !publicKey) {
+          alert("Please connect your Phantom wallet.");
+          return;
+        }
+        if (!amount || amount <= 0) {
+          alert("Enter a valid swap amount.");
+          return;
+        }
+        if (fromToken === toToken) {
+          alert("Swap tokens must be different.");
+          return;
+        }
+        setSwapStatus("Fetching best route...");
+        setLoading(true);
+        try {
+          const amountInBase = Math.floor(parseFloat(amount) * 1e9);
+          const quoteRes = await fetch(
+            `https://quote-api.jup.ag/v6/quote?inputMint=${fromToken}&outputMint=${toToken}&amount=${amountInBase}&slippageBps=50`
+          );
+          const quote = await quoteRes.json();
+          if (!quote.routes || quote.routes.length === 0) {
+            setSwapStatus("No swap route found.");
+            setLoading(false);
+            return;
+          }
+          const bestRoute = quote.routes[0];
+          setSwapStatus("Building swap transaction...");
+
+          const swapRes = await fetch("https://quote-api.jup.ag/v6/swap", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              route: bestRoute,
+              userPublicKey: publicKey.toBase58(),
+              wrapAndUnwrapSol: true,
+            }),
+          });
+
+          const swapTx = await swapRes.json();
+
+          if (!swapTx.swapTransaction) {
+            setSwapStatus("Failed to build swap transaction.");
+            setLoading(false);
+            return;
+          }
+          setSwapStatus("Signing and sending transaction...");
+          const txBuffer = Uint8Array.from(atob(swapTx.swapTransaction), c => c.charCodeAt(0));
+          const transaction = Transaction.from(txBuffer);
+
+          const signature = await sendTransaction(transaction, connection);
+
+          setSwapStatus(
+            React.createElement(Fragment, null,
+              "Swap transaction sent! ",
+              React.createElement("a", {
+                href: `https://solscan.io/tx/${signature}`,
+                target: "_blank",
+                rel: "noopener noreferrer",
+                className: "swap-link",
+                style: { color: "#29d6b6", textDecoration: "underline" }
+              }, "View on Solscan"))
+          );
+          await fetchBalances();
+        } catch (err) {
+          setSwapStatus("Error during swap: " + (err.message || err));
+        } finally {
+          setLoading(false);
+        }
+      };
+
+      return React.createElement(Fragment, null,
+        React.createElement("div", {
+          className: "fixorium-header",
+          style: {
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            padding: 12,
+            background: "#23272F",
+            flexWrap: "wrap",
+            gap: 12
+          }
+        },
+          React.createElement("div", { style: { display: "flex", alignItems: "center" } },
+            React.createElement("svg", {
+              className: "fixorium-logo",
+              viewBox: "0 0 64 64",
+              "aria-hidden": true,
+              focusable: false,
+              width: 36,
+              height: 36,
+              style: { marginRight: 10 }
+            },
+              React.createElement("circle", { cx: 32, cy: 32, r: 32, fill: "#29D6B6" }),
+              React.createElement("text", {
+                x: 32,
+                y: 42,
+                textAnchor: "middle",
+                fontSize: 28,
+                fill: "#23272F",
+                fontFamily: "Arial",
+                fontWeight: "bold"
+              }, "F")
+            ),
+            React.createElement("span", {
+              style: { color: "white", fontSize: 24, fontWeight: "bold", whiteSpace: "nowrap" }
+            }, "FIXORIUM")
+          ),
+          React.createElement("div", {
+            className: "wallet-section",
+            "aria-live": "polite",
+            "aria-label": "Wallet connection status",
+            style: {
+              background: "#31363F",
+              borderRadius: 6,
+              padding: "5px 15px",
+              display: "flex",
+              alignItems: "center",
+              gap: 10,
+              flexWrap: "wrap",
+              justifyContent: "flex-end",
+              minWidth: 225,
+              fontSize: 14
+            }
+          },
+            React.createElement(WalletMultiButton, { className: "wallet-button" }),
+            connected && React.createElement("button", {
+              className: "wallet-button",
+              onClick: disconnect,
+              style: { marginLeft: 8 }
+            }, "Disconnect")
+          )
+        ),
+        React.createElement("main", null,
+          React.createElement("section", {
+            className: "swap-card",
+            role: "main",
+            "aria-label": "Token swap interface",
+            style: {
+              background: "#23272F",
+              margin: "32px auto",
+              borderRadius: 16,
+              boxShadow: "0 8px 24px #0003",
+              padding: "32px 24px",
+              maxWidth: 450,
+              width: "100%",
+              boxSizing: "border-box"
+            }
+          },
+            React.createElement("form", {
+              onSubmit: e => {
+                e.preventDefault();
+                if (!loading) handleSwap();
+              },
+              "aria-describedby": "swapStatus"
+            },
+              React.createElement("label", { htmlFor: "fromToken", className: "swap-label" }, "From Token"),
+              React.createElement("select", {
+                id: "fromToken",
+                name: "fromToken",
+                "aria-required": true,
+                value: fromToken,
+                onChange: e => setFromToken(e.target.value),
+                disabled: !connected || loading,
+                className: "swap-input",
+              }, MEME_TOKEN_MINTS.map(mint =>
+                React.createElement("option", { key: mint, value: mint },
+                  MEME_TOKEN_NAMES[mint] || mint.slice(0, 6)
+                )
+              )),
+              React.createElement("label", { htmlFor: "toToken", className: "swap-label" }, "To Token"),
+              React.createElement("select", {
+                id: "toToken",
+                name: "toToken",
+                "aria-required": true,
+                value: toToken,
+                onChange: e => setToToken(e.target.value),
+                disabled: !connected || loading,
+                className: "swap-input",
+              }, MEME_TOKEN_MINTS.map(mint =>
+                React.createElement("option", { key: mint, value: mint },
+                  MEME_TOKEN_NAMES[mint] || mint.slice(0, 6)
+                )
+              )),
+              React.createElement("label", { htmlFor: "swapAmount", className: "swap-label" }, "Amount"),
+              React.createElement("input", {
+                id: "swapAmount",
+                name: "swapAmount",
+                className: "swap-input",
+                type: "number",
+                min: "0",
+                step: "any",
+                placeholder: "Enter amount",
+                "aria-required": true,
+                disabled: !connected || loading,
+                value: amount,
+                onChange: e => setAmount(e.target.value)
+              }),
+              React.createElement("div", {
+                id: "swapRatio",
+                style: { color: "#ccc", fontSize: 14, minHeight: 18, marginBottom: 8 }
+              }, swapRatio),
+              React.createElement("button", {
+                id: "swapBtn",
+                className: "swap-btn",
+                type: "submit",
+                disabled: (!connected || loading || !amount || amount <= 0 || fromToken === toToken),
+                "aria-live": "polite",
+                "aria-busy": loading,
+                style: { cursor: loading ? "not-allowed" : "pointer" }
+              }, loading ? "Swapping..." : "Swap"),
+              React.createElement("div", {
+                id: "swapStatus",
+                role: "status",
+                "aria-live": "polite",
+                style: { color: "#29D6B6", marginTop: 12, minHeight: 32 }
+              }, swapStatus)
+            ),
+            React.createElement("div", {
+              className: "balances-list",
+              "aria-label": "Wallet balances",
+              style: { marginTop: 20, fontSize: 14, whiteSpace: "pre-wrap" }
+            },
+              React.createElement("ul", { style: { paddingLeft: 20, margin: 0 } },
+                Object.entries(balances).map(([token, bal]) =>
+                  React.createElement("li", { key: token },
+                    React.createElement("b", null, token),
+                    ": ",
+                    bal.toLocaleString(undefined, { minimumFractionDigits: 4, maximumFractionDigits: 9 })
+                  )
+                )
+              )
+            )
+          )
+        ),
+        React.createElement(SignalBot)
+      );
+    }
+
+    ReactDOM.createRoot(document.getElementById("root")).render(React.createElement(App));
   </script>
 </body>
 
