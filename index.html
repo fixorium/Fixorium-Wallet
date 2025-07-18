@@ -146,11 +146,9 @@
     import { Connection, PublicKey, Transaction } from "https://cdn.jsdelivr.net/npm/@solana/web3.js@1.92.1/lib/index.esm.js";
     import { PhantomWalletAdapter } from "https://cdn.jsdelivr.net/npm/@solana/wallet-adapter-wallets@0.21.0/lib/index.esm.js";
 
-    // RPC Endpoint & Connection
     const RPC_ENDPOINT = "https://api.mainnet-beta.solana.com";
     const connection = new Connection(RPC_ENDPOINT, "confirmed");
 
-    // Tokens list - mint, symbol, decimals. Add or adjust as needed
     const TOKENS = [
       { mint: "So11111111111111111111111111111111111111112", symbol: "SOL", decimals: 9 },
       { mint: "DezXAZ8z7PnrnRJjz3wXBoRhwTLdMPkqhuBczetogeoK", symbol: "BONK", decimals: 9 },
@@ -160,13 +158,11 @@
 
     const SIGNAL_BOT_TOKENS = ["BTC", "SOL", "FIXERCOIN"];
 
-    // State
     let walletAdapter = null;
     let walletConnected = false;
     let publicKey = null;
     let balances = {};
 
-    // Utilities
     const shortenAddress = (address) => `${address.slice(0, 4)}...${address.slice(-4)}`;
 
     function copyToClipboard(text) {
@@ -175,7 +171,6 @@
         .catch(() => alert("Failed to copy to clipboard."));
     }
 
-    // Wallet Section Render
     function renderWalletSection() {
       const el = document.getElementById("walletSection");
       el.innerHTML = "";
@@ -194,10 +189,8 @@
       }
     }
 
-    // Connect wallet - detects Phantom extension, falls back to adapter
     async function tryConnectWallet() {
       const phantomAvailable = window.solana && window.solana.isPhantom;
-
       if (phantomAvailable) {
         try {
           const resp = await window.solana.connect();
@@ -231,7 +224,6 @@
       renderSwapForm();
     }
 
-    // Disconnect wallet and clean state
     function disconnectWallet() {
       if (walletConnected && walletAdapter && walletAdapter.connected) {
         walletAdapter.disconnect();
@@ -248,7 +240,6 @@
       renderBalances();
     }
 
-    // Fetch balances - native SOL + SPL tokens from TOKENS list
     async function fetchAllBalances() {
       if (!walletConnected || !publicKey) {
         balances = {};
@@ -259,13 +250,10 @@
       try {
         const solBalance = await connection.getBalance(publicKey);
         balances["SOL"] = solBalance / 1e9;
-
-        // SPL tokens
         for (const token of TOKENS) {
           if (token.mint === "So11111111111111111111111111111111111111112") continue;
           const mintPubkey = new PublicKey(token.mint);
           const tokenAccounts = await connection.getParsedTokenAccountsByOwner(publicKey, { mint: mintPubkey });
-
           let totalAmount = 0;
           for (const acc of tokenAccounts.value) {
             const uiAmount = acc.account.data.parsed.info.tokenAmount.uiAmount;
@@ -273,13 +261,10 @@
           }
           balances[token.symbol] = totalAmount;
         }
-      } catch (e) {
-        console.error("Fetch balances failed", e);
-      }
+      } catch (e) { console.error("Fetch balances failed", e); }
       renderBalances();
     }
 
-    // Render balance list element
     function renderBalances() {
       const el = document.getElementById("balancesList");
       if (!walletConnected) {
@@ -296,7 +281,6 @@
       el.innerHTML = `<ul>${list}</ul>`;
     }
 
-    // Render swap form dropdowns and button disabled state depending on wallet connection
     function renderSwapForm() {
       const fromSel = document.getElementById("fromToken");
       const toSel = document.getElementById("toToken");
@@ -331,7 +315,6 @@
 
     let lastQuoteRequestKey = null;
 
-    // Fetch Jupiter swap quote and update rate display
     async function updateSwapRatio() {
       clearSwapStatus();
       const fromMint = document.getElementById("fromToken").value;
@@ -384,7 +367,6 @@
       }
     }
 
-    // Handle swap form submit
     async function handleSwap(event) {
       event.preventDefault();
       clearSwapStatus();
@@ -432,7 +414,6 @@
 
         statusEl.textContent = "Building swap transaction...";
 
-        // Build swap transaction request
         const swapBody = {
           route: bestRoute,
           userPublicKey: publicKey.toBase58(),
@@ -457,7 +438,6 @@
         const txBuffer = Uint8Array.from(atob(txBase64), c => c.charCodeAt(0));
         const transaction = Transaction.from(txBuffer);
 
-        // Sign and send transaction with wallet
         let signature;
         if (walletAdapter && walletAdapter.connected) {
           signature = await walletAdapter.sendTransaction(transaction, connection);
@@ -478,7 +458,6 @@
       }
     }
 
-    // Bottom signal bot with buy/sell blinking signals
     function renderSignalBot() {
       const container = document.getElementById("signalBot");
 
@@ -489,9 +468,7 @@
       function update() {
         container.innerHTML = SIGNAL_BOT_TOKENS.map(t => {
           const sig = randomSignal();
-          return `<div class="signal signal-${sig.toLowerCase()}" aria-live="polite">
-            ${t} <span aria-label="${sig} signal">${sig}</span>
-          </div>`;
+          return `<div class="signal signal-${sig.toLowerCase()}" aria-live="polite">${t} <span aria-label="${sig} signal">${sig}</span></div>`;
         }).join("");
       }
 
@@ -499,7 +476,6 @@
       setInterval(update, 1800);
     }
 
-    // Initialize UI after page loaded (use window load for injected phantom readiness)
     window.addEventListener("load", () => {
       renderWalletSection();
       renderSwapForm();
