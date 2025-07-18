@@ -14,6 +14,8 @@
       margin: 0;
       font-family: sans-serif;
       background: #181A20;
+      min-height: 100vh;
+      padding-bottom: 64px; /* for signal bot fixed bottom */
     }
 
     .fixorium-header {
@@ -22,6 +24,8 @@
       justify-content: space-between;
       padding: 12px 24px;
       background: #23272F;
+      flex-wrap: wrap;
+      gap: 12px;
     }
 
     .fixorium-logo {
@@ -34,6 +38,7 @@
       color: #fff;
       font-size: 24px;
       font-weight: bold;
+      white-space: nowrap;
     }
 
     .wallet-section {
@@ -43,6 +48,10 @@
       display: flex;
       align-items: center;
       gap: 10px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+      min-width: 225px;
+      font-size: 14px;
     }
 
     .swap-card {
@@ -50,15 +59,18 @@
       margin: 32px auto;
       border-radius: 16px;
       box-shadow: 0 8px 24px #0003;
-      padding: 32px;
-      min-width: 320px;
+      padding: 32px 24px;
+      width: 100%;
       max-width: 450px;
+      box-sizing: border-box;
     }
 
     .swap-label {
       color: #fff;
       font-weight: bold;
       margin-top: 10px;
+      display: block;
+      font-size: 14px;
     }
 
     .swap-input,
@@ -98,6 +110,9 @@
       margin-top: 20px;
       font-size: 14px;
       line-height: 1.5;
+      min-height: 50px;
+      white-space: pre-wrap;
+      word-break: break-word;
     }
 
     .signal-bot {
@@ -113,6 +128,7 @@
       z-index: 1000;
       gap: 24px;
       user-select: none;
+      flex-wrap: wrap;
     }
 
     .signal {
@@ -121,17 +137,18 @@
       gap: 8px;
       font-size: 18px;
       white-space: nowrap;
+      color: #fff;
     }
 
     .signal-buy {
       color: #29D6B6;
-      font-weight: bold;
+      font-weight: 700;
       animation: blinkBuy 1s linear infinite;
     }
 
     .signal-sell {
       color: #F73E3E;
-      font-weight: bold;
+      font-weight: 700;
       animation: blinkSell 1s linear infinite;
     }
 
@@ -170,6 +187,7 @@
       cursor: pointer;
       font-size: 12px;
       padding: 0 6px;
+      text-decoration: underline;
     }
 
     .disconnect-btn {
@@ -179,6 +197,7 @@
       cursor: pointer;
       font-size: 12px;
       padding: 0 6px;
+      text-decoration: underline;
     }
 
     a.swap-link {
@@ -192,7 +211,12 @@
     @media (max-width: 480px) {
       .swap-card {
         width: 90%;
-        padding: 24px;
+        padding: 24px 16px;
+      }
+
+      .wallet-section {
+        justify-content: center;
+        min-width: auto;
       }
     }
   </style>
@@ -210,55 +234,57 @@
     <div id="walletSection" class="wallet-section" aria-live="polite" aria-label="Wallet connection status"></div>
   </div>
 
-  <div class="swap-card" role="main" aria-label="Token swap interface">
-    <form id="swapForm" onsubmit="return false" aria-describedby="swapStatus">
-      <label for="fromToken" class="swap-label">From Token</label>
-      <select id="fromToken" name="fromToken" aria-required="true" aria-describedby="fromTokenDesc"></select>
+  <main>
+    <section class="swap-card" role="main" aria-label="Token swap interface">
+      <form id="swapForm" onsubmit="return false" aria-describedby="swapStatus">
+        <label for="fromToken" class="swap-label">From Token</label>
+        <select id="fromToken" name="fromToken" aria-required="true" aria-describedby="fromTokenDesc"></select>
 
-      <label for="toToken" class="swap-label">To Token</label>
-      <select id="toToken" name="toToken" aria-required="true" aria-describedby="toTokenDesc"></select>
+        <label for="toToken" class="swap-label">To Token</label>
+        <select id="toToken" name="toToken" aria-required="true" aria-describedby="toTokenDesc"></select>
 
-      <label for="swapAmount" class="swap-label">Amount</label>
-      <input id="swapAmount" name="swapAmount" class="swap-input"
-        type="number" min="0" step="any" placeholder="Enter amount" aria-required="true" />
+        <label for="swapAmount" class="swap-label">Amount</label>
+        <input id="swapAmount" name="swapAmount" class="swap-input"
+          type="number" min="0" step="any" placeholder="Enter amount" aria-required="true" />
 
-      <button id="swapBtn" class="swap-btn" disabled aria-live="polite" aria-busy="false" type="submit">Swap</button>
+        <button id="swapBtn" class="swap-btn" disabled aria-live="polite" aria-busy="false" type="submit">Swap</button>
 
-      <div id="swapStatus" role="status" aria-live="polite" style="color:#29D6B6;margin-top:12px;"></div>
-    </form>
-    <div class="balances-list" id="balancesList" aria-label="Wallet balances"></div>
-  </div>
+        <div id="swapStatus" role="status" aria-live="polite" style="color:#29D6B6;margin-top:12px;"></div>
+      </form>
+      <div class="balances-list" id="balancesList" aria-label="Wallet balances"></div>
+    </section>
+  </main>
 
   <div class="signal-bot" id="signalBot" aria-label="Market signals"></div>
 
   <script>
     const SOLANA_RPC = "https://api.mainnet-beta.solana.com";
 
-    // Example meme & common tokens (add more as needed)
+    // SOL & known popular meme tokens mint addresses for swap:
     const MEME_TOKEN_MINTS = [
-      "So11111111111111111111111111111111111111112",   // SOL
-      "4k3Dyjzvzp8eTqLDw1J8J8pbbAki8F2vr7e6uJ6zQ3iF", // RAY (example)
-      "9n4nbM75f5Ui33ZbPYXn59EwSgE8CGsHtAeTH5YFeJ9E" // BTC (example)
-      // Add your meme tokens here, e.g., BONK, WIF, etc.
+      'So11111111111111111111111111111111111111112', // SOL (native)
+      'DezXAZ8z7PnrnRJjz3wXBoRhwTLdMPkqhuBczetogeoK', // BONK token (example)
+      'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v', // USDC, widely used on Solana
+      'EKpQGSJtjMFqKZ9KQanSqYXRcF8fBtUk6goG7zcX3New'  // WIF token (example)
     ];
+
+    // Mapping for display names
     const MEME_TOKEN_NAMES = {
-      "So11111111111111111111111111111111111111112": "SOL",
-      "4k3Dyjzvzp8eTqLDw1J8J8pbbAki8F2vr7e6uJ6zQ3iF": "RAY",
-      "9n4nbM75f5Ui33ZbPYXn59EwSgE8CGsHtAeTH5YFeJ9E": "BTC"
+      'So11111111111111111111111111111111111111112': 'SOL',
+      'DezXAZ8z7PnrnRJjz3wXBoRhwTLdMPkqhuBczetogeoK': 'BONK',
+      'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v': 'USDC',
+      'EKpQGSJtjMFqKZ9KQanSqYXRcF8fBtUk6goG7zcX3New': 'WIF'
     };
 
-    // Wallet and state vars
     let wallet = null;
     let publicKey = null;
     let balances = {};
     let connected = false;
-    let persistKey = "fixorium_connected_wallet";
+    const persistKey = "fixorium_connected_wallet";
     let walletType = null; // phantom, solflare, backpack
 
-    // Format public key to short string (first 4 + last 4)
     const shortenAddress = addr => addr.slice(0, 4) + "..." + addr.slice(-4);
 
-    // Render wallet connect/disconnect UI
     function renderWalletSection() {
       const el = document.getElementById("walletSection");
       el.innerHTML = "";
@@ -282,52 +308,51 @@
       }
     }
 
-    // Copy public key to clipboard with user confirmation alert
     function copyToClipboard(text) {
       navigator.clipboard.writeText(text).then(() => alert("Wallet address copied!"));
     }
 
-    // Connect wallets supporting Phantom, Solflare, Backpack
     async function connectWallet(type) {
       walletType = type;
       try {
         if (type === "phantom" && window.solana?.isPhantom) {
-          await window.solana.connect();
+          const resp = await window.solana.connect();
           wallet = window.solana;
-        } else if (type === "solflare" && window.solflare?.isSolflare) {
-          await window.solflare.connect();
+          publicKey = resp.publicKey.toString();
+        }
+        else if (type === "solflare" && window.solflare?.isSolflare) {
+          const resp = await window.solflare.connect();
           wallet = window.solflare;
-        } else if (type === "backpack" && window.backpack?.solana) {
-          await window.backpack.solana.connect();
+          publicKey = resp.publicKey.toString();
+        }
+        else if (type === "backpack" && window.backpack?.solana) {
+          const resp = await window.backpack.solana.connect();
           wallet = window.backpack.solana;
-        } else {
+          publicKey = resp.publicKey.toString();
+        }
+        else {
           alert(`${type} wallet not installed!`);
           return;
         }
 
-        publicKey = wallet.publicKey.toString();
         connected = true;
-
-        // Save to localStorage for persistence
         localStorage.setItem(persistKey, JSON.stringify({ publicKey, walletType }));
 
         renderWalletSection();
         await fetchBalances();
         renderSwapForm();
 
-        // Setup disconnect listener
         wallet.on("disconnect", () => disconnectWallet());
-      } catch (err) {
-        alert("Wallet connection failed: " + err?.message || err);
+      }
+      catch (e) {
+        alert("Wallet connection failed: " + (e.message || e));
       }
     }
 
-    // Disconnect wallet and clear states
     function disconnectWallet() {
       if (wallet) {
         wallet.disconnect();
       }
-
       connected = false;
       publicKey = null;
       wallet = null;
@@ -340,17 +365,15 @@
       document.getElementById("swapStatus").textContent = "";
     }
 
-    // Persistent reconnect on page load
     window.addEventListener("DOMContentLoaded", async () => {
       const saved = localStorage.getItem(persistKey);
       if (saved) {
         try {
           const { publicKey: pk, walletType: wt } = JSON.parse(saved);
-          if (
-            (wt === "phantom" && window.solana?.isPhantom) ||
+          // Validate wallet availability before reconnect
+          if ((wt === "phantom" && window.solana?.isPhantom) ||
             (wt === "solflare" && window.solflare?.isSolflare) ||
-            (wt === "backpack" && window.backpack?.solana)
-          ) {
+            (wt === "backpack" && window.backpack?.solana)) {
             walletType = wt;
             await connectWallet(wt);
           }
@@ -360,49 +383,66 @@
       renderSignalBot();
     });
 
-    // Fetch SOL and SPL token balances
     async function fetchBalances() {
       if (!connected || !publicKey) return;
-      const conn = new solanaWeb3.Connection(SOLANA_RPC);
+      const conn = new solanaWeb3.Connection(SOLANA_RPC, "confirmed");
 
-      const ownerPk = new solanaWeb3.PublicKey(publicKey);
       balances = {};
 
-      // Fetch SOL balance
       try {
-        let solBalance = await conn.getBalance(ownerPk);
+        const ownerPk = new solanaWeb3.PublicKey(publicKey);
+
+        // Fetch SOL balance with retries for rare failures
+        let solBalance = await retry(async () => await conn.getBalance(ownerPk), 3, 300);
         balances["SOL"] = solBalance / solanaWeb3.LAMPORTS_PER_SOL;
-      } catch {
-        balances["SOL"] = 0;
-      }
 
-      // Fetch SPL token balances for meme tokens (skip SOL mint)
-      const tokenBalances = {};
-      for (const mint of MEME_TOKEN_MINTS) {
-        if (mint === "So11111111111111111111111111111111111111112") continue;
-        try {
-          const mintPk = new solanaWeb3.PublicKey(mint);
-          const parsedTokens = await conn.getParsedTokenAccountsByOwner(ownerPk, { mint: mintPk });
+        // Fetch SPL tokens balances for listed meme tokens, skip SOL mint
+        for (const mint of MEME_TOKEN_MINTS) {
+          if (mint === "So11111111111111111111111111111111111111112") continue;
+          let mintPk = new solanaWeb3.PublicKey(mint);
+
+          // Token accounts by mint
+          let tokenAccounts = await retry(
+            async () => await conn.getParsedTokenAccountsByOwner(ownerPk, { mint: mintPk }),
+            3,
+            300
+          );
+
           let bal = 0;
-          if (parsedTokens.value.length > 0) {
-            bal = parsedTokens.value[0].account.data.parsed.info.tokenAmount.uiAmount || 0;
+          if (tokenAccounts.value.length > 0) {
+            bal = tokenAccounts.value.reduce((acc, item) => {
+              const tokenAmount = item.account.data.parsed.info.tokenAmount;
+              return acc + (tokenAmount.uiAmount || 0);
+            }, 0);
           }
-          tokenBalances[MEME_TOKEN_NAMES[mint] || mint.slice(0, 6)] = bal;
-        } catch {
-          tokenBalances[MEME_TOKEN_NAMES[mint] || mint.slice(0, 6)] = 0;
+          balances[MEME_TOKEN_NAMES[mint] || mint.slice(0, 6)] = bal;
         }
+      } catch (err) {
+        // Gracefully handle and keep balances empty if fail
+        console.warn("Failed to fetch balances:", err);
       }
 
-      balances = { ...balances, ...tokenBalances };
-
-      // Render balances list
-      const list = Object.entries(balances)
-        .map(([k, v]) => `<li><b>${k}</b>: ${v.toFixed(6)}</li>`)
+      // Render balances on page
+      const balanceItems = Object.entries(balances)
+        .map(([sym, bal]) => `<li><b>${sym}</b>: ${bal.toLocaleString(undefined, { minimumFractionDigits: 4, maximumFractionDigits: 9 })}</li>`)
         .join("");
-      document.getElementById("balancesList").innerHTML = `<ul>${list}</ul>`;
+      document.getElementById("balancesList").innerHTML = `<ul>${balanceItems}</ul>`;
     }
 
-    // Prepare token select inputs & swap button state
+    // Utility: retry async function n times with delay ms between
+    async function retry(fn, times, delay) {
+      let err;
+      for (let i = 0; i < times; i++) {
+        try {
+          return await fn();
+        } catch (e) {
+          err = e;
+          await new Promise(resolve => setTimeout(resolve, delay));
+        }
+      }
+      throw err;
+    }
+
     function renderSwapForm() {
       const fromSel = document.getElementById("fromToken");
       const toSel = document.getElementById("toToken");
@@ -415,18 +455,15 @@
         fromSel.appendChild(new Option(name, mint));
         toSel.appendChild(new Option(name, mint));
       });
-
       fromSel.value = MEME_TOKEN_MINTS[0];
       toSel.value = MEME_TOKEN_MINTS[1];
 
       const swapBtn = document.getElementById("swapBtn");
       swapBtn.disabled = !(connected && publicKey);
 
-      // Setup swap button event
       swapBtn.onclick = handleSwap;
     }
 
-    // Handle swapping tokens using Jupiter Aggregator
     async function handleSwap() {
       const fromMint = document.getElementById("fromToken").value;
       const toMint = document.getElementById("toToken").value;
@@ -438,19 +475,20 @@
         alert("Enter a valid swap amount.");
         return;
       }
-
       if (fromMint === toMint) {
         alert("Swap tokens must be different.");
         return;
       }
 
-      // Amount in lamports for SOL or base units for SPL (assume 9 decimals)
-      const amountInBaseUnits = Math.floor(amount * 1e9);
-
       statusEl.textContent = "Fetching best route...";
 
+      // Amount in lamports/base units (assumes 9 decimals for simplicity)
+      const amountInBaseUnits = Math.floor(amount * 1e9);
+
       try {
-        const quoteRes = await fetch(`https://quote-api.jup.ag/v6/quote?inputMint=${fromMint}&outputMint=${toMint}&amount=${amountInBaseUnits}&slippageBps=50`);
+        const quoteRes = await fetch(
+          `https://quote-api.jup.ag/v6/quote?inputMint=${fromMint}&outputMint=${toMint}&amount=${amountInBaseUnits}&slippageBps=50`
+        );
         const quote = await quoteRes.json();
 
         if (!quote.routes || quote.routes.length === 0) {
@@ -468,8 +506,8 @@
           body: JSON.stringify({
             route: bestRoute,
             userPublicKey: publicKey,
-            wrapAndUnwrapSol: true
-          })
+            wrapAndUnwrapSol: true,
+          }),
         });
 
         const swapTx = await swapRes.json();
@@ -482,7 +520,7 @@
         statusEl.textContent = "Signing and sending transaction...";
 
         const txBase64 = swapTx.swapTransaction;
-        const txBuffer = Uint8Array.from(atob(txBase64), c => c.charCodeAt(0));
+        const txBuffer = Uint8Array.from(atob(txBase64), (c) => c.charCodeAt(0));
         const tx = solanaWeb3.Transaction.from(txBuffer);
 
         let sendResult;
@@ -496,7 +534,7 @@
           throw new Error("Wallet not found for sending transaction.");
         }
 
-        const signature = sendResult.signature || sendResult; // Backpack returns string directly
+        const signature = sendResult.signature || sendResult;
 
         statusEl.innerHTML = `Swap transaction sent! <a class="swap-link" href="https://solscan.io/tx/${signature}" target="_blank" rel="noopener noreferrer">View on Solscan</a>`;
 
@@ -506,7 +544,7 @@
       }
     }
 
-    // Signal Bot for "BUY" / "SELL" signals (dummy data)
+    // Signal Bot bottom fixed, cycling buy/sell signals for meme tokens
     function renderSignalBot() {
       const tokens = Object.values(MEME_TOKEN_NAMES);
       const signalBot = document.getElementById("signalBot");
@@ -516,10 +554,12 @@
       }
 
       function updateSignals() {
-        signalBot.innerHTML = tokens.map(tok => {
-          const sig = randomSignal();
-          return `<div class="signal"><span>${tok}</span><span class="signal-${sig.toLowerCase()}">${sig}</span></div>`;
-        }).join("");
+        signalBot.innerHTML = tokens
+          .map((tok) => {
+            const sig = randomSignal();
+            return `<div class="signal"><span aria-label="Token">${tok}</span><span class="signal-${sig.toLowerCase()}" aria-label="${sig} signal">${sig}</span></div>`;
+          })
+          .join("");
       }
 
       updateSignals();
