@@ -1,16 +1,9 @@
  <!DOCTYPE html>
 <html lang="en">
-
 <head>
   <meta charset="UTF-8" />
   <title>FIXORIUM Swap System</title>
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <!-- Solana web3.js -->
-  <script src="https://cdn.jsdelivr.net/npm/@solana/web3.js@1.92.1/lib/index.iife.min.js"></script>
-  <!-- Wallet Adapter -->
-  <script src="https://cdn.jsdelivr.net/npm/@solana/wallet-adapter-base@0.21.0/lib/index.umd.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@solana/wallet-adapter-react@0.21.0/lib/index.umd.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@solana/wallet-adapter-wallets@0.21.0/lib/index.umd.min.js"></script>
   <style>
     body {
       margin: 0;
@@ -73,6 +66,23 @@
       background-color: #22bca7;
     }
 
+    button.copy-btn,
+    button.disconnect-btn {
+      background: #444c56;
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      padding: 6px 10px;
+      font-size: 14px;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+    }
+
+    button.copy-btn:hover,
+    button.disconnect-btn:hover {
+      background-color: #555f70;
+    }
+
     .swap-card {
       background: #23272F;
       margin: 32px auto;
@@ -120,7 +130,7 @@
     }
 
     .swap-btn:disabled {
-      opacity: .5;
+      opacity: 0.5;
       cursor: not-allowed;
     }
 
@@ -180,31 +190,15 @@
     }
 
     @keyframes blinkBuy {
-      0% {
-        opacity: 1;
-      }
-
-      50% {
-        opacity: 0.3;
-      }
-
-      100% {
-        opacity: 1;
-      }
+      0% { opacity: 1; }
+      50% { opacity: 0.3; }
+      100% { opacity: 1; }
     }
 
     @keyframes blinkSell {
-      0% {
-        opacity: 1;
-      }
-
-      50% {
-        opacity: 0.3;
-      }
-
-      100% {
-        opacity: 1;
-      }
+      0% { opacity: 1; }
+      50% { opacity: 0.3; }
+      100% { opacity: 1; }
     }
 
     a.swap-link {
@@ -219,18 +213,15 @@
         width: 90%;
         padding: 24px 16px;
       }
-
       .wallet-section {
         justify-content: center;
         min-width: auto;
       }
-
       .signal-bot {
         font-size: 14px;
         gap: 12px;
         padding: 12px 4px;
       }
-
       .signal {
         font-size: 14px;
         gap: 4px;
@@ -238,7 +229,6 @@
     }
   </style>
 </head>
-
 <body>
   <div class="fixorium-header">
     <div style="display:flex;align-items:center;">
@@ -253,7 +243,7 @@
 
   <main>
     <section class="swap-card" role="main" aria-label="Token swap interface">
-      <form id="swapForm" onsubmit="return false" aria-describedby="swapStatus">
+      <form id="swapForm" aria-describedby="swapStatus">
         <label for="fromToken" class="swap-label">From Token</label>
         <select id="fromToken" name="fromToken" aria-required="true" aria-describedby="fromTokenDesc"></select>
 
@@ -277,17 +267,9 @@
   <div class="signal-bot" id="signalBot" aria-label="Market signals"></div>
 
   <script type="module">
-    import {
-      Connection,
-      PublicKey,
-      Transaction
-    } from "https://cdn.jsdelivr.net/npm/@solana/web3.js@1.92.1/lib/index.esm.js";
+    import { Connection, PublicKey, Transaction } from 'https://cdn.jsdelivr.net/npm/@solana/web3.js@1.92.1/lib/index.esm.js';
+    import { PhantomWalletAdapter } from 'https://cdn.jsdelivr.net/npm/@solana/wallet-adapter-wallets@0.21.0/lib/index.esm.js';
 
-    import {
-      PhantomWalletAdapter
-    } from "https://cdn.jsdelivr.net/npm/@solana/wallet-adapter-wallets@0.21.0/lib/index.esm.js";
-
-    // Constants and variables
     const SOLANA_RPC = "https://api.mainnet-beta.solana.com";
 
     const MEME_TOKEN_MINTS = [
@@ -304,7 +286,7 @@
       'EKpQGSJtjMFqKZ9KQanSqYXRcF8fBtUk6goG7zcX3New': 'WIF'
     };
 
-    const SIGNAL_BOT_SMALL_TOKENS = ["BTC", "SOL", "FIXERCOIN"];  
+    const SIGNAL_BOT_SMALL_TOKENS = ["BTC", "SOL", "FIXERCOIN"];
 
     let walletAdapter = null;
     let connection = new Connection(SOLANA_RPC, "confirmed");
@@ -312,8 +294,8 @@
     let balances = {};
     let connected = false;
 
-    // -- Helper functions --
-    const shortenAddress = address => address.slice(0, 4) + "..." + address.slice(-4);
+    // Helper function to shorten address
+    const shortenAddress = (address) => address.slice(0, 4) + "..." + address.slice(-4);
 
     function renderWalletSection() {
       const el = document.getElementById("walletSection");
@@ -323,18 +305,21 @@
           <span aria-label="Connected wallet address" title="${publicKey.toBase58()}" style="color:#fff;font-size:14px;">
             ${shortenAddress(publicKey.toBase58())}
           </span>
-          <button class="copy-btn" aria-label="Copy wallet address" onclick="copyToClipboard('${publicKey.toBase58()}')">Copy</button>
+          <button class="copy-btn" aria-label="Copy wallet address" id="copyWalletBtn">Copy</button>
           <button id="disconnectBtn" class="disconnect-btn" aria-label="Disconnect wallet">Disconnect</button>
         `;
-        document.getElementById('disconnectBtn').addEventListener('click', disconnectWallet);
+        document.getElementById('disconnectBtn').onclick = disconnectWallet;
+        document.getElementById('copyWalletBtn').onclick = () => copyToClipboard(publicKey.toBase58());
       } else {
         el.innerHTML = `<button id="connectPhantomBtn" class="wallet-button" type="button">Connect Phantom</button>`;
-        document.getElementById('connectPhantomBtn').addEventListener('click', connectWallet);
+        document.getElementById('connectPhantomBtn').onclick = connectWallet;
       }
     }
 
     function copyToClipboard(text) {
-      navigator.clipboard.writeText(text).then(() => alert("Wallet address copied!"));
+      navigator.clipboard.writeText(text)
+        .then(() => alert("Wallet address copied!"))
+        .catch(() => alert("Failed to copy wallet address!"));
     }
 
     async function connectWallet() {
@@ -376,13 +361,14 @@
       if (!connected || !publicKey) return;
       balances = {};
       try {
-        // SOL balance
-        let solBalance = await connection.getBalance(publicKey);
+        // Native SOL balance
+        const solBalance = await connection.getBalance(publicKey);
         balances["SOL"] = solBalance / 1e9;
 
-        // For SPL tokens
+        // SPL tokens
         for (const mintAddress of MEME_TOKEN_MINTS) {
-          if (mintAddress === 'So11111111111111111111111111111111111111112') continue; // Skip native SOL
+          if (mintAddress === 'So11111111111111111111111111111111111111112') continue; // skip native SOL
+
           const mintPubKey = new PublicKey(mintAddress);
           const tokenAccounts = await connection.getParsedTokenAccountsByOwner(publicKey, { mint: mintPubKey });
           let balance = 0;
@@ -412,6 +398,7 @@
       const toSel = document.getElementById("toToken");
       fromSel.innerHTML = "";
       toSel.innerHTML = "";
+
       MEME_TOKEN_MINTS.forEach(mint => {
         const name = MEME_TOKEN_NAMES[mint] || mint.slice(0, 6);
         fromSel.appendChild(new Option(name, mint));
@@ -419,10 +406,17 @@
       });
       fromSel.value = MEME_TOKEN_MINTS[0];
       toSel.value = MEME_TOKEN_MINTS[1];
+
       const swapBtn = document.getElementById("swapBtn");
       swapBtn.disabled = !(connected && publicKey);
+
+      // Clear inputs
+      document.getElementById('swapAmount').value = "";
+      document.getElementById('swapRatio').textContent = "";
+      document.getElementById('swapStatus').textContent = "";
+
+      // Attach event listeners
       swapBtn.onclick = handleSwap;
-      // Update swap ratio when inputs change
       document.getElementById('swapAmount').oninput = updateSwapRatio;
       fromSel.onchange = updateSwapRatio;
       toSel.onchange = updateSwapRatio;
@@ -439,6 +433,7 @@
 
       const amount = parseFloat(amountString);
       if (!amount || amount <= 0) return;
+
       if (fromMint === toMint) {
         ratioEl.textContent = "From and To tokens cannot be the same.";
         return;
@@ -466,7 +461,8 @@
       }
     }
 
-    async function handleSwap() {
+    async function handleSwap(event) {
+      event.preventDefault();
       if (!connected || !publicKey) {
         alert("Please connect your Phantom wallet");
         return;
@@ -564,10 +560,9 @@
       setInterval(updateSignals, 2000);
     }
 
-    // Init render
+    // Run on load
     renderWalletSection();
     renderSignalBot();
   </script>
 </body>
-
 </html>
