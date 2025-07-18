@@ -2,189 +2,92 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>FIXORIUM Swap System - Production Ready</title>
+  <title>FIXORIUM Swap System</title>
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <style>
     body {
-      margin: 0;
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen,
-        Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
-      background: #181A20;
-      min-height: 100vh;
-      padding-bottom: 64px;
-      color: white;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: flex-start;
+      margin: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen,
+      Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+      background: #181A20; min-height: 100vh; padding-bottom: 64px; color: white;
+      display: flex; flex-direction: column; align-items: center; justify-content: flex-start;
     }
     .fixorium-header {
-      width: 100%;
-      max-width: 500px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 12px 24px;
-      background: #23272F;
-      flex-wrap: wrap;
-      gap: 12px;
-      box-sizing: border-box;
-      margin-top: 16px;
+      width: 100%; max-width: 500px;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 12px 24px; background: #23272F; flex-wrap: wrap; gap: 12px;
+      box-sizing: border-box; margin-top: 16px;
     }
     .fixorium-logo {
-      height: 36px;
-      width: 36px;
-      margin-right: 10px;
+      height: 36px; width: 36px; margin-right: 10px;
     }
     .fixorium-title {
-      color: #fff;
-      font-size: 24px;
-      font-weight: bold;
-      white-space: nowrap;
+      color: #fff; font-size: 24px; font-weight: bold; white-space: nowrap;
     }
     #walletSection {
-      background: #31363F;
-      border-radius: 6px;
-      padding: 5px 15px;
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      flex-wrap: wrap;
-      justify-content: flex-end;
-      min-width: 220px;
-      font-size: 14px;
-      box-sizing: border-box;
+      background: #31363F; border-radius: 6px; padding: 5px 15px;
+      display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+      justify-content: flex-end; min-width: 220px; font-size: 14px; box-sizing: border-box;
     }
     button.wallet-button, button.copy-btn, button.disconnect-btn {
-      cursor: pointer;
-      background: #29D6B6;
-      border: none;
-      border-radius: 6px;
-      padding: 6px 12px;
-      font-weight: 700;
-      color: #23272F;
-      font-size: 14px;
-      transition: background-color 0.3s ease;
-      user-select: none;
+      cursor: pointer; background: #29D6B6; border: none; border-radius: 6px;
+      padding: 6px 12px; font-weight: 700; color: #23272F; font-size: 14px;
+      transition: background-color 0.3s ease; user-select: none;
     }
     button.copy-btn, button.disconnect-btn {
-      background: #444c56;
-      color: white;
+      background: #444c56; color: white;
     }
-    button.wallet-button:hover {
-      background-color: #22bca7;
-    }
-    button.copy-btn:hover, button.disconnect-btn:hover {
-      background-color: #555f70;
-    }
+    button.wallet-button:hover { background-color: #22bca7; }
+    button.copy-btn:hover, button.disconnect-btn:hover { background-color: #555f70; }
     main {
-      width: 100%;
-      max-width: 500px;
-      margin: 24px 0;
-      padding: 0 24px;
-      box-sizing: border-box;
+      width: 100%; max-width: 500px; margin: 24px 0; padding: 0 24px; box-sizing: border-box;
     }
     .swap-card {
-      background: #23272F;
-      border-radius: 16px;
-      box-shadow: 0 8px 24px #0003;
-      padding: 32px 24px;
-      width: 100%;
-      box-sizing: border-box;
+      background: #23272F; border-radius: 16px; box-shadow: 0 8px 24px #0003;
+      padding: 32px 24px; width: 100%; box-sizing: border-box;
     }
     .swap-label {
-      color: #fff;
-      font-weight: bold;
-      margin-top: 10px;
-      display: block;
-      font-size: 14px;
+      color: #fff; font-weight: bold; margin-top: 10px; display: block; font-size: 14px;
     }
     select, input.swap-input {
-      width: 100%;
-      padding: 6px 10px;
-      border-radius: 4px;
-      border: none;
-      background: #31363F;
-      color: #fff;
-      margin: 6px 0 14px;
-      font-size: 14px;
-      box-sizing: border-box;
-      font-family: inherit;
+      width: 100%; padding: 6px 10px; border-radius: 4px; border: none;
+      background: #31363F; color: #fff; margin: 6px 0 14px; font-size: 14px;
+      box-sizing: border-box; font-family: inherit;
     }
     button.swap-btn {
-      background: #29D6B6;
-      color: #23272F;
-      font-weight: 700;
-      padding: 10px 0;
-      width: 100%;
-      border: none;
-      border-radius: 6px;
-      margin-top: 10px;
-      cursor: pointer;
-      font-size: 16px;
-      transition: background-color 0.3s;
+      background: #29D6B6; color: #23272F; font-weight: 700; padding: 10px 0;
+      width: 100%; border: none; border-radius: 6px; margin-top: 10px;
+      cursor: pointer; font-size: 16px; transition: background-color 0.3s;
       user-select: none;
     }
     button.swap-btn:disabled {
-      opacity: 0.5;
-      cursor: not-allowed;
+      opacity: 0.5; cursor: not-allowed;
     }
     #swapRatio {
-      color: #ccc;
-      font-size: 14px;
-      min-height: 18px;
-      margin-bottom: 8px;
-      min-height: 20px;
-      font-style: italic;
+      color: #ccc; font-size: 14px; min-height: 18px; margin-bottom: 8px;
+      min-height: 20px; font-style: italic;
     }
     #swapStatus {
-      color: #29D6B6;
-      margin-top: 12px;
-      min-height: 20px;
-      word-break: break-word;
+      color: #29D6B6; margin-top: 12px; min-height: 20px; word-break: break-word;
     }
     .balances-list {
-      color: #fff;
-      margin-top: 20px;
-      font-size: 14px;
-      line-height: 1.5;
-      min-height: 50px;
-      white-space: pre-wrap;
-      word-break: break-word;
+      color: #fff; margin-top: 20px; font-size: 14px; line-height: 1.5;
+      min-height: 50px; white-space: pre-wrap; word-break: break-word;
     }
     .signal-bot {
-      position: fixed;
-      bottom: 0;
-      left: 0;
-      width: 100%;
-      background: #23272F;
-      padding: 16px 0;
-      display: flex;
-      justify-content: center;
-      border-top: 1px solid #23272F;
-      z-index: 1000;
-      gap: 36px;
-      user-select: none;
-      flex-wrap: wrap;
-      font-size: 18px;
-      color: #fff;
-      box-sizing: border-box;
+      position: fixed; bottom: 0; left: 0; width: 100%; background: #23272F;
+      padding: 16px 0; display: flex; justify-content: center; border-top: 1px solid #23272F;
+      z-index: 1000; gap: 36px; user-select: none; flex-wrap: wrap;
+      font-size: 18px; color: #fff; box-sizing: border-box;
     }
     .signal {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      white-space: nowrap;
-      font-weight: 700;
-      font-family: monospace, monospace;
+      display: flex; align-items: center; gap: 8px; white-space: nowrap;
+      font-weight: 700; font-family: monospace, monospace;
     }
     .signal-buy {
-      color: #29D6B6;
-      animation: blinkBuy 1.5s ease-in-out infinite;
+      color: #29D6B6; animation: blinkBuy 1.5s ease-in-out infinite;
     }
     .signal-sell {
-      color: #F73E3E;
-      animation: blinkSell 1.5s ease-in-out infinite;
+      color: #F73E3E; animation: blinkSell 1.5s ease-in-out infinite;
     }
     @keyframes blinkBuy {
       0%, 100% {opacity: 1;}
@@ -195,20 +98,11 @@
       50% {opacity: 0.3;}
     }
     a.swap-link {
-      color: #29d6b6;
-      text-decoration: underline;
-      word-break: break-word;
-      font-size: 13px;
+      color: #29d6b6; text-decoration: underline; word-break: break-word; font-size: 13px;
     }
     @media (max-width: 480px) {
-      main {
-        padding: 0 12px;
-      }
-      .signal-bot {
-        font-size: 14px;
-        gap: 16px;
-        padding: 12px 8px;
-      }
+      main { padding: 0 12px; }
+      .signal-bot { font-size: 14px; gap: 16px; padding: 12px 8px; }
     }
   </style>
 </head>
@@ -252,13 +146,11 @@
     import { Connection, PublicKey, Transaction } from "https://cdn.jsdelivr.net/npm/@solana/web3.js@1.92.1/lib/index.esm.js";
     import { PhantomWalletAdapter } from "https://cdn.jsdelivr.net/npm/@solana/wallet-adapter-wallets@0.21.0/lib/index.esm.js";
 
-    // Constants and token list
+    // RPC Endpoint & Connection
     const RPC_ENDPOINT = "https://api.mainnet-beta.solana.com";
     const connection = new Connection(RPC_ENDPOINT, "confirmed");
 
-    // Replace or add here your desired tokens for swap and balance tracking
-    // Mint addresses based on Solana: SOL (native), BONK, USDC, WIF (example)
-    // Used Jupiter Supports these tokens; add others here
+    // Tokens list - mint, symbol, decimals. Add or adjust as needed
     const TOKENS = [
       { mint: "So11111111111111111111111111111111111111112", symbol: "SOL", decimals: 9 },
       { mint: "DezXAZ8z7PnrnRJjz3wXBoRhwTLdMPkqhuBczetogeoK", symbol: "BONK", decimals: 9 },
@@ -266,31 +158,30 @@
       { mint: "EKpQGSJtjMFqKZ9KQanSqYXRcF8fBtUk6goG7zcX3New", symbol: "WIF", decimals: 9 }
     ];
 
-    // Signal bot tokens
     const SIGNAL_BOT_TOKENS = ["BTC", "SOL", "FIXERCOIN"];
 
-    // Globals
+    // State
     let walletAdapter = null;
     let walletConnected = false;
     let publicKey = null;
     let balances = {};
 
-    // Utils
-    const shortenAddress = address => `${address.slice(0, 4)}...${address.slice(-4)}`;
+    // Utilities
+    const shortenAddress = (address) => `${address.slice(0, 4)}...${address.slice(-4)}`;
 
-    // Clipboard copy
     function copyToClipboard(text) {
-      navigator.clipboard.writeText(text).then(() => alert("Copied to clipboard!"))
+      navigator.clipboard.writeText(text)
+        .then(() => alert("Copied to clipboard!"))
         .catch(() => alert("Failed to copy to clipboard."));
     }
 
-    // Render wallet section
+    // Wallet Section Render
     function renderWalletSection() {
-      const walletSection = document.getElementById("walletSection");
-      walletSection.innerHTML = "";
+      const el = document.getElementById("walletSection");
+      el.innerHTML = "";
       if (walletConnected && publicKey) {
         const addr = publicKey.toBase58();
-        walletSection.innerHTML = `
+        el.innerHTML = `
           <span aria-label="Connected wallet address" title="${addr}" style="color:#fff;font-size:14px;">${shortenAddress(addr)}</span>
           <button id="copyAddressBtn" class="copy-btn" aria-label="Copy wallet address" type="button">Copy</button>
           <button id="disconnectWalletBtn" class="disconnect-btn" aria-label="Disconnect wallet" type="button">Disconnect</button>
@@ -298,30 +189,27 @@
         document.getElementById("copyAddressBtn").onclick = () => copyToClipboard(addr);
         document.getElementById("disconnectWalletBtn").onclick = disconnectWallet;
       } else {
-        walletSection.innerHTML = `<button id="connectWalletBtn" class="wallet-button" type="button">Connect Phantom</button>`;
+        el.innerHTML = `<button id="connectWalletBtn" class="wallet-button" type="button">Connect Phantom</button>`;
         document.getElementById("connectWalletBtn").onclick = tryConnectWallet;
       }
     }
 
-    // Connect wallet with fallback support for Phantom extension and adapter
+    // Connect wallet - detects Phantom extension, falls back to adapter
     async function tryConnectWallet() {
       const phantomAvailable = window.solana && window.solana.isPhantom;
-      
+
       if (phantomAvailable) {
         try {
           const resp = await window.solana.connect();
           publicKey = resp.publicKey;
           walletConnected = true;
-          walletAdapter = null; // using injected wallet
-          window.solana.on("disconnect", () => {
-            disconnectWallet();
-          });
-          await postWalletConnected();
+          walletAdapter = null;
+          window.solana.on("disconnect", () => disconnectWallet());
+          await afterConnect();
         } catch (e) {
-          alert(`Phantom connect error: ${e?.message ?? e}`);
+          alert(`Phantom connect error: ${e.message || e}`);
         }
       } else {
-        // Fallback to PhantomWalletAdapter package (for non-browser environments)
         if (!walletAdapter) {
           walletAdapter = new PhantomWalletAdapter();
           walletAdapter.on("disconnect", () => disconnectWallet());
@@ -330,29 +218,29 @@
           await walletAdapter.connect();
           publicKey = walletAdapter.publicKey;
           walletConnected = walletAdapter.connected;
-          await postWalletConnected();
+          await afterConnect();
         } catch (e) {
-          alert(`WalletAdapter connect error: ${e?.message ?? e}`);
+          alert(`WalletAdapter connect error: ${e.message || e}`);
         }
       }
     }
 
-    async function postWalletConnected() {
+    async function afterConnect() {
       renderWalletSection();
       await fetchAllBalances();
       renderSwapForm();
     }
 
-    // Disconnect wallet and reset state
+    // Disconnect wallet and clean state
     function disconnectWallet() {
       if (walletConnected && walletAdapter && walletAdapter.connected) {
         walletAdapter.disconnect();
       } else if (walletConnected && window.solana && window.solana.isPhantom) {
         window.solana.disconnect();
       }
+      walletConnected = false;
       publicKey = null;
       walletAdapter = null;
-      walletConnected = false;
       balances = {};
       renderWalletSection();
       renderSwapForm();
@@ -360,7 +248,7 @@
       renderBalances();
     }
 
-    // Fetch balances of native SOL and SPL tokens in TOKENS list for connected wallet
+    // Fetch balances - native SOL + SPL tokens from TOKENS list
     async function fetchAllBalances() {
       if (!walletConnected || !publicKey) {
         balances = {};
@@ -369,15 +257,15 @@
       }
       balances = {};
       try {
-        // Fetch native SOL balance
-        const solBalanceLamports = await connection.getBalance(publicKey);
-        balances["SOL"] = solBalanceLamports / 1e9;
+        const solBalance = await connection.getBalance(publicKey);
+        balances["SOL"] = solBalance / 1e9;
 
-        // For SPL tokens: fetch token accounts for each mint
-        const tokenMints = TOKENS.filter(t => t.mint !== "So11111111111111111111111111111111111111112");
-        for (const token of tokenMints) {
+        // SPL tokens
+        for (const token of TOKENS) {
+          if (token.mint === "So11111111111111111111111111111111111111112") continue;
           const mintPubkey = new PublicKey(token.mint);
           const tokenAccounts = await connection.getParsedTokenAccountsByOwner(publicKey, { mint: mintPubkey });
+
           let totalAmount = 0;
           for (const acc of tokenAccounts.value) {
             const uiAmount = acc.account.data.parsed.info.tokenAmount.uiAmount;
@@ -385,68 +273,65 @@
           }
           balances[token.symbol] = totalAmount;
         }
-        renderBalances();
-      } catch (err) {
-        console.error("Failed to fetch balances:", err);
+      } catch (e) {
+        console.error("Fetch balances failed", e);
       }
+      renderBalances();
     }
 
-    // Render balances below swap form
+    // Render balance list element
     function renderBalances() {
-      const balancesEl = document.getElementById("balancesList");
+      const el = document.getElementById("balancesList");
       if (!walletConnected) {
-        balancesEl.innerHTML = "<em>Wallet not connected</em>";
+        el.innerHTML = "<em>Wallet not connected</em>";
         return;
       }
       if (!balances || Object.keys(balances).length === 0) {
-        balancesEl.innerHTML = "<em>Loading balances...</em>";
+        el.innerHTML = "<em>Loading balances...</em>";
         return;
       }
-      const listItems = Object.entries(balances)
+      const list = Object.entries(balances)
         .map(([sym, val]) => `<li><b>${sym}:</b> ${val.toLocaleString(undefined, { minimumFractionDigits: 4, maximumFractionDigits: 9 })}</li>`)
         .join("");
-      balancesEl.innerHTML = `<ul>${listItems}</ul>`;
+      el.innerHTML = `<ul>${list}</ul>`;
     }
 
-    // Populate swap select inputs and enable swap button if connected
+    // Render swap form dropdowns and button disabled state depending on wallet connection
     function renderSwapForm() {
-      const fromTokenSel = document.getElementById("fromToken");
-      const toTokenSel = document.getElementById("toToken");
-      const swapBtn = document.getElementById("swapBtn");
-      fromTokenSel.innerHTML = "";
-      toTokenSel.innerHTML = "";
+      const fromSel = document.getElementById("fromToken");
+      const toSel = document.getElementById("toToken");
+      fromSel.innerHTML = "";
+      toSel.innerHTML = "";
 
       for (const token of TOKENS) {
-        fromTokenSel.appendChild(new Option(token.symbol, token.mint));
-        toTokenSel.appendChild(new Option(token.symbol, token.mint));
+        fromSel.appendChild(new Option(token.symbol, token.mint));
+        toSel.appendChild(new Option(token.symbol, token.mint));
       }
-      // Default selected tokens - different
-      fromTokenSel.value = TOKENS[0].mint;
-      toTokenSel.value = TOKENS.length>1 ? TOKENS[1].mint : TOKENS[0].mint;
 
+      fromSel.value = TOKENS[0].mint;
+      toSel.value = TOKENS.length > 1 ? TOKENS[1].mint : TOKENS[0].mint;
+
+      const swapBtn = document.getElementById("swapBtn");
       swapBtn.disabled = !walletConnected;
 
-      // Clear inputs and status texts
       document.getElementById("swapAmount").value = "";
       document.getElementById("swapRatio").textContent = "";
       clearSwapStatus();
 
-      // Attach listeners
-      // Remove all to avoid multiple triggers
-      fromTokenSel.onchange = updateSwapRatio;
-      toTokenSel.onchange = updateSwapRatio;
+      fromSel.onchange = updateSwapRatio;
+      toSel.onchange = updateSwapRatio;
       document.getElementById("swapAmount").oninput = updateSwapRatio;
       document.getElementById("swapForm").onsubmit = handleSwap;
     }
 
     function clearSwapStatus() {
-      const status = document.getElementById("swapStatus");
-      status.textContent = "";
+      const statusEl = document.getElementById("swapStatus");
+      statusEl.textContent = "";
     }
 
     let lastQuoteRequestKey = null;
 
-    // Query Jupiter API for swap quote
+    // Fetch Jupiter swap quote and update rate display
     async function updateSwapRatio() {
       clearSwapStatus();
       const fromMint = document.getElementById("fromToken").value;
@@ -465,45 +350,41 @@
       const requestKey = `${fromMint}_${toMint}_${amountVal}`;
       lastQuoteRequestKey = requestKey;
 
-      // Convert amount to base units (lamports or smallest token unit)
       const fromToken = TOKENS.find(t => t.mint === fromMint);
       if (!fromToken) {
         ratioEl.textContent = "From token info missing.";
         return;
       }
-      const inputAmount = Math.floor(amountVal * (10 ** fromToken.decimals));
+      const inputAmount = Math.floor(amountVal * 10 ** fromToken.decimals);
 
       try {
-        // Fetch quote from Jupiter aggregation API (v6)
-        // Example API: https://quote-api.jup.ag/v6/quote?inputMint=FROM&outputMint=TO&amount=INPUT_AMOUNT&slippageBps=50
-        const url = `https://quote-api.jup.ag/v6/quote?inputMint=${fromMint}&outputMint=${toMint}&amount=${inputAmount}&slippageBps=50`;
-        const res = await fetch(url);
-        const data = await res.json();
+        const qurl = `https://quote-api.jup.ag/v6/quote?inputMint=${fromMint}&outputMint=${toMint}&amount=${inputAmount}&slippageBps=50`;
+        const response = await fetch(qurl);
+        const data = await response.json();
 
-        if (lastQuoteRequestKey !== requestKey) return; // ignore stale responses
-        if (!data || !data.routes || data.routes.length === 0) {
+        if (lastQuoteRequestKey !== requestKey) return;
+
+        if (!data?.routes?.length) {
           ratioEl.textContent = "No route found for swap.";
           return;
         }
 
         const bestRoute = data.routes[0];
-        // outAmountUI is the UI amount of the output token
-        let outAmountUI = bestRoute.outAmountUI;
-        // Calculate rate
+        const outAmountUI = bestRoute.outAmountUI;
         const rate = outAmountUI / amountVal;
 
         const toToken = TOKENS.find(t => t.mint === toMint);
         const fromSymbol = fromToken.symbol;
-        const toSymbol = toToken ? toToken.symbol : toMint.slice(0,6);
+        const toSymbol = toToken ? toToken.symbol : toMint.slice(0, 6);
 
         ratioEl.textContent = `Est. rate: 1 ${fromSymbol} ≈ ${rate.toFixed(6)} ${toSymbol}`;
       } catch (e) {
         ratioEl.textContent = "Failed fetching swap rate.";
-        console.error("Swap rate fetch error", e);
+        console.error("Swap rate error", e);
       }
     }
 
-    // Perform swap via Jupiter API + sign/send tx wallet
+    // Handle swap form submit
     async function handleSwap(event) {
       event.preventDefault();
       clearSwapStatus();
@@ -533,17 +414,16 @@
         alert("From token info missing");
         return;
       }
-      const inputAmount = Math.floor(amountVal * (10 ** fromToken.decimals));
 
+      const inputAmount = Math.floor(amountVal * 10 ** fromToken.decimals);
       statusEl.textContent = "Fetching swap routes from Jupiter...";
 
       try {
-        // Fetch quotes (routes)
         const quoteUrl = `https://quote-api.jup.ag/v6/quote?inputMint=${fromMint}&outputMint=${toMint}&amount=${inputAmount}&slippageBps=50`;
         const quoteRes = await fetch(quoteUrl);
         const quoteJson = await quoteRes.json();
 
-        if (!quoteJson.routes || quoteJson.routes.length === 0) {
+        if (!quoteJson.routes?.length) {
           statusEl.textContent = "No valid swap routes found.";
           return;
         }
@@ -552,8 +432,8 @@
 
         statusEl.textContent = "Building swap transaction...";
 
-        // Post swap build request with best route
-        const swapReqBody = {
+        // Build swap transaction request
+        const swapBody = {
           route: bestRoute,
           userPublicKey: publicKey.toBase58(),
           wrapAndUnwrapSol: true,
@@ -561,48 +441,44 @@
 
         const swapRes = await fetch("https://quote-api.jup.ag/v6/swap", {
           method: "POST",
-          headers: {"Content-Type": "application/json"},
-          body: JSON.stringify(swapReqBody),
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(swapBody),
         });
+        const swapTxJson = await swapRes.json();
 
-        const swapJson = await swapRes.json();
-
-        if (!swapJson.swapTransaction) {
+        if (!swapTxJson.swapTransaction) {
           statusEl.textContent = "Failed to build swap transaction.";
           return;
         }
 
         statusEl.textContent = "Signing and sending transaction...";
 
-        // Prepare transaction from base64
-        const rawTx = swapJson.swapTransaction;
-        const txBuffer = Uint8Array.from(atob(rawTx), c => c.charCodeAt(0));
+        const txBase64 = swapTxJson.swapTransaction;
+        const txBuffer = Uint8Array.from(atob(txBase64), c => c.charCodeAt(0));
         const transaction = Transaction.from(txBuffer);
 
-        // Sign and send with Phantom wallet or adapter
+        // Sign and send transaction with wallet
         let signature;
         if (walletAdapter && walletAdapter.connected) {
           signature = await walletAdapter.sendTransaction(transaction, connection);
         } else if (window.solana && window.solana.isPhantom) {
-          // Use injected wallet
-          signature = await window.solana.signAndSendTransaction(transaction).then(({signature}) => signature);
+          signature = await window.solana.signAndSendTransaction(transaction).then(r => r.signature);
         } else {
           statusEl.textContent = "No wallet available for signing transaction";
           return;
         }
 
-        statusEl.innerHTML = `Transaction sent: <a class="swap-link" href="https://solscan.io/tx/${signature}" target="_blank" rel="noopener noreferrer">View on Solscan</a>`;
+        statusEl.innerHTML = `Transaction sent! <a class="swap-link" href="https://solscan.io/tx/${signature}" target="_blank" rel="noopener">View on Solscan</a>`;
 
-        // Refresh balances and swap ratio
         await fetchAllBalances();
         updateSwapRatio();
       } catch (e) {
-        statusEl.textContent = `Swap failed: ${e?.message || e}`;
+        statusEl.textContent = `Swap failed: ${e.message || e}`;
         console.error("Swap error:", e);
       }
     }
 
-    // Animate bottom signal bot
+    // Bottom signal bot with buy/sell blinking signals
     function renderSignalBot() {
       const container = document.getElementById("signalBot");
 
@@ -612,9 +488,9 @@
 
       function update() {
         container.innerHTML = SIGNAL_BOT_TOKENS.map(t => {
-          const signal = randomSignal();
-          return `<div class="signal signal-${signal.toLowerCase()}" aria-live="polite">
-            ${t} <span class="signal-${signal.toLowerCase()}" aria-label="${signal}">${signal}</span>
+          const sig = randomSignal();
+          return `<div class="signal signal-${sig.toLowerCase()}" aria-live="polite">
+            ${t} <span aria-label="${sig} signal">${sig}</span>
           </div>`;
         }).join("");
       }
@@ -623,8 +499,8 @@
       setInterval(update, 1800);
     }
 
-    // Initialize after DOM ready
-    window.addEventListener("DOMContentLoaded", () => {
+    // Initialize UI after page loaded (use window load for injected phantom readiness)
+    window.addEventListener("load", () => {
       renderWalletSection();
       renderSwapForm();
       renderSignalBot();
