@@ -53,7 +53,7 @@
       margin-top: 0;
       color: #00ffcc;
     }
-    .token-select, .amount-input {
+    .token-select, .amount-input, .slippage-input {
       margin-bottom: 1rem;
     }
     select, input[type="number"] {
@@ -81,11 +81,9 @@
       color: #999;
       text-align: right;
     }
-    #loading {
-      display: none;
-      text-align: center;
-      margin-top: 1rem;
-      color: #00ffcc;
+    .loading {
+      font-size: 0.85rem;
+      color: yellow;
     }
   </style>
   <script src="https://unpkg.com/@solana/web3.js@1.86.1/lib/index.iife.min.js"></script>
@@ -118,11 +116,16 @@
     <div class="amount-input">
       <input type="number" id="amount" placeholder="Enter amount" />
     </div>
+    <div class="slippage-input">
+      <label for="slippage">Slippage (%):</label>
+      <input type="number" id="slippage" value="0.5" min="0.1" step="0.1" />
+    </div>
     <div class="conversion">
       Total Value (in USDT): <span id="conversionValue">-</span>
     </div>
-    <button id="executeSwap">Confirm Transaction</button>
-    <div id="loading">Processing transaction...</div>
+    <div id="loadingIndicator" class="loading" style="display: none;">Loading...</div>
+    <button id="getQuote">Preview Quote</button>
+    <button id="executeSwap" style="display: none;">Confirm Transaction</button>
     <div id="quoteResult" class="status"></div>
   </main>
 
@@ -137,6 +140,7 @@
 
     let connection;
     let walletPublicKey = null;
+    let lastQuote = null;
 
     function initializeConnection() {
       connection = new solanaWeb3.Connection(solanaWeb3.clusterApiUrl("mainnet-beta"));
@@ -174,56 +178,63 @@
       document.getElementById("disconnectWallet").style.display = "none";
     }
 
-    async function executeSwap() {
-      if (!walletPublicKey) return alert("Connect wallet first");
-
+    async function fetchQuote() {
       const inputMint = document.getElementById("fromToken").value;
       const outputMint = document.getElementById("toToken").value;
       const amount = parseFloat(document.getElementById("amount").value);
-      if (!inputMint || !outputMint || !amount) return alert("Invalid swap params");
+      const slippage = parseFloat(document.getElementById("slippage").value);
+      if (!inputMint || !outputMint || !amount || !slippage) return alert("Fill all fields");
 
-      document.getElementById("loading").style.display = "block";
+      document.getElementById("loadingIndicator").style.display = "block";
 
       try {
-        const url = `https://quote-api.jup.ag/v6/swap`; // Jupiter swap endpoint
-        const response = await fetch(url, {
+        const res = await fetch(`https://quote-api.jup.ag/v6/quote?inputMint=${inputMint}&outputMint=${outputMint}&amount=${amount * 1e6}&slippageBps=${slippage * 100}`);
+        const data = await res.json();
+
+        if (!data?.outAmount) throw new Error("Invalid quote");
+
+        document.getElementById("quoteResult").textContent = `Estimated: ${(data.outAmount / 1e6).toFixed(6)} Tokens`;
+        document.getElementById("conversionValue").textContent = (data.outAmount / 1e6).toFixed(2) + ' USDT';
+        document.getElementById("executeSwap").style.display = "inline-block";
+        lastQuote = data;
+      } catch (err) {
+        console.error(err);
+        alert("Quote fetch failed");
+      } finally {
+        document.getElementById("loadingIndicator").style.display = "none";
+      }
+    }
+
+    async function executeSwap() {
+      if (!walletPublicKey || !lastQuote) return alert("No quote or wallet connected");
+      try {
+        const swapRes = await fetch("https://quote-api.jup.ag/v6/swap", {
           method: "POST",
-          headers: {
-            "Content-Type": "application/json"
-          },
+          headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             userPublicKey: walletPublicKey.toBase58(),
+            quoteResponse: lastQuote,
             wrapUnwrapSOL: true,
-            inputMint,
-            outputMint,
-            amount: Math.round(amount * 10 ** 6), // assuming 6 decimals
-            slippage: 1,
+            computeUnitPriceMicroLamports: 5000
           })
         });
 
-        const swapData = await response.json();
-        if (swapData.error) throw new Error(swapData.error);
+        const { swapTransaction } = await swapRes.json();
+        const recoveredTx = solanaWeb3.Transaction.from(Buffer.from(swapTransaction, "base64"));
 
-        const swapTransaction = swapData.swapTransaction;
-        const decodedTransaction = solanaWeb3.Transaction.from(Buffer.from(swapTransaction, "base64"));
-        decodedTransaction.feePayer = walletPublicKey;
-        decodedTransaction.recentBlockhash = (await connection.getRecentBlockhash()).blockhash;
+        const signed = await window.solana.signTransaction(recoveredTx);
+        const txid = await connection.sendRawTransaction(signed.serialize());
 
-        const signed = await window.solana.signTransaction(decodedTransaction);
-        const signature = await connection.sendRawTransaction(signed.serialize());
-        await connection.confirmTransaction(signature);
-
-        document.getElementById("quoteResult").textContent = `Swap successful: ${signature}`;
+        document.getElementById("quoteResult").textContent = `Transaction sent: ${txid}`;
       } catch (err) {
-        console.error("Swap error:", err);
-        document.getElementById("quoteResult").textContent = "Swap failed: " + err.message;
-      } finally {
-        document.getElementById("loading").style.display = "none";
+        console.error(err);
+        alert("Swap failed");
       }
     }
 
     document.getElementById("connectWallet").addEventListener("click", connectWallet);
     document.getElementById("disconnectWallet").addEventListener("click", disconnectWallet);
+    document.getElementById("getQuote").addEventListener("click", fetchQuote);
     document.getElementById("executeSwap").addEventListener("click", executeSwap);
 
     window.addEventListener("load", () => {
