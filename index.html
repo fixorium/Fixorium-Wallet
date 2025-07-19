@@ -96,21 +96,22 @@
     let publicKey = null;
     const FEE_WALLET = 'H4qKn8FMFha8jJuj8xMryMqRhH3h7GjLuxw7TVixpump';
     const JUP_BASE = 'https://quote-api.jup.ag';
-    const FIXERCOIN_MINT = 'FIXERCOINTOKENADDRESSHERE'; // Replace with real mint
+    const FIXERCOIN_MINT = 'FIXERCOINTOKENADDRESSHERE'; // Replace with your real token
 
     async function connectWallet() {
-      if (!window.solana || !window.solana.isPhantom) {
-        alert('Phantom Wallet not found. Please install Phantom extension.');
-        return;
-      }
-      try {
-        const res = await window.solana.connect();
-        publicKey = res.publicKey.toString();
-        document.getElementById('walletAddress').innerText = publicKey;
-        document.getElementById('walletInfo').style.display = 'block';
-        await populateTokens();
-      } catch (e) {
-        alert('Connection failed. Please try again.');
+      if (window.solana && window.solana.isPhantom) {
+        try {
+          const res = await window.solana.connect();
+          publicKey = res.publicKey.toString();
+          document.getElementById('walletAddress').innerText = publicKey;
+          document.getElementById('walletInfo').style.display = 'block';
+          await populateTokens();
+        } catch (err) {
+          console.error('Wallet connection failed:', err);
+          alert('Connection was rejected. Please approve the request in Phantom.');
+        }
+      } else {
+        alert('Phantom Wallet not found. Please install it from https://phantom.app');
       }
     }
 
@@ -147,7 +148,12 @@
       }
     }
 
-    document.getElementById('connectWallet').addEventListener('click', connectWallet);
+    window.addEventListener('DOMContentLoaded', () => {
+      const connectButton = document.getElementById('connectWallet');
+      if (connectButton) {
+        connectButton.addEventListener('click', connectWallet);
+      }
+    });
   </script>
 </body>
 </html>
