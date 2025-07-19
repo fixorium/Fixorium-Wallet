@@ -1,27 +1,27 @@
  {
-  "name": "fixorium-wallet",
-  "version": "1.0.0",
-  "private": true,
-  "scripts": {
-    "dev": "next dev",
-    "build": "next build",
-    "start": "next start",
-    "lint": "next lint"
-  },
-  "dependencies": {
-    "next": "14.2.30",
-    "react": "18.2.0",
-    "react-dom": "18.2.0",
-    "@solana/web3.js": "0.86.1",
-    "@solana/wallet-adapter-base": "^0.10.4",
-    "@solana/wallet-adapter-react": "^0.15.27",
-    "@solana/wallet-adapter-react-ui": "^0.10.10",
-    "@solana/wallet-adapter-wallets": "^0.19.3",
-    "@solana/wallet-adapter-phantom": "^0.10.4",
-    "@jup-ag/api": "^6.0.44"
-  },
-  "devDependencies": {
-    "eslint": "8.57.0",
-    "eslint-config-next": "14.2.30"
-  }
+  "name": "fixorium-wallet",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint"
+  },
+  "dependencies": {
+    "next": "14.2.30",
+    "react": "18.2.0",
+    "react-dom": "18.2.0",
+    "@solana/web3.js": "0.86.1",
+    "@solana/wallet-adapter-base": "^0.10.4",
+    "@solana/wallet-adapter-react": "^0.15.27",
+    "@solana/wallet-adapter-react-ui": "^0.10.10",
+    "@solana/wallet-adapter-wallets": "^0.19.3",
+    "@solana/wallet-adapter-phantom": "^0.10.4",
+    "@jup-ag/api": "^6.0.44"
+  },
+  "devDependencies": {
+    "eslint": "8.57.0",
+    "eslint-config-next": "14.2.30"
+  }
 }
