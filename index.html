@@ -95,7 +95,7 @@
 
       <div id="quoteDisplay"></div>
 
-      <button onclick="getQuoteAndSwap()">Swap Tokens</button>
+      <button onclick="executeSwap()">Swap Tokens</button>
     </div>
 
     <div class="card">
@@ -131,6 +131,8 @@
       }
     ];
 
+    let latestRoute;
+
     function populateTokens() {
       const from = document.getElementById('fromToken');
       const to = document.getElementById('toToken');
@@ -144,7 +146,7 @@
     async function connectWallet() {
       if (window.solana && window.solana.isPhantom) {
         try {
-          const res = await window.solana.connect();
+          const res = await window.solana.connect({ onlyIfTrusted: false });
           publicKey = res.publicKey.toString();
           document.getElementById('walletAddress').innerText = publicKey;
           document.getElementById('walletInfo').style.display = 'block';
@@ -152,7 +154,7 @@
           fetchBalances();
         } catch (err) {
           console.error('Wallet connection failed:', err);
-          alert('Connection was rejected. Please approve the request in Phantom.');
+          alert('Connection failed. Please approve the connection request in Phantom Wallet.');
         }
       } else {
         alert('Phantom Wallet not found. Please install it from https://phantom.app');
@@ -169,7 +171,7 @@
     }
 
     async function fetchBalances() {
-      const connection = new window.solanaWeb3.Connection(window.solana.network?.rpcUrl || 'https://api.mainnet-beta.solana.com');
+      const connection = new window.solanaWeb3.Connection('https://api.mainnet-beta.solana.com');
       const balancesUl = document.getElementById('balances');
       balancesUl.innerHTML = '';
 
@@ -191,26 +193,52 @@
       }
     }
 
-    async function getQuoteAndSwap() {
+    async function executeSwap() {
       const amount = document.getElementById('amount').value;
       const inputMint = document.getElementById('fromToken').value;
       const outputMint = document.getElementById('toToken').value;
 
       try {
-        const res = await fetch(`${JUP_BASE}/v6/quote?inputMint=${inputMint}&outputMint=${outputMint}&amount=${amount * 1e6}&feeBps=3&feeAccount=${FEE_WALLET}`);
-        const data = await res.json();
-        if (!data || !data.routes || !data.routes[0]) {
+        const quoteRes = await fetch(`${JUP_BASE}/v6/quote?inputMint=${inputMint}&outputMint=${outputMint}&amount=${amount * 1e6}&feeBps=3&feeAccount=${FEE_WALLET}`);
+        const quoteData = await quoteRes.json();
+        if (!quoteData.routes || !quoteData.routes[0]) {
           document.getElementById('quoteDisplay').innerText = 'Quote failed';
           return;
         }
-        document.getElementById('quoteDisplay').innerText = `Expected Output: ${data.routes[0].outAmount / 1e6}`;
+        latestRoute = quoteData.routes[0];
+        document.getElementById('quoteDisplay').innerText = `Expected Output: ${latestRoute.outAmount / 1e6}`;
+
+        const txRes = await fetch('https://quote-api.jup.ag/v6/swap', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            route: latestRoute,
+            userPublicKey: publicKey,
+            wrapUnwrapSOL: true,
+            feeAccount: FEE_WALLET,
+            dynamicComputeUnitLimit: true,
+          })
+        });
+
+        const txData = await txRes.json();
+        const { swapTransaction } = txData;
+        const recoveredTx = window.solanaWeb3.Transaction.from(Buffer.from(swapTransaction, 'base64'));
+        recoveredTx.feePayer = new window.solanaWeb3.PublicKey(publicKey);
+        recoveredTx.recentBlockhash = (await new window.solanaWeb3.Connection('https://api.mainnet-beta.solana.com').getLatestBlockhash()).blockhash;
+
+        const signed = await window.solana.signTransaction(recoveredTx);
+        const txid = await new window.solanaWeb3.Connection('https://api.mainnet-beta.solana.com').sendRawTransaction(signed.serialize());
+
+        alert('Swap executed! Transaction ID: ' + txid);
+        fetchBalances();
       } catch (err) {
-        document.getElementById('quoteDisplay').innerText = 'Error fetching quote';
+        console.error('Swap error:', err);
+        alert('Swap failed: ' + err.message);
       }
     }
 
     setInterval(() => {
-      if (publicKey) getQuoteAndSwap();
+      if (publicKey) executeSwap();
     }, 10000);
 
     window.addEventListener('DOMContentLoaded', () => {
@@ -218,7 +246,6 @@
         window.solana.on('connect', () => {
           console.log('Wallet connected:', window.solana.publicKey.toString());
         });
-
         window.solana.on('disconnect', () => {
           console.log('Wallet disconnected');
           publicKey = null;
