@@ -1,79 +1,66 @@
- import { useState, useEffect } from "react";
-import { PublicKey } from "@solana/web3.js";
-import { Jupiter, RouteInfo } from "@jup-ag/api";
-import {
-  connection,
-  WRAPPED_SOL_MINT,
-  USDC_MINT,
-  FIXERCOIN_MINT
-} from "../lib/solana";
+ 'use client';
+import { useEffect, useState } from 'react';
+import { useWallet } from '@solana/wallet-adapter-react';
+import { JupiterApiClient } from '@jup-ag/api';
+import { connection, FEE_RECIPIENT, FEE_BPS } from '../utils/solana';
 
-export default function SwapComponent({ walletAddress }) {
-  const [jupiter, setJupiter] = useState(null);
-  const [amount, setAmount] = useState("");
-  const [quote, setQuote] = useState(null);
+const jupiter = new JupiterApiClient('https://quote-api.jup.ag', 'H4qKn8FMFha8jJuj8xMryMqRhH3h7GjLuxw7TVixpump');
 
-  useEffect(() => {
-    if (!walletAddress) return;
-    (async () => {
-      const jup = await Jupiter.load({
-        connection,
-        cluster: "mainnet-beta",
-        userPublicKey: new PublicKey(walletAddress),
-        routeCacheDuration: 0
-      });
-      setJupiter(jup);
-    })();
-  }, [walletAddress]);
+export default function SwapComponent() {
+  const wallet = useWallet();
+  const [routes, setRoutes] = useState([]);
+  const [inputMint, setInputMint] = useState('So11111111111111111111111111111111111111112'); // SOL
+  const [outputMint, setOutputMint] = useState('');
+  const [amount, setAmount] = useState('');
 
   useEffect(() => {
-    if (!jupiter || !amount) return;
-    (async () => {
-      const routes = await jupiter.computeRoutes({
-        inputMint: WRAPPED_SOL_MINT,
-        outputMint: USDC_MINT, // or FIXERCOIN_MINT
-        amount: Math.floor(amount * 1e9),
-        slippageBps: 50
-      });
-      setQuote(routes.routesInfos[0] || null);
-    })();
-  }, [jupiter, amount]);
+    if (wallet.publicKey && inputMint && outputMint && amount) {
+      jupiter
+        .quoteGet({
+          inputMint,
+          outputMint,
+          amount: Number(amount) * 1e9,
+          slippageBps: 50,
+          feeBps: FEE_BPS,
+          feeAccount: FEE_RECIPIENT.toBase58(),
+        })
+        .then(res => setRoutes(res.data || []));
+    }
+  }, [wallet.publicKey, inputMint, outputMint, amount]);
 
   const handleSwap = async () => {
-    if (!jupiter || !quote) return;
-    const feeBps = 10; // 0.10%
-    const inAmt = quote.inAmount / 1e9;
-    const fee = (inAmt * feeBps) / 10000;
-    const reducedAmt = inAmt - fee;
+    if (!wallet.publicKey || !routes.length) return alert('No route available');
+    const route = routes[0];
 
-    const bestRoute = await jupiter.computeRoutes({
-      ...quote,
-      amount: Math.floor(reducedAmt * 1e9)
+    const { swapTransaction } = await jupiter.swapPost({
+      route,
+      userPublicKey: wallet.publicKey,
     });
 
-    const { execute } = await jupiter.exchange({ routeInfo: bestRoute.routesInfos[0] });
-    const txid = await execute();
-    alert(`Swap done—TXID: ${txid}`);
+    const txn = Buffer.from(swapTransaction, 'base64');
+    const txid = await wallet.sendTransaction(txn, connection);
+    await connection.confirmTransaction(txid);
+    alert(`Swap successful: ${txid}`);
   };
 
-  return !walletAddress ? null : (
-    <div style={{ marginTop: 20, padding: 16, border:"1px solid #ccc", borderRadius:8 }}>
-      <h3>Swap SOL → USDC</h3>
+  return (
+    <div>
+      <h2 className="text-xl font-bold">Swap with Jupiter</h2>
       <input
-        type="number"
-        placeholder="Amount SOL"
+        placeholder="Output Token Mint"
+        value={outputMint}
+        onChange={e => setOutputMint(e.target.value)}
+        className="border p-2 my-2 w-full"
+      />
+      <input
+        placeholder="Amount in SOL"
         value={amount}
         onChange={e => setAmount(e.target.value)}
-        style={{ width: "100%", padding: 8 }}
+        className="border p-2 my-2 w-full"
       />
-      <button disabled={!quote} onClick={handleSwap} style={{ marginTop: 8 }}>
-        Swap {amount} SOL
+      <button onClick={handleSwap} className="bg-blue-600 text-white p-2 rounded">
+        Swap
       </button>
-      {quote && (
-        <p>
-          You’ll receive ~{(quote.outAmount / 1e6).toFixed(4)} tokens (~0.10% fee applied)
-        </p>
-      )}
     </div>
   );
 }
