@@ -2,7 +2,8 @@ import { useState, useEffect } from 'react';
 import { Connection, PublicKey } from '@solana/web3.js';
 import { Jupiter } from '@jup-ag/core';
 
-const connection = new Connection('https:                                
+const connection = new Connection('https://api.devnet.solana.com');
+
 const jupiter = new Jupiter(connection);
 
 const SwapComponent = () => {
