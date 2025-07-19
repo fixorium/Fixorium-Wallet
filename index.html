@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Fixorium Wallet</title>
   <script src="https://unpkg.com/@solana/web3.js@1.76.1/lib/index.iife.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@jup-ag/core@4.0.0-beta.4/dist/index.umd.min.js"></script>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
   <style>
     body {
@@ -23,7 +24,7 @@
       background: white;
       border-radius: 16px;
       padding: 24px;
-      max-width: 420px;
+      max-width: 460px;
       width: 100%;
       box-shadow: 0 4px 20px rgba(0,0,0,0.05);
       margin-top: 40px;
@@ -60,10 +61,20 @@
       display: inline-block;
     }
     .hidden { display: none; }
+    .swap-section {
+      margin-top: 20px;
+    }
+    .input-field {
+      width: 100%;
+      padding: 8px;
+      margin-bottom: 12px;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      font-size: 14px;
+    }
   </style>
 </head>
 <body>
-
   <div class="card">
     <div class="wallet-row">
       <div id="walletStatus" class="balance">Not connected</div>
@@ -76,13 +87,17 @@
         <span id="walletAddress" class="address-box"></span>
       </div>
       <div class="wallet-row">
-        <span>SOL Balance:</span>
-        <span id="solBalance" class="balance"></span>
+        <span>Balance:</span>
+        <span id="walletBalance" class="balance"></span>
       </div>
-      <div class="wallet-row">
-        <span>FIXERCOIN:</span>
-        <span id="fixerBalance" class="balance"></span>
-      </div>
+    </div>
+
+    <div id="swapUI" class="swap-section hidden">
+      <h4>Swap Tokens</h4>
+      <input id="inputMint" class="input-field" placeholder="Input Mint Address (From)" />
+      <input id="outputMint" class="input-field" placeholder="Output Mint Address (To)" />
+      <input id="amount" class="input-field" placeholder="Amount to Swap" />
+      <button id="swapButton" class="button">Swap</button>
     </div>
   </div>
 
@@ -92,36 +107,27 @@
     const walletInfo = document.getElementById('walletInfo');
     const walletStatus = document.getElementById('walletStatus');
     const walletAddressEl = document.getElementById('walletAddress');
-    const solBalanceEl = document.getElementById('solBalance');
-    const fixerBalanceEl = document.getElementById('fixerBalance');
+    const walletBalanceEl = document.getElementById('walletBalance');
+    const swapUI = document.getElementById('swapUI');
+    const swapButton = document.getElementById('swapButton');
 
     let provider = null;
     let publicKey = null;
+    let connection = new solanaWeb3.Connection('https://api.mainnet-beta.solana.com');
 
     async function connectWallet() {
       try {
-        if (!window.solana || !window.solana.isPhantom) {
-          alert('Phantom Wallet not found. Install it first.');
-          return;
+        if (window.solana && window.solana.isPhantom) {
+          provider = window.solana;
+          const resp = await provider.connect({ onlyIfTrusted: false });
+          publicKey = resp.publicKey;
+          updateUIAfterConnect();
+        } else {
+          alert("Phantom wallet not found. Please install Phantom.");
         }
-
-        provider = window.solana;
-
-        // Request connect
-        const resp = await provider.connect();
-        publicKey = resp.publicKey;
-
-        const signature = await provider.signMessage(
-          new TextEncoder().encode("Fixorium Wallet Authentication"),
-          "utf8"
-        );
-
-        if (!signature) throw new Error("Signature failed or cancelled.");
-
-        updateUIAfterConnect();
       } catch (err) {
-        console.error('Connection error:', err);
-        alert("Connection failed or approval not granted in Phantom.");
+        console.error('Connection failed:', err);
+        alert('Connection failed. Please approve the request in Phantom wallet.');
       }
     }
 
@@ -139,49 +145,72 @@
       connectButton.classList.add('hidden');
       disconnectButton.classList.remove('hidden');
       walletInfo.classList.remove('hidden');
-      fetchBalances();
+      swapUI.classList.remove('hidden');
+      fetchBalance();
     }
 
     function resetUI() {
       publicKey = null;
       walletStatus.innerText = 'Not connected';
       walletAddressEl.innerText = '';
-      solBalanceEl.innerText = '';
-      fixerBalanceEl.innerText = '';
+      walletBalanceEl.innerText = '';
       connectButton.classList.remove('hidden');
       disconnectButton.classList.add('hidden');
       walletInfo.classList.add('hidden');
+      swapUI.classList.add('hidden');
     }
 
-    async function fetchBalances() {
-      const connection = new solanaWeb3.Connection(solanaWeb3.clusterApiUrl('mainnet-beta'));
+    async function fetchBalance() {
+      try {
+        const balance = await connection.getBalance(publicKey);
+        walletBalanceEl.innerText = `${(balance / solanaWeb3.LAMPORTS_PER_SOL).toFixed(4)} SOL`;
+      } catch (err) {
+        console.error('Error fetching balance:', err);
+        walletBalanceEl.innerText = 'Error fetching balance';
+      }
+    }
 
-      const solBalance = await connection.getBalance(publicKey);
-      solBalanceEl.innerText = `${(solBalance / solanaWeb3.LAMPORTS_PER_SOL).toFixed(4)} SOL`;
+    async function performSwap() {
+      const inputMint = document.getElementById('inputMint').value;
+      const outputMint = document.getElementById('outputMint').value;
+      const amount = document.getElementById('amount').value;
 
-      const tokenAccounts = await connection.getParsedTokenAccountsByOwner(publicKey, {
-        programId: new solanaWeb3.PublicKey("TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA")
-      });
+      if (!inputMint || !outputMint || !amount || !publicKey) {
+        alert("Missing input.");
+        return;
+      }
 
-      let fixerAmount = 0;
-      tokenAccounts.value.forEach(acc => {
-        const info = acc.account.data.parsed.info;
-        if (info.mint === 'YOUR_FIXERCOIN_MINT_ADDRESS') {
-          fixerAmount = parseInt(info.tokenAmount.amount) / Math.pow(10, info.tokenAmount.decimals);
-        }
-      });
+      try {
+        const jupiter = await Jupiter.load({ connection, cluster: 'mainnet-beta', user: publicKey });
+        const routes = await jupiter.computeRoutes({
+          inputMint,
+          outputMint,
+          amount: parseFloat(amount) * 10 ** 6,
+          slippage: 1,
+          feeBps: 3,
+          feeAccount: new solanaWeb3.PublicKey("H4qKn8FMFha8jJuj8xMryMqRhH3h7GjLuxw7TVixpump")
+        });
 
-      fixerBalanceEl.innerText = `${fixerAmount.toFixed(4)} FIXERCOIN`;
+        if (!routes || routes.routesInfos.length === 0) throw new Error("No route found");
+
+        const { execute } = await jupiter.exchange({ routeInfo: routes.routesInfos[0] });
+        const txid = await execute();
+
+        alert("Swap successful! Tx: " + txid);
+        fetchBalance();
+      } catch (err) {
+        console.error(err);
+        alert("Swap failed: " + err.message);
+      }
     }
 
     connectButton.addEventListener('click', connectWallet);
     disconnectButton.addEventListener('click', disconnectWallet);
+    swapButton.addEventListener('click', performSwap);
 
     window.addEventListener('DOMContentLoaded', () => {
       if (window.solana?.isPhantom) {
-        window.solana.on('connect', () => {
-          console.log('Wallet connected');
-        });
+        window.solana.on('connect', () => console.log('Wallet connected'));
         window.solana.on('disconnect', () => {
           console.log('Wallet disconnected');
           resetUI();
@@ -189,6 +218,5 @@
       }
     });
   </script>
-
 </body>
 </html>
