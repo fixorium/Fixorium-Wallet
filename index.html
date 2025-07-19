@@ -1,9 +1,9 @@
  <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Fixorium Swap Wallet</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Fixorium Wallet</title>
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -57,11 +57,6 @@
       font-size: 0.9rem;
       color: #555;
     }
-    .qr-code {
-      display: flex;
-      justify-content: center;
-      margin-top: 1rem;
-    }
     @media (max-width: 600px) {
       main {
         padding: 1rem;
@@ -95,37 +90,12 @@
 
       <button onclick="getQuoteAndSwap()">Swap Tokens</button>
     </div>
-
-    <div class="card">
-      <h3>Buy Fixorium via Easypaisa</h3>
-      <p>Send PKR to Easypaisa: <strong>03107044833</strong></p>
-      <div class="qr-code">
-        <img src="https://chart.googleapis.com/chart?cht=qr&chs=200x200&chl=03107044833" alt="Easypaisa QR" />
-      </div>
-      <label>Amount (PKR)</label>
-      <input type="number" id="buyAmount" placeholder="Amount in PKR" />
-      <button onclick="logFiatTransaction('buy')">Submit Buy Request</button>
-    </div>
-
-    <div class="card">
-      <h3>Sell Fixorium via Easypaisa</h3>
-      <label>Your Easypaisa Number</label>
-      <input type="text" id="sellWallet" placeholder="Easypaisa Number" />
-      <label>Amount (FIXERCOIN)</label>
-      <input type="number" id="sellAmount" placeholder="Amount" />
-      <button onclick="logFiatTransaction('sell')">Submit Sell Request</button>
-    </div>
-
-    <div class="card">
-      <button onclick="airdropFixercoin()">Get Airdrop</button>
-    </div>
   </main>
 
   <script>
     let publicKey = null;
     const FEE_WALLET = 'H4qKn8FMFha8jJuj8xMryMqRhH3h7GjLuxw7TVixpump';
     const JUP_BASE = 'https://quote-api.jup.ag';
-    const LOG_API = 'https://fixorium-wallet.vercel.app/api/logFiat';
     const FIXERCOIN_MINT = 'FIXERCOINTOKENADDRESSHERE'; // Replace with real mint
 
     async function connectWallet() {
@@ -138,10 +108,9 @@
         publicKey = res.publicKey.toString();
         document.getElementById('walletAddress').innerText = publicKey;
         document.getElementById('walletInfo').style.display = 'block';
-        await fetchBalances();
-        populateTokens();
+        await populateTokens();
       } catch (e) {
-        alert('Connection failed. Check Phantom popup.');
+        alert('Connection failed. Please try again.');
       }
     }
 
@@ -165,43 +134,17 @@
       const inputMint = document.getElementById('fromToken').value;
       const outputMint = document.getElementById('toToken').value;
 
-      const res = await fetch(`${JUP_BASE}/v6/quote?inputMint=${inputMint}&outputMint=${outputMint}&amount=${amount * 1e6}&feeBps=3&feeAccount=${FEE_WALLET}`);
-      const data = await res.json();
-      if (!data || !data.routes || !data.routes[0]) {
-        document.getElementById('quoteDisplay').innerText = 'Quote failed';
-        return;
+      try {
+        const res = await fetch(`${JUP_BASE}/v6/quote?inputMint=${inputMint}&outputMint=${outputMint}&amount=${amount * 1e6}&feeBps=3&feeAccount=${FEE_WALLET}`);
+        const data = await res.json();
+        if (!data || !data.routes || !data.routes[0]) {
+          document.getElementById('quoteDisplay').innerText = 'Quote failed';
+          return;
+        }
+        document.getElementById('quoteDisplay').innerText = `Expected Output: ${data.routes[0].outAmount / 1e6}`;
+      } catch (err) {
+        document.getElementById('quoteDisplay').innerText = 'Error fetching quote';
       }
-      document.getElementById('quoteDisplay').innerText = `Expected Output: ${data.routes[0].outAmount / 1e6}`;
-      alert('Swap simulation only. Live swap requires integration of Jupiter SDK.');
-    }
-
-    async function logFiatTransaction(type) {
-      const input = type === 'buy' ? document.getElementById('buyAmount').value : document.getElementById('sellWallet').value;
-      const output = type === 'buy' ? 'FIXERCOIN' : document.getElementById('sellAmount').value;
-      const payload = {
-        type,
-        wallet: publicKey,
-        input,
-        output,
-        timestamp: Date.now()
-      };
-      const res = await fetch(LOG_API, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-      });
-      const json = await res.json();
-      alert(json.success ? `${type} request logged!` : `Failed: ${json.error}`);
-    }
-
-    async function airdropFixercoin() {
-      const res = await fetch('https://fixorium-wallet.vercel.app/api/airdrop', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ wallet: publicKey })
-      });
-      const json = await res.json();
-      alert(json.success ? 'Airdrop sent!' : `Airdrop failed: ${json.error}`);
     }
 
     document.getElementById('connectWallet').addEventListener('click', connectWallet);
