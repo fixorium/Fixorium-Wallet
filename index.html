@@ -1,4 +1,4 @@
-  <!DOCTYPE html>
+ <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
@@ -36,7 +36,7 @@
       font-size: 0.9rem;
       color: #2563eb;
     }
-    .connect-btn {
+    .connect-btn, .disconnect-btn {
       background: #2563eb;
       color: white;
       padding: 0.4rem 0.7rem;
@@ -45,7 +45,7 @@
       cursor: pointer;
       font-size: 0.9rem;
     }
-    .connect-btn:hover {
+    .connect-btn:hover, .disconnect-btn:hover {
       background: #1e3a8a;
     }
     .card {
@@ -95,6 +95,7 @@
     <div class="wallet-bar">
       <div id="walletStatus" class="wallet-address">Disconnected</div>
       <button id="connectWallet" class="connect-btn" onclick="connectWallet()">Connect</button>
+      <button id="disconnectWallet" class="disconnect-btn" style="display: none;" onclick="disconnectWallet()">Disconnect</button>
     </div>
 
     <div class="card">
@@ -158,18 +159,29 @@
     async function connectWallet() {
       if (window.solana && window.solana.isPhantom) {
         try {
-          const res = await window.solana.connect();
+          const res = await window.solana.connect({ onlyIfTrusted: false });
           publicKey = res.publicKey.toString();
           document.getElementById('walletStatus').innerText = `Connected: ${publicKey.slice(0, 4)}...${publicKey.slice(-4)}`;
           document.getElementById('connectWallet').style.display = 'none';
+          document.getElementById('disconnectWallet').style.display = 'inline-block';
           populateTokens();
           fetchBalances();
         } catch (err) {
-          console.error('Wallet connection failed:', err);
-          alert('Please approve connection request in Phantom Wallet.');
+          console.error('Connection failed:', err);
+          alert('Please approve the connection request in your Phantom Wallet.');
         }
       } else {
-        alert('Phantom Wallet not found. Please install it from https://phantom.app');
+        alert('Phantom Wallet not found. Please install Phantom Wallet from https://phantom.app');
+      }
+    }
+
+    function disconnectWallet() {
+      if (window.solana && window.solana.disconnect) {
+        window.solana.disconnect();
+        publicKey = null;
+        document.getElementById('walletStatus').innerText = 'Disconnected';
+        document.getElementById('connectWallet').style.display = 'inline-block';
+        document.getElementById('disconnectWallet').style.display = 'none';
       }
     }
 
@@ -246,9 +258,7 @@
 
         window.solana.on('disconnect', () => {
           console.log('Wallet disconnected');
-          publicKey = null;
-          document.getElementById('walletStatus').innerText = 'Disconnected';
-          document.getElementById('connectWallet').style.display = 'inline-block';
+          disconnectWallet();
         });
       }
     });
