@@ -5,216 +5,214 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Fixorium Wallet</title>
   <script src="https://unpkg.com/@solana/web3.js@1.76.1/lib/index.iife.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@jup-ag/core@4.0.0-beta.4/dist/index.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@jup-ag/core@2.0.0-beta.17"></script>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
   <style>
     body {
       margin: 0;
       font-family: 'Inter', sans-serif;
-      background: #f9f9fb;
-      color: #222;
+      background: #f4f6fa;
+      color: #333;
       display: flex;
       flex-direction: column;
       align-items: center;
-      justify-content: flex-start;
-      min-height: 100vh;
       padding: 20px;
     }
     .card {
       background: white;
       border-radius: 16px;
       padding: 24px;
-      max-width: 460px;
+      max-width: 480px;
       width: 100%;
-      box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+      box-shadow: 0 4px 20px rgba(0,0,0,0.06);
       margin-top: 40px;
     }
     .button {
-      padding: 10px 16px;
-      border-radius: 8px;
+      padding: 10px 18px;
+      border-radius: 10px;
       border: none;
-      background-color: #4F46E5;
+      background-color: #4f46e5;
       color: white;
       font-weight: 600;
       cursor: pointer;
-      transition: background-color 0.2s ease;
-    }
-    .button:hover {
-      background-color: #4338CA;
     }
     .wallet-row {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      margin-bottom: 16px;
-    }
-    .balance {
-      font-size: 14px;
-      color: #555;
-    }
-    .address-box {
-      font-size: 14px;
-      font-weight: 500;
-      background: #eef1f6;
-      padding: 6px 12px;
-      border-radius: 8px;
-      display: inline-block;
-    }
-    .hidden { display: none; }
-    .swap-section {
-      margin-top: 20px;
+      margin-bottom: 12px;
     }
     .input-field {
       width: 100%;
-      padding: 8px;
-      margin-bottom: 12px;
-      border: 1px solid #ccc;
+      padding: 10px;
+      margin-top: 8px;
       border-radius: 8px;
+      border: 1px solid #ccc;
+    }
+    .hidden { display: none; }
+    #tokenList {
       font-size: 14px;
+      margin-top: 8px;
+      color: #666;
     }
   </style>
 </head>
 <body>
+
   <div class="card">
     <div class="wallet-row">
-      <div id="walletStatus" class="balance">Not connected</div>
+      <div id="walletStatus">Not connected</div>
       <button id="connectButton" class="button">Connect Wallet</button>
       <button id="disconnectButton" class="button hidden">Disconnect</button>
     </div>
     <div id="walletInfo" class="hidden">
       <div class="wallet-row">
         <span>Wallet:</span>
-        <span id="walletAddress" class="address-box"></span>
+        <span id="walletAddress"></span>
       </div>
       <div class="wallet-row">
         <span>Balance:</span>
-        <span id="walletBalance" class="balance"></span>
+        <span id="walletBalance">-</span>
       </div>
     </div>
 
-    <div id="swapUI" class="swap-section hidden">
-      <h4>Swap Tokens</h4>
+    <div id="swapSection" class="hidden">
+      <h3>Swap</h3>
       <input id="inputMint" class="input-field" placeholder="Input Mint Address (From)" />
       <input id="outputMint" class="input-field" placeholder="Output Mint Address (To)" />
-      <input id="amount" class="input-field" placeholder="Amount to Swap" />
-      <button id="swapButton" class="button">Swap</button>
+      <input id="amount" class="input-field" placeholder="Amount to Swap" type="number" />
+      <button id="swapButton" class="button" style="margin-top:12px">Swap</button>
+      <p id="swapStatus"></p>
     </div>
+
+    <div id="tokenList"></div>
   </div>
 
   <script>
     const connectButton = document.getElementById('connectButton');
     const disconnectButton = document.getElementById('disconnectButton');
-    const walletInfo = document.getElementById('walletInfo');
     const walletStatus = document.getElementById('walletStatus');
     const walletAddressEl = document.getElementById('walletAddress');
     const walletBalanceEl = document.getElementById('walletBalance');
-    const swapUI = document.getElementById('swapUI');
+    const walletInfo = document.getElementById('walletInfo');
+    const swapSection = document.getElementById('swapSection');
     const swapButton = document.getElementById('swapButton');
+    const swapStatus = document.getElementById('swapStatus');
+    const tokenList = document.getElementById('tokenList');
 
     let provider = null;
     let publicKey = null;
-    let connection = new solanaWeb3.Connection('https://api.mainnet-beta.solana.com');
 
-    async function connectWallet() {
+    connectButton.addEventListener('click', async () => {
       try {
         if (window.solana && window.solana.isPhantom) {
           provider = window.solana;
-          const resp = await provider.connect({ onlyIfTrusted: false });
+          const resp = await provider.connect();
           publicKey = resp.publicKey;
-          updateUIAfterConnect();
+          updateUI();
+          await fetchSOLBalance();
+          await fetchSPLTokens();
         } else {
-          alert("Phantom wallet not found. Please install Phantom.");
+          alert("Please install Phantom Wallet.");
         }
-      } catch (err) {
-        console.error('Connection failed:', err);
-        alert('Connection failed. Please approve the request in Phantom wallet.');
+      } catch (e) {
+        alert("Connection failed. Please approve request in Phantom.");
+        console.error(e);
       }
-    }
+    });
 
-    function disconnectWallet() {
+    disconnectButton.addEventListener('click', () => {
       if (provider) {
         provider.disconnect();
         resetUI();
       }
-    }
+    });
 
-    function updateUIAfterConnect() {
+    function updateUI() {
       const shortAddr = `${publicKey.toString().slice(0, 4)}...${publicKey.toString().slice(-4)}`;
-      walletAddressEl.innerText = shortAddr;
-      walletStatus.innerText = 'Connected';
+      walletAddressEl.textContent = shortAddr;
+      walletStatus.textContent = 'Connected';
       connectButton.classList.add('hidden');
       disconnectButton.classList.remove('hidden');
       walletInfo.classList.remove('hidden');
-      swapUI.classList.remove('hidden');
-      fetchBalance();
+      swapSection.classList.remove('hidden');
     }
 
     function resetUI() {
-      publicKey = null;
-      walletStatus.innerText = 'Not connected';
-      walletAddressEl.innerText = '';
-      walletBalanceEl.innerText = '';
+      walletStatus.textContent = 'Not connected';
       connectButton.classList.remove('hidden');
       disconnectButton.classList.add('hidden');
       walletInfo.classList.add('hidden');
-      swapUI.classList.add('hidden');
+      swapSection.classList.add('hidden');
+      tokenList.innerHTML = '';
     }
 
-    async function fetchBalance() {
-      try {
-        const balance = await connection.getBalance(publicKey);
-        walletBalanceEl.innerText = `${(balance / solanaWeb3.LAMPORTS_PER_SOL).toFixed(4)} SOL`;
-      } catch (err) {
-        console.error('Error fetching balance:', err);
-        walletBalanceEl.innerText = 'Error fetching balance';
-      }
+    async function fetchSOLBalance() {
+      const connection = new solanaWeb3.Connection(solanaWeb3.clusterApiUrl('mainnet-beta'));
+      const lamports = await connection.getBalance(publicKey);
+      const sol = lamports / solanaWeb3.LAMPORTS_PER_SOL;
+      walletBalanceEl.textContent = sol.toFixed(4) + ' SOL';
     }
 
-    async function performSwap() {
+    async function fetchSPLTokens() {
+      const connection = new solanaWeb3.Connection(solanaWeb3.clusterApiUrl('mainnet-beta'));
+      const tokenAccounts = await connection.getParsedTokenAccountsByOwner(publicKey, { programId: new solanaWeb3.PublicKey("TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA") });
+      tokenList.innerHTML = '<h4>Your Tokens:</h4>';
+      tokenAccounts.value.forEach(account => {
+        const info = account.account.data.parsed.info;
+        const mint = info.mint;
+        const amount = info.tokenAmount.uiAmount;
+        if (amount > 0) {
+          tokenList.innerHTML += `<div>${amount.toFixed(4)} - ${mint}</div>`;
+        }
+      });
+    }
+
+    swapButton.addEventListener('click', async () => {
       const inputMint = document.getElementById('inputMint').value;
       const outputMint = document.getElementById('outputMint').value;
-      const amount = document.getElementById('amount').value;
+      const amount = parseFloat(document.getElementById('amount').value);
 
-      if (!inputMint || !outputMint || !amount || !publicKey) {
-        alert("Missing input.");
+      if (!inputMint || !outputMint || !amount || amount <= 0) {
+        swapStatus.textContent = 'Please fill all swap fields correctly.';
         return;
       }
 
+      swapStatus.textContent = 'Getting best route...';
       try {
-        const jupiter = await Jupiter.load({ connection, cluster: 'mainnet-beta', user: publicKey });
+        const connection = new solanaWeb3.Connection(solanaWeb3.clusterApiUrl('mainnet-beta'));
+        const jupiter = await Jupiter.load({
+          connection,
+          cluster: 'mainnet-beta',
+          user: publicKey,
+        });
+
         const routes = await jupiter.computeRoutes({
-          inputMint,
-          outputMint,
-          amount: parseFloat(amount) * 10 ** 6,
-          slippage: 1,
-          feeBps: 3,
-          feeAccount: new solanaWeb3.PublicKey("H4qKn8FMFha8jJuj8xMryMqRhH3h7GjLuxw7TVixpump")
+          inputMint: new solanaWeb3.PublicKey(inputMint),
+          outputMint: new solanaWeb3.PublicKey(outputMint),
+          amount: amount * 10 ** 6,
+          slippageBps: 50,
         });
 
-        if (!routes || routes.routesInfos.length === 0) throw new Error("No route found");
+        if (!routes.routesInfos.length) {
+          swapStatus.textContent = 'No route found';
+          return;
+        }
 
-        const { execute } = await jupiter.exchange({ routeInfo: routes.routesInfos[0] });
-        const txid = await execute();
-
-        alert("Swap successful! Tx: " + txid);
-        fetchBalance();
-      } catch (err) {
-        console.error(err);
-        alert("Swap failed: " + err.message);
-      }
-    }
-
-    connectButton.addEventListener('click', connectWallet);
-    disconnectButton.addEventListener('click', disconnectWallet);
-    swapButton.addEventListener('click', performSwap);
-
-    window.addEventListener('DOMContentLoaded', () => {
-      if (window.solana?.isPhantom) {
-        window.solana.on('connect', () => console.log('Wallet connected'));
-        window.solana.on('disconnect', () => {
-          console.log('Wallet disconnected');
-          resetUI();
+        const swapResult = await jupiter.exchange({
+          routeInfo: routes.routesInfos[0],
         });
+
+        if (swapResult.error) {
+          swapStatus.textContent = 'Swap failed';
+        } else {
+          swapStatus.textContent = 'Swap successful';
+          await fetchSOLBalance();
+          await fetchSPLTokens();
+        }
+      } catch (e) {
+        console.error('Swap error:', e);
+        swapStatus.textContent = 'Swap failed';
       }
     });
   </script>
