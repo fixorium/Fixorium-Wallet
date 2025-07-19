@@ -114,4 +114,59 @@ const SwapComponent = () => {
 };
 
 export default SwapComponent;
-         
+         import { useEffect, useState } from "react";
+
+export default function Home() {
+  const [walletAddress, setWalletAddress] = useState(null);
+
+  // Check for Solana provider (like Phantom)
+  const isPhantomInstalled = () => {
+    return typeof window !== "undefined" && window.solana && window.solana.isPhantom;
+  };
+
+  // Connect wallet handler
+  const connectWallet = async () => {
+    try {
+      const { solana } = window;
+      if (solana) {
+        const response = await solana.connect();
+        setWalletAddress(response.publicKey.toString());
+      }
+    } catch (err) {
+      console.error("Wallet connection failed:", err);
+    }
+  };
+
+  // Auto-connect if already authorized
+  useEffect(() => {
+    const checkIfWalletIsConnected = async () => {
+      try {
+        const { solana } = window;
+        if (solana && solana.isPhantom) {
+          const response = await solana.connect({ onlyIfTrusted: true });
+          setWalletAddress(response.publicKey.toString());
+        }
+      } catch (err) {
+        console.error(err);
+      }
+    };
+    checkIfWalletIsConnected();
+  }, []);
+
+  return (
+    <main style={{ padding: "2rem", fontFamily: "Arial" }}>
+      <h1>Fixorium Wallet</h1>
+      {!walletAddress ? (
+        <button onClick={connectWallet} style={{ padding: "10px 20px", fontSize: "16px" }}>
+          Connect Wallet
+        </button>
+      ) : (
+        <div>
+          <p>Connected Wallet:</p>
+          <code>{walletAddress}</code>
+        </div>
+      )}
+    </main>
+  );
+     }
+
