@@ -1,6 +1,7 @@
  import { useState, useEffect } from 'react';
 import { Connection, PublicKey } from '@solana/web3.js';
-import { Jupiter } from '@jup-ag/api":^6.0.44'; 
+
+import { createJupiterApiClient } from "@jup-ag/api";
 
 const inputMints = {
   SOL: 'So11111111111111111111111111111111111111112',
