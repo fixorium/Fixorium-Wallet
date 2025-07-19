@@ -5,67 +5,91 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Fixorium Wallet</title>
   <style>
+    * {
+      box-sizing: border-box;
+    }
     body {
-      font-family: Arial, sans-serif;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
       margin: 0;
       padding: 0;
-      background: #f7f9fc;
-      color: #333;
+      background: linear-gradient(135deg, #0f172a, #1e293b);
+      color: #f8fafc;
+      min-height: 100vh;
     }
     header {
-      background-color: #1f2937;
-      color: white;
-      padding: 1rem;
+      background-color: #1e293b;
+      padding: 1.5rem;
       text-align: center;
+      border-bottom: 1px solid #334155;
+    }
+    header h1 {
+      margin: 0;
+      font-size: 1.5rem;
+      color: #facc15;
     }
     main {
-      padding: 1rem;
+      padding: 1.5rem;
       display: flex;
       flex-direction: column;
-      gap: 1rem;
-      max-width: 600px;
+      gap: 1.5rem;
+      max-width: 480px;
       margin: auto;
     }
     .card {
-      background: white;
-      border-radius: 10px;
-      padding: 1rem;
-      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.05);
+      background: #1e293b;
+      border-radius: 1rem;
+      padding: 1.5rem;
+      box-shadow: 0 6px 16px rgba(0,0,0,0.3);
     }
     label {
-      font-weight: bold;
+      font-weight: 600;
     }
     input, select, button {
       width: 100%;
-      padding: 0.5rem;
-      margin-top: 0.3rem;
+      padding: 0.75rem;
+      margin-top: 0.5rem;
       margin-bottom: 1rem;
-      border: 1px solid #ccc;
-      border-radius: 6px;
+      border: none;
+      border-radius: 0.5rem;
+      font-size: 1rem;
+    }
+    input, select {
+      background: #334155;
+      color: #f8fafc;
     }
     button {
-      background: #2563eb;
+      background: #10b981;
       color: white;
       font-weight: bold;
       cursor: pointer;
     }
     button:hover {
-      background: #1e40af;
+      background: #059669;
     }
     #walletInfo {
       display: none;
       font-size: 0.9rem;
-      color: #555;
     }
     .token-logo {
-      width: 16px;
-      height: 16px;
+      width: 18px;
+      height: 18px;
       vertical-align: middle;
-      margin-right: 6px;
+      margin-right: 8px;
     }
-    @media (max-width: 600px) {
-      main {
-        padding: 1rem;
+    ul#balances {
+      list-style: none;
+      padding: 0;
+    }
+    ul#balances li {
+      padding: 0.3rem 0;
+      border-bottom: 1px solid #475569;
+    }
+    @media (max-width: 480px) {
+      body {
+        font-size: 0.95rem;
+      }
+      header h1 {
+        font-size: 1.25rem;
       }
     }
   </style>
@@ -76,35 +100,34 @@
   </header>
   <main>
     <div class="card">
-      <button id="connectWallet" onclick="connectWallet()">Connect Wallet</button>
+      <button id="connectWallet" onclick="connectWallet()">🔌 Connect Phantom Wallet</button>
       <div id="walletInfo">
-        Connected Wallet: <span id="walletAddress"></span>
+        ✅ Connected: <span id="walletAddress"></span>
         <button onclick="disconnectWallet()">Disconnect</button>
       </div>
     </div>
 
     <div class="card">
-      <label for="fromToken">From Token</label>
+      <label for="fromToken">From</label>
       <select id="fromToken"></select>
 
-      <label for="toToken">To Token</label>
+      <label for="toToken">To</label>
       <select id="toToken"></select>
 
       <label for="amount">Amount</label>
-      <input type="number" id="amount" placeholder="Amount" />
+      <input type="number" id="amount" placeholder="Amount to Swap" />
 
       <div id="quoteDisplay"></div>
-
-      <button onclick="executeSwap()">Swap Tokens</button>
+      <button onclick="executeSwap()">💱 Swap</button>
     </div>
 
     <div class="card">
-      <h3>Your Balances</h3>
+      <h3>📊 Balances</h3>
       <ul id="balances"></ul>
     </div>
   </main>
 
-  <script src="https://unpkg.com/@solana/web3.js@latest/lib/index.iife.js"></script>
+  <script src="https://unpkg.com/@solana/web3.js@1.73.3/lib/index.iife.js"></script>
   <script>
     let publicKey = null;
     const FEE_WALLET = 'H4qKn8FMFha8jJuj8xMryMqRhH3h7GjLuxw7TVixpump';
@@ -144,20 +167,22 @@
     }
 
     async function connectWallet() {
-      if (window.solana && window.solana.isPhantom) {
-        try {
-          const res = await window.solana.connect({ onlyIfTrusted: false });
-          publicKey = res.publicKey.toString();
-          document.getElementById('walletAddress').innerText = publicKey;
-          document.getElementById('walletInfo').style.display = 'block';
-          populateTokens();
-          fetchBalances();
-        } catch (err) {
-          console.error('Wallet connection failed:', err);
-          alert('Connection failed. Please approve the connection request in Phantom Wallet.');
+      try {
+        const provider = window.solana;
+        if (!provider || !provider.isPhantom) {
+          alert('Phantom Wallet not found. Install it from https://phantom.app');
+          return;
         }
-      } else {
-        alert('Phantom Wallet not found. Please install it from https://phantom.app');
+
+        const response = await provider.connect();
+        publicKey = response.publicKey.toString();
+        document.getElementById('walletAddress').innerText = publicKey;
+        document.getElementById('walletInfo').style.display = 'block';
+        populateTokens();
+        fetchBalances();
+      } catch (err) {
+        console.error('Connection failed:', err);
+        alert('Please open Phantom Wallet and approve the connection.');
       }
     }
 
@@ -165,22 +190,21 @@
       if (window.solana && window.solana.isPhantom) {
         window.solana.disconnect();
         publicKey = null;
-        document.getElementById('walletAddress').innerText = '';
         document.getElementById('walletInfo').style.display = 'none';
+        document.getElementById('walletAddress').innerText = '';
       }
     }
 
     async function fetchBalances() {
-      const connection = new window.solanaWeb3.Connection('https://api.mainnet-beta.solana.com');
+      const conn = new window.solanaWeb3.Connection('https://api.mainnet-beta.solana.com');
       const balancesUl = document.getElementById('balances');
       balancesUl.innerHTML = '';
-
       for (const token of TOKENS) {
         let balance = 0;
         if (token.symbol === 'SOL') {
-          balance = await connection.getBalance(new window.solanaWeb3.PublicKey(publicKey)) / 1e9;
+          balance = await conn.getBalance(new window.solanaWeb3.PublicKey(publicKey)) / 1e9;
         } else {
-          const accounts = await connection.getTokenAccountsByOwner(new window.solanaWeb3.PublicKey(publicKey), {
+          const accounts = await conn.getTokenAccountsByOwner(new window.solanaWeb3.PublicKey(publicKey), {
             mint: new window.solanaWeb3.PublicKey(token.mint)
           });
           if (accounts.value.length > 0) {
@@ -208,7 +232,7 @@
         latestRoute = quoteData.routes[0];
         document.getElementById('quoteDisplay').innerText = `Expected Output: ${latestRoute.outAmount / 1e6}`;
 
-        const txRes = await fetch('https://quote-api.jup.ag/v6/swap', {
+        const txRes = await fetch(`${JUP_BASE}/v6/swap`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -229,25 +253,28 @@
         const signed = await window.solana.signTransaction(recoveredTx);
         const txid = await new window.solanaWeb3.Connection('https://api.mainnet-beta.solana.com').sendRawTransaction(signed.serialize());
 
-        alert('Swap executed! Transaction ID: ' + txid);
+        alert('Swap executed! TX ID: ' + txid);
         fetchBalances();
       } catch (err) {
-        console.error('Swap error:', err);
+        console.error('Swap failed:', err);
         alert('Swap failed: ' + err.message);
       }
     }
 
     setInterval(() => {
-      if (publicKey) executeSwap();
-    }, 10000);
+      if (publicKey) fetchBalances();
+    }, 15000);
 
     window.addEventListener('DOMContentLoaded', () => {
       if (window.solana && window.solana.isPhantom) {
         window.solana.on('connect', () => {
-          console.log('Wallet connected:', window.solana.publicKey.toString());
+          publicKey = window.solana.publicKey.toString();
+          document.getElementById('walletAddress').innerText = publicKey;
+          document.getElementById('walletInfo').style.display = 'block';
+          populateTokens();
+          fetchBalances();
         });
         window.solana.on('disconnect', () => {
-          console.log('Wallet disconnected');
           publicKey = null;
           document.getElementById('walletAddress').innerText = '';
           document.getElementById('walletInfo').style.display = 'none';
