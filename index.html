@@ -2,266 +2,193 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Fixorium Wallet</title>
+  <script src="https://unpkg.com/@solana/web3.js@1.76.1/lib/index.iife.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
   <style>
     body {
-      font-family: 'Segoe UI', sans-serif;
       margin: 0;
-      padding: 0;
-      background: #f0f4f8;
-      color: #333;
-    }
-    header {
-      background-color: #0f172a;
-      color: white;
-      padding: 1rem;
-      text-align: center;
-    }
-    main {
-      padding: 1rem;
+      font-family: 'Inter', sans-serif;
+      background: #f9f9fb;
+      color: #222;
       display: flex;
       flex-direction: column;
-      gap: 1rem;
-      max-width: 600px;
-      margin: auto;
-    }
-    .wallet-bar {
-      display: flex;
-      justify-content: space-between;
       align-items: center;
-      margin-bottom: 1rem;
-    }
-    .wallet-address {
-      font-size: 0.9rem;
-      color: #2563eb;
-    }
-    .connect-btn, .disconnect-btn {
-      background: #2563eb;
-      color: white;
-      padding: 0.4rem 0.7rem;
-      border: none;
-      border-radius: 6px;
-      cursor: pointer;
-      font-size: 0.9rem;
-    }
-    .connect-btn:hover, .disconnect-btn:hover {
-      background: #1e3a8a;
+      justify-content: flex-start;
+      min-height: 100vh;
+      padding: 20px;
     }
     .card {
       background: white;
-      border-radius: 10px;
-      padding: 1rem;
-      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.05);
-    }
-    label {
-      font-weight: bold;
-    }
-    input, select, button {
+      border-radius: 16px;
+      padding: 24px;
+      max-width: 420px;
       width: 100%;
-      padding: 0.5rem;
-      margin-top: 0.3rem;
-      margin-bottom: 1rem;
-      border: 1px solid #ccc;
-      border-radius: 6px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+      margin-top: 40px;
     }
-    button {
-      background: #2563eb;
+    .button {
+      padding: 10px 16px;
+      border-radius: 8px;
+      border: none;
+      background-color: #4F46E5;
       color: white;
-      font-weight: bold;
+      font-weight: 600;
       cursor: pointer;
+      transition: background-color 0.2s ease;
     }
-    button:hover {
-      background: #1e40af;
+    .button:hover {
+      background-color: #4338CA;
     }
-    .token-logo {
-      width: 16px;
-      height: 16px;
-      vertical-align: middle;
-      margin-right: 6px;
+    .wallet-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
     }
-    @media (max-width: 600px) {
-      main {
-        padding: 1rem;
-      }
+    .balance {
+      font-size: 14px;
+      color: #555;
     }
+    .address-box {
+      font-size: 14px;
+      font-weight: 500;
+      background: #eef1f6;
+      padding: 6px 12px;
+      border-radius: 8px;
+      display: inline-block;
+    }
+    .hidden { display: none; }
   </style>
 </head>
 <body>
-  <header>
-    <h1>Fixorium Wallet</h1>
-  </header>
-  <main>
-    <div class="wallet-bar">
-      <div id="walletStatus" class="wallet-address">Disconnected</div>
-      <button id="connectWallet" class="connect-btn" onclick="connectWallet()">Connect</button>
-      <button id="disconnectWallet" class="disconnect-btn" style="display: none;" onclick="disconnectWallet()">Disconnect</button>
+
+  <div class="card">
+    <div class="wallet-row">
+      <div id="walletStatus" class="balance">Not connected</div>
+      <button id="connectButton" class="button">Connect Wallet</button>
+      <button id="disconnectButton" class="button hidden">Disconnect</button>
     </div>
-
-    <div class="card">
-      <label for="fromToken">From Token</label>
-      <select id="fromToken"></select>
-
-      <label for="toToken">To Token</label>
-      <select id="toToken"></select>
-
-      <label for="amount">Amount</label>
-      <input type="number" id="amount" placeholder="Amount" />
-
-      <div id="quoteDisplay"></div>
-
-      <button onclick="getQuoteAndSwap()">Swap Tokens</button>
+    <div id="walletInfo" class="hidden">
+      <div class="wallet-row">
+        <span>Wallet:</span>
+        <span id="walletAddress" class="address-box"></span>
+      </div>
+      <div class="wallet-row">
+        <span>SOL Balance:</span>
+        <span id="solBalance" class="balance"></span>
+      </div>
+      <div class="wallet-row">
+        <span>FIXERCOIN:</span>
+        <span id="fixerBalance" class="balance"></span>
+      </div>
     </div>
+  </div>
 
-    <div class="card">
-      <h3>Your Balances</h3>
-      <ul id="balances"></ul>
-    </div>
-  </main>
-
-  <script src="https://unpkg.com/@solana/web3.js@latest/lib/index.iife.js"></script>
   <script>
+    const connectButton = document.getElementById('connectButton');
+    const disconnectButton = document.getElementById('disconnectButton');
+    const walletInfo = document.getElementById('walletInfo');
+    const walletStatus = document.getElementById('walletStatus');
+    const walletAddressEl = document.getElementById('walletAddress');
+    const solBalanceEl = document.getElementById('solBalance');
+    const fixerBalanceEl = document.getElementById('fixerBalance');
+
+    let provider = null;
     let publicKey = null;
-    const FEE_WALLET = 'H4qKn8FMFha8jJuj8xMryMqRhH3h7GjLuxw7TVixpump';
-    const JUP_BASE = 'https://quote-api.jup.ag';
-
-    const TOKENS = [
-      {
-        symbol: 'SOL',
-        mint: window.solanaWeb3.SystemProgram.programId.toString(),
-        decimals: 9,
-        logo: 'https://cryptologos.cc/logos/solana-sol-logo.png'
-      },
-      {
-        symbol: 'USDC',
-        mint: 'EPjFWdd5AufqSSqeM2qN1xzyiT1bJzj9gnN5nyvRLgk',
-        decimals: 6,
-        logo: 'https://cryptologos.cc/logos/usd-coin-usdc-logo.png'
-      },
-      {
-        symbol: 'FIXERCOIN',
-        mint: 'YOUR_FIXERCOIN_MINT_ADDRESS',
-        decimals: 6,
-        logo: 'https://fixorium.com/fixercoin-logo.png'
-      }
-    ];
-
-    function populateTokens() {
-      const from = document.getElementById('fromToken');
-      const to = document.getElementById('toToken');
-      from.innerHTML = to.innerHTML = '';
-      TOKENS.forEach(t => {
-        from.innerHTML += `<option value="${t.mint}">${t.symbol}</option>`;
-        to.innerHTML += `<option value="${t.mint}">${t.symbol}</option>`;
-      });
-    }
 
     async function connectWallet() {
-      if (window.solana && window.solana.isPhantom) {
-        try {
-          const res = await window.solana.connect({ onlyIfTrusted: false });
-          publicKey = res.publicKey.toString();
-          document.getElementById('walletStatus').innerText = `Connected: ${publicKey.slice(0, 4)}...${publicKey.slice(-4)}`;
-          document.getElementById('connectWallet').style.display = 'none';
-          document.getElementById('disconnectWallet').style.display = 'inline-block';
-          populateTokens();
-          fetchBalances();
-        } catch (err) {
-          console.error('Connection failed:', err);
-          alert('Please approve the connection request in your Phantom Wallet.');
+      try {
+        if (!window.solana || !window.solana.isPhantom) {
+          alert('Phantom Wallet not found. Install it first.');
+          return;
         }
-      } else {
-        alert('Phantom Wallet not found. Please install Phantom Wallet from https://phantom.app');
+
+        provider = window.solana;
+
+        // Request connect
+        const resp = await provider.connect();
+        publicKey = resp.publicKey;
+
+        const signature = await provider.signMessage(
+          new TextEncoder().encode("Fixorium Wallet Authentication"),
+          "utf8"
+        );
+
+        if (!signature) throw new Error("Signature failed or cancelled.");
+
+        updateUIAfterConnect();
+      } catch (err) {
+        console.error('Connection error:', err);
+        alert("Connection failed or approval not granted in Phantom.");
       }
     }
 
     function disconnectWallet() {
-      if (window.solana && window.solana.disconnect) {
-        window.solana.disconnect();
-        publicKey = null;
-        document.getElementById('walletStatus').innerText = 'Disconnected';
-        document.getElementById('connectWallet').style.display = 'inline-block';
-        document.getElementById('disconnectWallet').style.display = 'none';
+      if (provider) {
+        provider.disconnect();
+        resetUI();
       }
+    }
+
+    function updateUIAfterConnect() {
+      const shortAddr = `${publicKey.toString().slice(0, 4)}...${publicKey.toString().slice(-4)}`;
+      walletAddressEl.innerText = shortAddr;
+      walletStatus.innerText = 'Connected';
+      connectButton.classList.add('hidden');
+      disconnectButton.classList.remove('hidden');
+      walletInfo.classList.remove('hidden');
+      fetchBalances();
+    }
+
+    function resetUI() {
+      publicKey = null;
+      walletStatus.innerText = 'Not connected';
+      walletAddressEl.innerText = '';
+      solBalanceEl.innerText = '';
+      fixerBalanceEl.innerText = '';
+      connectButton.classList.remove('hidden');
+      disconnectButton.classList.add('hidden');
+      walletInfo.classList.add('hidden');
     }
 
     async function fetchBalances() {
-      const connection = new window.solanaWeb3.Connection('https://api.mainnet-beta.solana.com');
-      const balancesUl = document.getElementById('balances');
-      balancesUl.innerHTML = '';
+      const connection = new solanaWeb3.Connection(solanaWeb3.clusterApiUrl('mainnet-beta'));
 
-      for (const token of TOKENS) {
-        let balance = 0;
-        if (token.symbol === 'SOL') {
-          balance = await connection.getBalance(new window.solanaWeb3.PublicKey(publicKey)) / 1e9;
-        } else {
-          const accounts = await connection.getTokenAccountsByOwner(new window.solanaWeb3.PublicKey(publicKey), {
-            mint: new window.solanaWeb3.PublicKey(token.mint)
-          });
-          if (accounts.value.length > 0) {
-            const raw = accounts.value[0].account.data;
-            const data = raw.slice(64, 72);
-            balance = Number(BigInt('0x' + [...data].map(b => ('00' + b.toString(16)).slice(-2)).reverse().join(''))) / Math.pow(10, token.decimals);
-          }
+      const solBalance = await connection.getBalance(publicKey);
+      solBalanceEl.innerText = `${(solBalance / solanaWeb3.LAMPORTS_PER_SOL).toFixed(4)} SOL`;
+
+      const tokenAccounts = await connection.getParsedTokenAccountsByOwner(publicKey, {
+        programId: new solanaWeb3.PublicKey("TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA")
+      });
+
+      let fixerAmount = 0;
+      tokenAccounts.value.forEach(acc => {
+        const info = acc.account.data.parsed.info;
+        if (info.mint === 'YOUR_FIXERCOIN_MINT_ADDRESS') {
+          fixerAmount = parseInt(info.tokenAmount.amount) / Math.pow(10, info.tokenAmount.decimals);
         }
-        balancesUl.innerHTML += `<li><img class="token-logo" src="${token.logo}"/>${token.symbol}: ${balance.toFixed(4)}</li>`;
-      }
+      });
+
+      fixerBalanceEl.innerText = `${fixerAmount.toFixed(4)} FIXERCOIN`;
     }
 
-    async function getQuoteAndSwap() {
-      const amount = document.getElementById('amount').value;
-      const inputMint = document.getElementById('fromToken').value;
-      const outputMint = document.getElementById('toToken').value;
-
-      try {
-        const res = await fetch(`${JUP_BASE}/v6/quote?inputMint=${inputMint}&outputMint=${outputMint}&amount=${amount * 1e6}&feeBps=3&feeAccount=${FEE_WALLET}`);
-        const data = await res.json();
-        if (!data || !data.routes || !data.routes[0]) {
-          document.getElementById('quoteDisplay').innerText = 'Quote failed';
-          return;
-        }
-        document.getElementById('quoteDisplay').innerText = `Expected Output: ${data.routes[0].outAmount / 1e6}`;
-
-        const swapReq = await fetch(`https://quote-api.jup.ag/v6/swap`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            route: data.routes[0],
-            userPublicKey: publicKey,
-            feeAccount: FEE_WALLET
-          })
-        });
-        const swapTx = await swapReq.json();
-        const connection = new window.solanaWeb3.Connection('https://api.mainnet-beta.solana.com');
-        const transaction = window.solanaWeb3.Transaction.from(Buffer.from(swapTx.swapTransaction, 'base64'));
-        transaction.recentBlockhash = (await connection.getLatestBlockhash()).blockhash;
-        transaction.feePayer = new window.solanaWeb3.PublicKey(publicKey);
-        const signed = await window.solana.signTransaction(transaction);
-        const txid = await connection.sendRawTransaction(signed.serialize());
-        alert('Swap submitted. Transaction ID: ' + txid);
-        fetchBalances();
-      } catch (err) {
-        console.error(err);
-        document.getElementById('quoteDisplay').innerText = 'Error fetching or executing swap';
-      }
-    }
-
-    setInterval(() => {
-      if (publicKey) getQuoteAndSwap();
-    }, 10000);
+    connectButton.addEventListener('click', connectWallet);
+    disconnectButton.addEventListener('click', disconnectWallet);
 
     window.addEventListener('DOMContentLoaded', () => {
-      if (window.solana && window.solana.isPhantom) {
+      if (window.solana?.isPhantom) {
         window.solana.on('connect', () => {
-          console.log('Wallet connected:', window.solana.publicKey.toString());
+          console.log('Wallet connected');
         });
-
         window.solana.on('disconnect', () => {
           console.log('Wallet disconnected');
-          disconnectWallet();
+          resetUI();
         });
       }
     });
   </script>
+
 </body>
 </html>
