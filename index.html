@@ -4,217 +4,219 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Fixorium Wallet</title>
-  <script src="https://unpkg.com/@solana/web3.js@1.76.1/lib/index.iife.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@jup-ag/core@2.0.0-beta.17"></script>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
   <style>
     body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background-color: #0d0d0d;
+      color: #ffffff;
       margin: 0;
-      font-family: 'Inter', sans-serif;
-      background: #f4f6fa;
-      color: #333;
+      padding: 0;
+    }
+    header {
+      background-color: #1a1a1a;
+      padding: 16px;
       display: flex;
-      flex-direction: column;
       align-items: center;
+      justify-content: space-between;
+    }
+    header h1 {
+      margin: 0;
+      font-size: 20px;
+      color: #00ffcc;
+    }
+    .wallet-btn {
+      background-color: #00ffcc;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 8px;
+      cursor: pointer;
+      color: black;
+      font-weight: bold;
+    }
+    .wallet-info {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .container {
       padding: 20px;
     }
-    .card {
-      background: white;
-      border-radius: 16px;
-      padding: 24px;
-      max-width: 480px;
-      width: 100%;
-      box-shadow: 0 4px 20px rgba(0,0,0,0.06);
-      margin-top: 40px;
-    }
-    .button {
-      padding: 10px 18px;
+    .token-section {
+      background: #1a1a1a;
+      padding: 20px;
       border-radius: 10px;
-      border: none;
-      background-color: #4f46e5;
-      color: white;
-      font-weight: 600;
-      cursor: pointer;
+      margin-top: 20px;
     }
-    .wallet-row {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 12px;
+    .token-section h2 {
+      margin-top: 0;
+      color: #00ffcc;
     }
-    .input-field {
+    label, input, select {
+      display: block;
       width: 100%;
-      padding: 10px;
-      margin-top: 8px;
-      border-radius: 8px;
-      border: 1px solid #ccc;
-    }
-    .hidden { display: none; }
-    #tokenList {
+      margin-bottom: 12px;
       font-size: 14px;
-      margin-top: 8px;
-      color: #666;
+    }
+    input, select {
+      padding: 8px;
+      border-radius: 6px;
+      border: 1px solid #444;
+      background-color: #111;
+      color: #fff;
+    }
+    button.swap-btn {
+      width: 100%;
+      background-color: #00ffcc;
+      color: black;
+      border: none;
+      padding: 10px;
+      font-weight: bold;
+      font-size: 16px;
+      border-radius: 8px;
+      cursor: pointer;
+      margin-top: 10px;
     }
   </style>
 </head>
 <body>
-
-  <div class="card">
-    <div class="wallet-row">
-      <div id="walletStatus">Not connected</div>
-      <button id="connectButton" class="button">Connect Wallet</button>
-      <button id="disconnectButton" class="button hidden">Disconnect</button>
+  <header>
+    <h1>Fixorium Wallet</h1>
+    <div class="wallet-info">
+      <span id="walletAddress"></span>
+      <button id="connectButton" class="wallet-btn">Connect Wallet</button>
+      <button id="disconnectButton" class="wallet-btn" style="display: none;">Disconnect</button>
     </div>
-    <div id="walletInfo" class="hidden">
-      <div class="wallet-row">
-        <span>Wallet:</span>
-        <span id="walletAddress"></span>
-      </div>
-      <div class="wallet-row">
-        <span>Balance:</span>
-        <span id="walletBalance">-</span>
-      </div>
+  </header>
+  <div class="container">
+    <div class="token-section">
+      <h2>Token Swap</h2>
+      <label for="fromToken">From Token</label>
+      <select id="fromToken"></select>
+      <label for="toToken">To Token</label>
+      <select id="toToken"></select>
+      <label for="amount">Amount</label>
+      <input type="number" id="amount" placeholder="Enter amount" />
+      <div id="quoteInfo"></div>
+      <button class="swap-btn" onclick="performSwap()">Swap</button>
     </div>
-
-    <div id="swapSection" class="hidden">
-      <h3>Swap</h3>
-      <input id="inputMint" class="input-field" placeholder="Input Mint Address (From)" />
-      <input id="outputMint" class="input-field" placeholder="Output Mint Address (To)" />
-      <input id="amount" class="input-field" placeholder="Amount to Swap" type="number" />
-      <button id="swapButton" class="button" style="margin-top:12px">Swap</button>
-      <p id="swapStatus"></p>
-    </div>
-
-    <div id="tokenList"></div>
   </div>
 
-  <script>
-    const connectButton = document.getElementById('connectButton');
-    const disconnectButton = document.getElementById('disconnectButton');
-    const walletStatus = document.getElementById('walletStatus');
-    const walletAddressEl = document.getElementById('walletAddress');
-    const walletBalanceEl = document.getElementById('walletBalance');
-    const walletInfo = document.getElementById('walletInfo');
-    const swapSection = document.getElementById('swapSection');
-    const swapButton = document.getElementById('swapButton');
-    const swapStatus = document.getElementById('swapStatus');
-    const tokenList = document.getElementById('tokenList');
+  <script type="module">
+    import { Connection, PublicKey, clusterApiUrl } from 'https://unpkg.com/@solana/web3.js@1.89.1/lib/index.iife.js';
+    import { Jupiter, RouteMap, TOKEN_LIST_URL } from 'https://cdn.jsdelivr.net/npm/@jup-ag/core/dist/jupiter-core.min.js';
 
-    let provider = null;
+    const connectButton = document.getElementById("connectButton");
+    const disconnectButton = document.getElementById("disconnectButton");
+    const walletAddress = document.getElementById("walletAddress");
+    const fromToken = document.getElementById("fromToken");
+    const toToken = document.getElementById("toToken");
+    const amountInput = document.getElementById("amount");
+    const quoteInfo = document.getElementById("quoteInfo");
+
+    let connection = new Connection(clusterApiUrl("mainnet-beta"));
+    let provider = window.solana;
     let publicKey = null;
+    let jupiter = null;
 
-    connectButton.addEventListener('click', async () => {
+    const TOKENS = [
+      { symbol: "SOL", mint: "So11111111111111111111111111111111111111112" },
+      { symbol: "USDC", mint: "Es9vMFrzaCERc9nBP9aQ6kYfwqkh4MfJUZ36b2eFYLnP" },
+      { symbol: "USDT", mint: "BQhuG6Chxjx3VuM8ypgrZ9aYXu5qGyNFfrrtU8zGzFzN" },
+      { symbol: "BONK", mint: "DezXjCz3g5LVLqJHEPZ3hxrFDjJKwiTcE1RW9FgLbZ9T" },
+      { symbol: "RAY", mint: "4k3Dyjzvzp8eUppzUNqN3r7di4hRt5DRRzKpXfzjG8ND" },
+      { symbol: "SRM", mint: "9xQeWvG816bUx9EPm9FqjDqkF9M6sRFz1YYwzzF6VvjV" },
+      { symbol: "MNGO", mint: "Bb9bsTQaK6ZY7uJc5rGKnY2Lu1sauDWvErpN1eKYZ9oZ" },
+      { symbol: "ORCA", mint: "orca8V2FjX6jv1BZjZJX4SGEqJUEK7nmWR2tVAmfd2pu" },
+      { symbol: "SNY", mint: "EodWVvfu6FsN6bHLbmSnZ3sVKYzccKZK2NCiI3kkRj1C" },
+      { symbol: "FIDA", mint: "E8VqjRMcdaNTzEUNgZcVC7DfcX5bKYHBW9dD5hn9mp9n" },
+      { symbol: "SOLAPE", mint: "7U9Sewcbxk4AfwLj5cMBiNYkY5czmg28W1aazN6bLxGw" },
+      { symbol: "SHDW", mint: "SHDW1pZf3aGgefvfVRbDt3JTxSRtVm8HEk8aV7YqE7F" },
+      { symbol: "JTO", mint: "JToX6cVfUSw5PAeHoUcz4sw6MiPQ7VmPjbpwBfY7n25" },
+      { symbol: "SAMO", mint: "7xKXo3Vd3DJHD5rq4gqNEgRKUtnq5YfBGGJZPiHzJ5Za" },
+      { symbol: "PRISM", mint: "PRSMNsEPqhGVCH1TtWiJqPjJyh2cKrLostPZTNy1o5x" },
+      { symbol: "NYAN", mint: "5PMPGHkUyrgqYd3CrYNR2aZk8PtDNjW5Yh2nMJqaK29D" },
+      { symbol: "STEP", mint: "STEPvW8Uqix5rXtXZYrGpF9pWx8fXFXt9VXzjghvB2t" },
+      { symbol: "SLRS", mint: "SLRSSpSLRSSpSLRSSpSLRSSpSLRSSpSLRSSpSLRS" },
+      { symbol: "COPE", mint: "8HGj6kK9pJeZsBxtkgPZr5ZTj5cwTZFRvQj2iXM3KXep" },
+      { symbol: "CATO", mint: "Cato2MCTb7ZtZtGdUe8LZ3C9U2ucT2TTqCTptDFnvgfu" }
+    ];
+
+    function populateTokens() {
+      for (const token of TOKENS) {
+        const opt1 = document.createElement("option");
+        opt1.value = token.mint;
+        opt1.innerText = token.symbol;
+        const opt2 = opt1.cloneNode(true);
+        fromToken.appendChild(opt1);
+        toToken.appendChild(opt2);
+      }
+    }
+
+    async function connectWallet() {
+      if (!provider?.isPhantom) return alert("Phantom Wallet not found");
       try {
-        if (window.solana && window.solana.isPhantom) {
-          provider = window.solana;
-          const resp = await provider.connect();
-          publicKey = resp.publicKey;
-          updateUI();
-          await fetchSOLBalance();
-          await fetchSPLTokens();
-        } else {
-          alert("Please install Phantom Wallet.");
-        }
+        const resp = await provider.connect();
+        publicKey = resp.publicKey;
+        walletAddress.innerText = shortenAddress(publicKey.toBase58());
+        connectButton.style.display = "none";
+        disconnectButton.style.display = "inline-block";
+        fetchSolBalance();
+        setupJupiter();
       } catch (e) {
-        alert("Connection failed. Please approve request in Phantom.");
-        console.error(e);
+        console.error("Connection failed:", e);
+        alert("Please approve connection in Phantom Wallet.");
       }
-    });
-
-    disconnectButton.addEventListener('click', () => {
-      if (provider) {
-        provider.disconnect();
-        resetUI();
-      }
-    });
-
-    function updateUI() {
-      const shortAddr = `${publicKey.toString().slice(0, 4)}...${publicKey.toString().slice(-4)}`;
-      walletAddressEl.textContent = shortAddr;
-      walletStatus.textContent = 'Connected';
-      connectButton.classList.add('hidden');
-      disconnectButton.classList.remove('hidden');
-      walletInfo.classList.remove('hidden');
-      swapSection.classList.remove('hidden');
     }
 
-    function resetUI() {
-      walletStatus.textContent = 'Not connected';
-      connectButton.classList.remove('hidden');
-      disconnectButton.classList.add('hidden');
-      walletInfo.classList.add('hidden');
-      swapSection.classList.add('hidden');
-      tokenList.innerHTML = '';
+    function disconnectWallet() {
+      provider.disconnect();
+      connectButton.style.display = "inline-block";
+      disconnectButton.style.display = "none";
+      walletAddress.innerText = "";
     }
 
-    async function fetchSOLBalance() {
-      const connection = new solanaWeb3.Connection(solanaWeb3.clusterApiUrl('mainnet-beta'));
-      const lamports = await connection.getBalance(publicKey);
-      const sol = lamports / solanaWeb3.LAMPORTS_PER_SOL;
-      walletBalanceEl.textContent = sol.toFixed(4) + ' SOL';
+    async function fetchSolBalance() {
+      const bal = await connection.getBalance(publicKey);
+      walletAddress.innerText += ` | Balance: ${(bal / 1e9).toFixed(3)} SOL`;
     }
 
-    async function fetchSPLTokens() {
-      const connection = new solanaWeb3.Connection(solanaWeb3.clusterApiUrl('mainnet-beta'));
-      const tokenAccounts = await connection.getParsedTokenAccountsByOwner(publicKey, { programId: new solanaWeb3.PublicKey("TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA") });
-      tokenList.innerHTML = '<h4>Your Tokens:</h4>';
-      tokenAccounts.value.forEach(account => {
-        const info = account.account.data.parsed.info;
-        const mint = info.mint;
-        const amount = info.tokenAmount.uiAmount;
-        if (amount > 0) {
-          tokenList.innerHTML += `<div>${amount.toFixed(4)} - ${mint}</div>`;
-        }
+    function shortenAddress(addr) {
+      return addr.slice(0, 4) + "..." + addr.slice(-4);
+    }
+
+    async function setupJupiter() {
+      jupiter = await Jupiter.load({ connection, cluster: "mainnet-beta", user: publicKey });
+    }
+
+    async function performSwap() {
+      if (!jupiter || !publicKey) return;
+      const inputMint = new PublicKey(fromToken.value);
+      const outputMint = new PublicKey(toToken.value);
+      const amount = parseFloat(amountInput.value);
+      const inputAmount = Math.floor(amount * 10 ** 6);
+
+      const routes = await jupiter.computeRoutes({
+        inputMint,
+        outputMint,
+        amount: inputAmount,
+        slippage: 1,
       });
+
+      if (!routes || routes.routesInfos.length === 0) return alert("No route found");
+
+      const { swapTransaction } = await jupiter.exchange({
+        routeInfo: routes.routesInfos[0],
+      });
+
+      const txid = await provider.sendAndConfirmTransaction(swapTransaction);
+      alert("Swap complete: " + txid);
+      fetchSolBalance();
     }
 
-    swapButton.addEventListener('click', async () => {
-      const inputMint = document.getElementById('inputMint').value;
-      const outputMint = document.getElementById('outputMint').value;
-      const amount = parseFloat(document.getElementById('amount').value);
+    connectButton.addEventListener("click", connectWallet);
+    disconnectButton.addEventListener("click", disconnectWallet);
 
-      if (!inputMint || !outputMint || !amount || amount <= 0) {
-        swapStatus.textContent = 'Please fill all swap fields correctly.';
-        return;
-      }
-
-      swapStatus.textContent = 'Getting best route...';
-      try {
-        const connection = new solanaWeb3.Connection(solanaWeb3.clusterApiUrl('mainnet-beta'));
-        const jupiter = await Jupiter.load({
-          connection,
-          cluster: 'mainnet-beta',
-          user: publicKey,
-        });
-
-        const routes = await jupiter.computeRoutes({
-          inputMint: new solanaWeb3.PublicKey(inputMint),
-          outputMint: new solanaWeb3.PublicKey(outputMint),
-          amount: amount * 10 ** 6,
-          slippageBps: 50,
-        });
-
-        if (!routes.routesInfos.length) {
-          swapStatus.textContent = 'No route found';
-          return;
-        }
-
-        const swapResult = await jupiter.exchange({
-          routeInfo: routes.routesInfos[0],
-        });
-
-        if (swapResult.error) {
-          swapStatus.textContent = 'Swap failed';
-        } else {
-          swapStatus.textContent = 'Swap successful';
-          await fetchSOLBalance();
-          await fetchSPLTokens();
-        }
-      } catch (e) {
-        console.error('Swap error:', e);
-        swapStatus.textContent = 'Swap failed';
-      }
-    });
+    populateTokens();
   </script>
 </body>
 </html>
