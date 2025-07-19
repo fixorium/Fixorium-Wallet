@@ -1,73 +1,44 @@
- import { useState, useEffect } from "react";
-import { PublicKey } from "@solana/web3.js";
-import Image from "next/image";
-import SwapComponent from "../components/SwapComponent";
-import { connection, TOKEN_PROGRAM_ID, FIXERCOIN_MINT } from "../lib/solana";
+ 'use client';
+import dynamic from 'next/dynamic';
+import { WalletAdapterNetwork } from '@solana/wallet-adapter-base';
+import {
+  ConnectionProvider,
+  WalletProvider
+} from '@solana/wallet-adapter-react';
+import {
+  WalletModalProvider,
+  WalletMultiButton
+} from '@solana/wallet-adapter-react-ui';
+import {
+  PhantomWalletAdapter,
+  SolflareWalletAdapter
+} from '@solana/wallet-adapter-wallets';
+import { useMemo } from 'react';
+import SwapComponent from '../components/SwapComponent';
+import '../styles/globals.css';
+
+require('@solana/wallet-adapter-react-ui/styles.css');
 
 export default function Home() {
-  const [walletAddress, setWalletAddress] = useState(null);
-  const [solBalance, setSolBalance] = useState(0);
-  const [fixerBalance, setFixerBalance] = useState(0);
+  const network = WalletAdapterNetwork.Mainnet;
+  const endpoint = 'https://api.mainnet-beta.solana.com';
 
-  const connectWallet = async () => {
-    if (window.solana?.isPhantom) {
-      try {
-        const resp = await window.solana.connect();
-        setWalletAddress(resp.publicKey.toString());
-      } catch {}
-    } else alert("Phantom wallet not found");
-  };
-
-  const disconnectWallet = async () => {
-    await window.solana?.disconnect();
-    setWalletAddress(null);
-    setSolBalance(0);
-    setFixerBalance(0);
-  };
-
-  useEffect(() => {
-    if (!walletAddress) return;
-
-    (async () => {
-      const pubkey = new PublicKey(walletAddress);
-      const sol = await connection.getBalance(pubkey);
-      setSolBalance(sol / 1e9);
-
-      const accounts = await connection.getParsedTokenAccountsByOwner(pubkey, {
-        programId: TOKEN_PROGRAM_ID
-      });
-
-      const fixerAcc = accounts.value.find(a =>
-        a.account.data.parsed.info.mint === FIXERCOIN_MINT.toString()
-      );
-
-      setFixerBalance(
-        fixerAcc
-          ? parseFloat(fixerAcc.account.data.parsed.info.tokenAmount.uiAmountString)
-          : 0
-      );
-    })();
-  }, [walletAddress]);
+  const wallets = useMemo(() => [
+    new PhantomWalletAdapter(),
+    new SolflareWalletAdapter(),
+  ], []);
 
   return (
-    <main style={{ padding: 20, fontFamily: "sans-serif" }}>
-      <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-        <h1 style={{ flexGrow: 1 }}>Fixorium Wallet</h1>
-        <Image src="/fixorium-logo.png" alt="Logo" width={40} height={40}/>
-      </div>
-
-      {!walletAddress ? (
-        <button onClick={connectWallet}>Connect Phantom</button>
-      ) : (
-        <>
-          <p><strong>Wallet:</strong> {walletAddress}</p>
-          <p><strong>SOL:</strong> {solBalance.toFixed(4)}</p>
-          <p><strong>Fixercoin:</strong> {fixerBalance.toFixed(2)}</p>
-          <button onClick={disconnectWallet} style={{ background:"#f44", color:"#fff" }}>Disconnect</button>
-
-          <SwapComponent walletAddress={walletAddress} />
-        </>
-      )}
-    </main>
+    <ConnectionProvider endpoint={endpoint}>
+      <WalletProvider wallets={wallets} autoConnect>
+        <WalletModalProvider>
+          <main className="p-4">
+            <h1 className="text-2xl font-bold mb-4">Fixorium Wallet</h1>
+            <WalletMultiButton />
+            <SwapComponent />
+          </main>
+        </WalletModalProvider>
+      </WalletProvider>
+    </ConnectionProvider>
   );
 }
