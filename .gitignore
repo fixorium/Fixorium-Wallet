@@ -1,3 +1,0 @@
-git add vercel.json
-git commit -m "Fix vercel.json for Vercel deployment"
-git push origin main
