@@ -5,12 +5,225 @@
   <meta charset="UTF-8" />
   <title>FIXORIUM Swap System</title>
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <!-- Load solanaWeb3 and Phantom Wallet Adapter as UMD (global vars) -->
+  <!-- Load Solana web3.js and wallet adapter UMD bundles -->
   <script src="https://cdn.jsdelivr.net/npm/@solana/web3.js@1.92.1/lib/index.iife.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@solana/wallet-adapter-base@0.21.0/lib/index.umd.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@solana/wallet-adapter-wallets@0.21.0/lib/index.umd.min.js"></script>
+
   <style>
-    /* Styles omitted here for brevity, use your previous styles */
+    body {
+      margin: 0;
+      font-family: sans-serif;
+      background: #181a20;
+      min-height: 100vh;
+      padding-bottom: 64px;
+      color: white;
+    }
+
+    .fixorium-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 24px;
+      background: #23272f;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
+    .fixorium-logo {
+      height: 36px;
+      width: 36px;
+      margin-right: 10px;
+    }
+
+    .fixorium-title {
+      color: #fff;
+      font-size: 24px;
+      font-weight: bold;
+      white-space: nowrap;
+    }
+
+    .wallet-section {
+      background: #31363f;
+      border-radius: 6px;
+      padding: 5px 15px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+      min-width: 225px;
+      font-size: 14px;
+    }
+
+    button {
+      border: none;
+      border-radius: 6px;
+      padding: 6px 12px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    .wallet-connect-btn {
+      background-color: #29d6b6;
+      color: #23272f;
+    }
+
+    .wallet-disconnect-btn {
+      background-color: #f73e3e;
+      color: white;
+    }
+
+    .copy-btn {
+      color: #29d6b6;
+      background: none;
+      border: none;
+      cursor: pointer;
+      font-size: 12px;
+      padding: 0 6px;
+      text-decoration: underline;
+      align-self: center;
+    }
+
+    .swap-card {
+      background: #23272f;
+      margin: 32px auto;
+      border-radius: 16px;
+      box-shadow: 0 8px 24px #0003;
+      padding: 32px 24px;
+      width: 100%;
+      max-width: 450px;
+      box-sizing: border-box;
+    }
+
+    .swap-label {
+      color: #fff;
+      font-weight: bold;
+      margin-top: 10px;
+      display: block;
+      font-size: 14px;
+    }
+
+    select,
+    input.swap-input {
+      width: 100%;
+      padding: 6px 10px;
+      margin: 6px 0 14px;
+      font-size: 14px;
+      border-radius: 4px;
+      border: none;
+      background: #31363f;
+      color: white;
+      box-sizing: border-box;
+    }
+
+    button.swap-btn {
+      width: 100%;
+      font-size: 16px;
+      padding: 10px 0;
+      margin-top: 10px;
+      background-color: #29d6b6;
+      color: #23272f;
+      font-weight: bold;
+      cursor: pointer;
+      border-radius: 6px;
+      border: none;
+      transition: background-color 0.3s;
+    }
+
+    button.swap-btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    #swapRatio {
+      color: #ccc;
+      font-size: 14px;
+      min-height: 18px;
+      margin-bottom: 8px;
+    }
+
+    #balancesList {
+      margin-top: 20px;
+      font-size: 14px;
+      line-height: 1.5;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+
+    .signal-bot {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      width: 100%;
+      background: #23272f;
+      padding: 16px 0;
+      display: flex;
+      justify-content: center;
+      border-top: 1px solid #23272f;
+      z-index: 1000;
+      gap: 24px;
+      user-select: none;
+      flex-wrap: wrap;
+      font-size: 18px;
+      color: #fff;
+    }
+
+    .signal {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      white-space: nowrap;
+    }
+
+    .signal-buy {
+      color: #29d6b6;
+      font-weight: 700;
+      animation: blinkBuy 1s linear infinite;
+    }
+
+    .signal-sell {
+      color: #f73e3e;
+      font-weight: 700;
+      animation: blinkSell 1s linear infinite;
+    }
+
+    .signal-small {
+      font-size: 10px;
+      opacity: 0.6;
+      user-select: none;
+      font-weight: 600;
+      letter-spacing: 0.05em;
+    }
+
+    @keyframes blinkBuy {
+      0% {
+        opacity: 1;
+      }
+
+      50% {
+        opacity: 0.3;
+      }
+
+      100% {
+        opacity: 1;
+      }
+    }
+
+    @keyframes blinkSell {
+      0% {
+        opacity: 1;
+      }
+
+      50% {
+        opacity: 0.3;
+      }
+
+      100% {
+        opacity: 1;
+      }
+    }
+
   </style>
 </head>
 
@@ -19,15 +232,12 @@
     <div style="display:flex;align-items:center;">
       <svg class="fixorium-logo" viewBox="0 0 64 64" aria-hidden="true" focusable="false">
         <circle cx="32" cy="32" r="32" fill="#29D6B6" />
-        <text x="32" y="42" text-anchor="middle" font-size="28" fill="#23272F" font-family="Arial" font-weight="bold">
-          F
-        </text>
+        <text x="32" y="42" text-anchor="middle" font-size="28" fill="#23272F" font-family="Arial" font-weight="bold">F</text>
       </svg>
       <span class="fixorium-title">FIXORIUM</span>
     </div>
     <div id="walletSection" class="wallet-section" aria-live="polite" aria-label="Wallet connection status"></div>
   </div>
-
   <main>
     <section class="swap-card" role="main" aria-label="Token swap interface">
       <form id="swapForm" onsubmit="return false" aria-describedby="swapStatus">
@@ -50,17 +260,11 @@
       <div id="balancesList" aria-label="Wallet balances"></div>
     </section>
   </main>
-
   <div id="signalBot" class="signal-bot" aria-label="Market signals"></div>
 
   <script>
-    // Globals imported by UMD scripts:
-    // solanaWeb3 (Solana web3.js)
-    // WalletAdapterWallets (from wallet-adapter-wallets)
-    // WalletAdapterBase (from wallet-adapter-base)
-
-    const { PhantomWalletAdapter } = WalletAdapterWallets;
-    const { Connection, PublicKey, Transaction, LAMPORTS_PER_SOL } = solanaWeb3;
+    const { PhantomWalletAdapter } = window.WalletAdapterWallets;
+    const { Connection, PublicKey, Transaction, LAMPORTS_PER_SOL } = window.solanaWeb3;
 
     const SOLANA_RPC = "https://api.mainnet-beta.solana.com";
 
@@ -308,13 +512,12 @@
       setInterval(update, 2000);
     }
 
-    // On load
     window.addEventListener("DOMContentLoaded", () => {
       renderWalletSection();
       setupSwapForm();
       renderSignalBot();
 
-      // auto-connect if previously connected
+      // auto-connect phantom wallet if publicKey was saved earlier
       const saved = localStorage.getItem(persistKey);
       if (saved) {
         wallet.on("connect", () => {
