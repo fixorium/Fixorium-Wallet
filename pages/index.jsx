@@ -3,170 +3,131 @@ import { Connection, PublicKey } from '@solana/web3.js';
 
 import { createJupiterApiClient } from "@jup-ag/api";
 
-const inputMints = {
-  SOL: 'So11111111111111111111111111111111111111112',
-  USDC: 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v'
-};
 
-const outputMints = {
-  USDC: 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v',
-  SOL: 'So11111111111111111111111111111111111111112'
-};
+import { useEffect, useState } from "react";
+import { getSolanaConnection, TOKEN_PROGRAM_ID } from "../lib/solana";
+import { Connection, LAMPORTS_PER_SOL, PublicKey } from "@solana/web3.js";
+import SwapComponent from "../components/SwapComponent";
+import Image from "next/image";
 
-const SwapComponent = () => {
-  const [inputToken, setInputToken] = useState('SOL');
-  const [outputToken, setOutputToken] = useState('USDC');
-  const [amount, setAmount] = useState('');
-  const [quote, setQuote] = useState(null);
-  const [jupiter, setJupiter] = useState(null);
+const FIXORIUM_MINT = new PublicKey("FiXo111111111111111111111111111111111111111");
 
-  useEffect(() => {
-    const initJupiter = async () => {
-      const connection = new Connection('https://api.devnet.solana.com');
-      try {
-        const jup = await Jupiter.load({
-          connection,
-          cluster: 'devnet',
-          userPublicKey: new PublicKey('11111111111111111111111111111111'), // Dummy wallet
-          routeCacheDuration: 0
-        });
-        setJupiter(jup);
-      } catch (err) {
-        console.error('Jupiter init failed:', err);
-      }
-    };
+export default function Home() {
+  const [walletAddress, setWalletAddress] = useState(null);
+  const [solBalance, setSolBalance] = useState(0);
+  const [fixoriumBalance, setFixoriumBalance] = useState(0);
 
-    initJupiter();
-  }, []);
+  const connection = getSolanaConnection();
 
-  useEffect(() => {
-    const fetchQuote = async () => {
-      if (!jupiter || !amount || isNaN(amount)) return;
-
-      const inputMint = new PublicKey(inputMints[inputToken]);
-      const outputMint = new PublicKey(outputMints[outputToken]);
-
-      try {
-        const routes = await jupiter.computeRoutes({
-          inputMint,
-          outputMint,
-          amount: Math.floor(Number(amount) * 1e9),
-          slippageBps: 100
-        });
-
-        if (routes && routes.routesInfos.length > 0) {
-          setQuote(routes.routesInfos[0]);
-        } else {
-          setQuote(null);
-        }
-      } catch (err) {
-        console.error('Quote fetch failed:', err);
-        setQuote(null);
-      }
-    };
-
-    fetchQuote();
-  }, [jupiter, inputToken, outputToken, amount]);
-
-  const handleSwap = async () => {
-    if (!quote || !jupiter) return;
-
+  const connectWallet = async () => {
     try {
-      const { execute } = await jupiter.exchange({
-        routeInfo: quote
-      });
-
-      const txid = await execute();
-      console.log('Transaction sent:', txid);
+      const { solana } = window;
+      if (solana) {
+        const response = await solana.connect();
+        setWalletAddress(response.publicKey.toString());
+        fetchBalances(response.publicKey);
+      }
     } catch (err) {
-      console.error('Swap failed:', err);
+      console.error("Wallet connection failed:", err);
     }
   };
 
+  const disconnectWallet = async () => {
+    try {
+      const { solana } = window;
+      if (solana) {
+        await solana.disconnect();
+        setWalletAddress(null);
+        setSolBalance(0);
+        setFixoriumBalance(0);
+      }
+    } catch (err) {
+      console.error("Disconnect failed:", err);
+    }
+  };
+
+  const fetchBalances = async (pubkey) => {
+    try {
+      const balance = await connection.getBalance(pubkey);
+      setSolBalance(balance / LAMPORTS_PER_SOL);
+
+      const tokenAccounts = await connection.getParsedTokenAccountsByOwner(pubkey, {
+        programId: TOKEN_PROGRAM_ID
+      });
+
+      let fixorium = 0;
+      tokenAccounts.value.forEach(({ account }) => {
+        const info = account.data.parsed.info;
+        if (info.mint === FIXORIUM_MINT.toString()) {
+          fixorium = parseFloat(info.tokenAmount.uiAmountString);
+        }
+      });
+
+      setFixoriumBalance(fixorium);
+    } catch (err) {
+      console.error("Balance fetch failed:", err);
+    }
+  };
+
+  useEffect(() => {
+    const checkIfWalletIsConnected = async () => {
+      const { solana } = window;
+      if (solana && solana.isPhantom) {
+        try {
+          const response = await solana.connect({ onlyIfTrusted: true });
+          setWalletAddress(response.publicKey.toString());
+          fetchBalances(response.publicKey);
+        } catch (err) {
+          console.warn("Not auto-connected:", err);
+        }
+      }
+    };
+    checkIfWalletIsConnected();
+  }, []);
+
   return (
-    <div className="container">
-      <h2>Solana Token Swap</h2>
-      <input
-        type="number"
-        placeholder="Amount"
-        value={amount}
-        onChange={(e) => setAmount(e.target.value)}
-      />
-      <div className="row">
-        <select value={inputToken} onChange={(e) => setInputToken(e.target.value)}>
-          <option value="SOL">SOL</option>
-          <option value="USDC">USDC</option>
-        </select>
-        <span style={{ margin: '0 10px' }}>→</span>
-        <select value={outputToken} onChange={(e) => setOutputToken(e.target.value)}>
-          <option value="USDC">USDC</option>
-          <option value="SOL">SOL</option>
-        </select>
-      </div>
-      <button onClick={handleSwap} disabled={!quote}>Swap</button>
-      {quote && (
-        <p>
-          You will receive {quote.outAmount / 1e6} {outputToken}
-        </p>
+    <main style={{ padding: "2rem", fontFamily: "Arial" }}>
+      <Image src="/fixorium-logo.png" alt="Fixorium Logo" width={120} height={120} />
+      <h1>Fixorium Wallet</h1>
+
+      {!walletAddress ? (
+        <button onClick={connectWallet} style={{ padding: "10px 20px" }}>
+          Connect Wallet
+        </button>
+      ) : (
+        <>
+          <p>
+            <strong>Connected Wallet:</strong> <code>{walletAddress}</code>
+          </p>
+          <p>
+            <strong>SOL Balance:</strong> {solBalance.toFixed(4)} SOL
+          </p>
+          <p>
+            <strong>Fixorium Balance:</strong> {fixoriumBalance.toFixed(2)} FIXO
+          </p>
+          <button
+            onClick={disconnectWallet}
+            style={{ padding: "8px 18px", background: "#f44", color: "white" }}
+          >
+            Disconnect
+          </button>
+        </>
       )}
-    </div>
+
+      <section style={{ marginTop: "2rem" }}>
+        <SwapComponent walletAddress={walletAddress} />
+      </section>
+
+      <section style={{ marginTop: "2rem" }}>
+        <h2>Supported SOL Meme Tokens (Devnet)</h2>
+        <ul>
+          <li>Dogecoin (wDOGE) - <code>Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkgMQg85NVh9Z</code></li>
+          <li>Bonk - <code>So11111111111111111111111111111111111111112</code></li>
+          <li>Samoyedcoin - <code>3WnvAX9TvMuBFhVZxrTZp4XqF6Yp3JeCvM6DtrrCUn8d</code></li>
+        </ul>
+      </section>
+    </main>
   );
-};
-
-export default SwapComponent;
-         import { useEffect, useState } from "react";
-
-export default function Home() {
-  const [walletAddress, setWalletAddress] = useState(null);
-
-  // Check for Solana provider (like Phantom)
-  const isPhantomInstalled = () => {
-    return typeof window !== "undefined" && window.solana && window.solana.isPhantom;
-  };
-
-  // Connect wallet handler
-  const connectWallet = async () => {
-    try {
-      const { solana } = window;
-      if (solana) {
-        const response = await solana.connect();
-        setWalletAddress(response.publicKey.toString());
-      }
-    } catch (err) {
-      console.error("Wallet connection failed:", err);
-    }
-  };
-
-  // Auto-connect if already authorized
-  useEffect(() => {
-    const checkIfWalletIsConnected = async () => {
-      try {
-        const { solana } = window;
-        if (solana && solana.isPhantom) {
-          const response = await solana.connect({ onlyIfTrusted: true });
-          setWalletAddress(response.publicKey.toString());
-        }
-      } catch (err) {
-        console.error(err);
-      }
-    };
-    checkIfWalletIsConnected();
-  }, []);
-
-  return (
-    <main style={{ padding: "2rem", fontFamily: "Arial" }}>
-      <h1>Fixorium Wallet</h1>
-      {!walletAddress ? (
-        <button onClick={connectWallet} style={{ padding: "10px 20px", fontSize: "16px" }}>
-          Connect Wallet
-        </button>
-      ) : (
-        <div>
-          <p>Connected Wallet:</p>
-          <code>{walletAddress}</code>
-        </div>
-      )}
-    </main>
-  );
-     }
+   }
+   
 
