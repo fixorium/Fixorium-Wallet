@@ -2,396 +2,142 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>FIXORIUM Swap System</title>
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <script src="https://cdn.jsdelivr.net/npm/@solana/web3.js@1.92.1/lib/index.iife.min.js"></script>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Fixorium Swap</title>
   <style>
     body {
-      margin: 0;
       font-family: sans-serif;
-      background: #181A20;
-      color: white;
+      padding: 2rem;
+      background: #f0f0f0;
+      max-width: 600px;
+      margin: auto;
     }
-
-    .fixorium-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 12px 24px;
-      background: #23272F;
-      flex-wrap: wrap;
-    }
-
-    .fixorium-logo {
-      height: 36px;
-      width: 36px;
-      margin-right: 10px;
-    }
-
-    .fixorium-title {
-      font-size: 24px;
-      font-weight: bold;
-    }
-
-    .wallet-section {
-      background: #31363F;
+    h2, h3 { text-align: center; }
+    #walletAddress { font-weight: bold; }
+    select, input, button {
+      width: 100%;
+      box-sizing: border-box;
+      margin: 0.5rem 0;
+      padding: 0.75rem;
       border-radius: 6px;
-      padding: 5px 15px;
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      flex-wrap: wrap;
-      font-size: 14px;
+      border: 1px solid #ccc;
     }
-
-    button {
-      border: none;
-      border-radius: 6px;
-      padding: 6px 12px;
-      font-weight: bold;
-      cursor: pointer;
+    #balancesList ul {
+      list-style: none;
+      padding-left: 0;
     }
-
-    .wallet-connect-btn {
-      background-color: #29d6b6;
-      color: #23272f;
-    }
-
-    .wallet-disconnect-btn {
-      background-color: #f73e3e;
-      color: white;
-    }
-
-    .swap-card {
-      background: #23272F;
-      margin: 32px auto;
-      border-radius: 16px;
-      padding: 32px 24px;
-      max-width: 450px;
-    }
-
-    .swap-label {
-      font-weight: bold;
-      margin-top: 10px;
+    img.qr {
+      width: 100%;
+      max-width: 220px;
       display: block;
-      font-size: 14px;
+      margin: 1rem auto;
     }
-
-    select, input.swap-input {
-      width: 100%;
-      padding: 6px 10px;
-      margin: 6px 0 14px;
-      font-size: 14px;
-      border-radius: 4px;
-      border: none;
-      background: #31363F;
-      color: white;
-    }
-
-    button.swap-btn {
-      width: 100%;
-      font-size: 16px;
-      padding: 10px 0;
-      margin-top: 10px;
-      background-color: #29d6b6;
-      color: #23272f;
-    }
-
-    #balancesList {
-      margin-top: 20px;
-      font-size: 14px;
-    }
-
-    #swapRatio {
-      color: #ccc;
-      font-size: 14px;
-      min-height: 18px;
-    }
-
-    .signal-bot {
-      position: fixed;
-      bottom: 0;
-      width: 100%;
-      background: #23272F;
-      padding: 12px;
-      display: flex;
-      justify-content: center;
-      gap: 16px;
-      flex-wrap: wrap;
-      color: #fff;
-    }
-
-    .signal-buy {
-      color: #29D6B6;
-      font-weight: bold;
-      animation: blinkBuy 1s linear infinite;
-    }
-
-    .signal-sell {
-      color: #F73E3E;
-      font-weight: bold;
-      animation: blinkSell 1s linear infinite;
-    }
-
-    @keyframes blinkBuy {
-      0%, 100% { opacity: 1; }
-      50% { opacity: 0.3; }
-    }
-
-    @keyframes blinkSell {
-      0%, 100% { opacity: 1; }
-      50% { opacity: 0.3; }
+    @media (max-width: 480px) {
+      body {
+        padding: 1rem;
+      }
     }
   </style>
 </head>
 <body>
-  <div class="fixorium-header">
-    <div style="display:flex;align-items:center;">
-      <svg class="fixorium-logo" viewBox="0 0 64 64">
-        <circle cx="32" cy="32" r="32" fill="#29D6B6" />
-        <text x="32" y="42" text-anchor="middle" font-size="28" fill="#23272F" font-family="Arial" font-weight="bold">F</text>
-      </svg>
-      <span class="fixorium-title">FIXORIUM</span>
-    </div>
-    <div id="walletSection" class="wallet-section"></div>
+  <h2>Fixorium Wallet Swap</h2>
+  <button id="connectWallet">Connect Wallet</button>
+  <div id="walletInfo" style="display:none;">
+    <p>Wallet: <span id="walletAddress"></span></p>
+    <div id="balancesList"></div>
+
+    <hr/>
+    <h3>Swap Tokens</h3>
+    <label>From: <select id="fromToken"></select></label>
+    <label>To: <select id="toToken"></select></label>
+    <label>Amount: <input type="number" id="swapAmount" /></label>
+    <p id="swapQuote"></p>
+    <button id="swapButton">Swap</button>
+
+    <hr/>
+    <h3>Buy/Sell Fixorium</h3>
+    <p>1 FIXERCOIN = 0.001 PKR</p>
+    <img src="https://chart.googleapis.com/chart?cht=qr&chs=220x220&chl=03107044833" alt="Easypaisa QR" class="qr" />
+    <label>Amount (PKR): <input type="number" id="fiatAmount" /></label>
+    <button onclick="buyFixercoin()">Buy Fixorium</button>
+    <button onclick="sellFixercoin()">Sell Fixorium</button>
+    <p id="fiatResult"></p>
   </div>
 
-  <main>
-    <section class="swap-card">
-      <form id="swapForm" onsubmit="return false">
-        <label for="fromToken" class="swap-label">From Token</label>
-        <select id="fromToken"></select>
-
-        <label for="toToken" class="swap-label">To Token</label>
-        <select id="toToken"></select>
-
-        <label for="swapAmount" class="swap-label">Amount</label>
-        <input id="swapAmount" class="swap-input" type="number" min="0" step="any" placeholder="Enter amount"/>
-
-        <div id="swapRatio"></div>
-
-        <button id="swapBtn" class="swap-btn" disabled>Swap</button>
-        <div id="swapStatus" style="color:#29D6B6;margin-top:12px;"></div>
-      </form>
-
-      <div id="balancesList"></div>
-    </section>
-  </main>
-
-  <div id="signalBot" class="signal-bot"></div>
-
+  <script src="https://cdn.jsdelivr.net/npm/@solana/web3.js@1.92.1/lib/index.iife.min.js"></script>
   <script>
-    const SOLANA_RPC = "https://api.mainnet-beta.solana.com";
-
+    const SOLANA_RPC = 'https://api.mainnet-beta.solana.com';
+    const FIXERCOIN_MINT = 'FIXERCOINTOKENADDRESSHERE';
+    const LOG_API = 'https://fixorium-api.vercel.app/api/logFiat';
     const MEME_TOKEN_MINTS = [
-      'So11111111111111111111111111111111111111112', // SOL
-      'DezXAZ8z7PnrnRJjz3wXBoRhwTLdMPkqhuBczetogeoK', // BONK
-      'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v', // USDC
-      'EKpQGSJtjMFqKZ9KQanSqYXRcF8fBtUk6goG7zcX3New'  // WIF
+      'So11111111111111111111111111111111111111112',
+      'DezXAZ8z7PnrnRJjz3wXBoRhwTLdMPkqhuBczetogeoK',
+      'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v',
+      'EKpQGSJtjMFqKZ9KQanSqYXRcF8fBtUk6goG7zcX3New',
+      FIXERCOIN_MINT
     ];
-
     const MEME_TOKEN_NAMES = {
       'So11111111111111111111111111111111111111112': 'SOL',
       'DezXAZ8z7PnrnRJjz3wXBoRhwTLdMPkqhuBczetogeoK': 'BONK',
       'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v': 'USDC',
-      'EKpQGSJtjMFqKZ9KQanSqYXRcF8fBtUk6goG7zcX3New': 'WIF'
+      'EKpQGSJtjMFqKZ9KQanSqYXRcF8fBtUk6goG7zcX3New': 'WIF',
+      [FIXERCOIN_MINT]: 'FIXERCOIN'
     };
 
-    const persistKey = "fixorium_connected_wallet";
-    let wallet = null, publicKey = null, connected = false;
+    let publicKey = null;
+    let connected = false;
     let balances = {};
-
-    function shortenAddress(addr) {
-      return addr.slice(0, 4) + "..." + addr.slice(-4);
-    }
-
-    function renderWalletSection() {
-      const el = document.getElementById('walletSection');
-      el.innerHTML = '';
-      if (connected && publicKey) {
-        el.innerHTML = `
-          <span>${shortenAddress(publicKey)}</span>
-          <button class="wallet-disconnect-btn" id="disconnectBtn">Disconnect</button>
-          <button class="wallet-connect-btn copy-btn">Copy</button>
-        `;
-        document.getElementById('disconnectBtn').onclick = disconnectWallet;
-        el.querySelector('.copy-btn').onclick = () => navigator.clipboard.writeText(publicKey).then(() => alert('Copied!'));
-      } else {
-        el.innerHTML = `<button class="wallet-connect-btn" id="connectBtn">Connect Phantom</button>`;
-        document.getElementById('connectBtn').onclick = connectWallet;
-      }
-    }
+    let bestRoute = null;
 
     async function connectWallet() {
-      if (!window.solana?.isPhantom) {
-        alert('Install Phantom Wallet!');
+      if (!window.solana || !window.solana.isPhantom) {
+        alert('Phantom Wallet not found');
         return;
       }
       try {
-        const resp = await window.solana.connect();
-        wallet = window.solana;
-        publicKey = resp.publicKey.toString();
+        const res = await window.solana.connect();
+        publicKey = res.publicKey.toString();
         connected = true;
-        localStorage.setItem(persistKey, publicKey);
-        renderWalletSection();
+        document.getElementById('walletAddress').innerText = publicKey;
+        document.getElementById('walletInfo').style.display = 'block';
         await fetchBalances();
-        setupSwapForm();
-      } catch (e) {
-        alert('Connection failed');
-      }
-    }
-
-    function disconnectWallet() {
-      wallet?.disconnect();
-      wallet = null;
-      publicKey = null;
-      connected = false;
-      balances = {};
-      localStorage.removeItem(persistKey);
-      renderWalletSection();
-      setupSwapForm();
-      document.getElementById('balancesList').innerHTML = '';
-    }
-
-    window.addEventListener('DOMContentLoaded', async () => {
-      const savedPk = localStorage.getItem(persistKey);
-      if (savedPk && window.solana?.isPhantom) await connectWallet();
-      else renderWalletSection();
-      setupSwapForm();
-      renderSignalBot();
-    });
-
-    async function fetchBalances() {
-      if (!connected || !publicKey) return;
-      const conn = new solanaWeb3.Connection(SOLANA_RPC);
-      const owner = new solanaWeb3.PublicKey(publicKey);
-      balances = {};
-      balances.SOL = { amount: await conn.getBalance(owner) / solanaWeb3.LAMPORTS_PER_SOL };
-
-      for (const mint of MEME_TOKEN_MINTS) {
-        if (mint === 'So11111111111111111111111111111111111111112') continue;
-        const tokenAccounts = await conn.getParsedTokenAccountsByOwner(owner, {
-          mint: new solanaWeb3.PublicKey(mint),
-        });
-        let amount = 0;
-        if (tokenAccounts.value.length) {
-          amount = tokenAccounts.value.reduce((acc, ta) =>
-            acc + (ta.account.data.parsed.info.tokenAmount.uiAmount || 0), 0);
-        }
-        balances[MEME_TOKEN_NAMES[mint]] = { amount };
-      }
-      await fetchPrices();
-      renderBalances();
-    }
-
-    async function fetchPrices() {
-      try {
-        const ids = MEME_TOKEN_MINTS.map(m => encodeURIComponent(m)).join(',');
-        const res = await fetch(`https://price.jup.ag/v4/price?ids=${ids}`);
-        const data = await res.json();
-        for (const mint of MEME_TOKEN_MINTS) {
-          const sym = MEME_TOKEN_NAMES[mint];
-          const price = data.data?.[mint]?.price || 0;
-          if (balances[sym]) balances[sym].price = price;
-        }
+        populateTokens();
       } catch (err) {
-        console.warn('Price fetch failed', err);
+        console.error('Connection failed:', err);
+        alert('Wallet connection failed. Please try again.');
       }
     }
 
-    function renderBalances() {
-      const el = document.getElementById('balancesList');
-      el.innerHTML = `<ul>${Object.entries(balances).map(([sym, data]) =>
-        `<li><b>${sym}:</b> ${data.amount.toFixed(6)} ${data.price ? `($${(data.amount * data.price).toFixed(4)})` : ''}</li>`
-      ).join('')}</ul>`;
+    async function buyFixercoin() {
+      const amount = parseFloat(document.getElementById('fiatAmount').value);
+      const tokens = amount / 0.001;
+      document.getElementById('fiatResult').innerText = `You will get ${tokens} FIXERCOIN (send PKR to Easypaisa 03107044833)`;
+      await logFiatRequest('buy', amount, tokens);
     }
 
-    function setupSwapForm() {
-      const from = document.getElementById('fromToken');
-      const to = document.getElementById('toToken');
-      from.innerHTML = ''; to.innerHTML = '';
-      for (const mint of MEME_TOKEN_MINTS) {
-        const name = MEME_TOKEN_NAMES[mint];
-        from.appendChild(new Option(name, mint));
-        to.appendChild(new Option(name, mint));
-      }
-      from.value = MEME_TOKEN_MINTS[0];
-      to.value = MEME_TOKEN_MINTS[1];
-
-      document.getElementById('swapBtn').disabled = !connected;
-      document.getElementById('swapBtn').onclick = handleSwap;
-      document.getElementById('swapAmount').oninput = updateSwapRatio;
-      from.onchange = updateSwapRatio;
-      to.onchange = updateSwapRatio;
+    async function sellFixercoin() {
+      const amount = parseFloat(document.getElementById('fiatAmount').value);
+      const pkr = amount * 0.001;
+      document.getElementById('fiatResult').innerText = `You will receive PKR ${pkr} (send FIXERCOIN to wallet shown)`;
+      await logFiatRequest('sell', amount, pkr);
     }
 
-    async function updateSwapRatio() {
-      const fromMint = document.getElementById('fromToken').value;
-      const toMint = document.getElementById('toToken').value;
-      const amount = parseFloat(document.getElementById('swapAmount').value);
-      const swapRatioEl = document.getElementById('swapRatio');
-      if (!amount || fromMint === toMint) return (swapRatioEl.textContent = '');
+    async function logFiatRequest(type, inputAmount, outputAmount) {
       try {
-        const inputAmount = Math.floor(amount * 1e9);
-        const res = await fetch(`https://quote-api.jup.ag/v6/quote?inputMint=${fromMint}&outputMint=${toMint}&amount=${inputAmount}&slippageBps=50&feeBps=3&feeAccount=H4qKn8FMFha8jJuj8xMryMqRhH3h7GjLuxw7TVixpump`);
-        const data = await res.json();
-        if (!data.routes.length) return (swapRatioEl.textContent = 'No route found');
-        const outputAmount = data.routes[0].outAmountUI;
-        const rate = outputAmount / amount;
-        swapRatioEl.textContent = `Estimated: 1 ${MEME_TOKEN_NAMES[fromMint]} ≈ ${rate.toFixed(6)} ${MEME_TOKEN_NAMES[toMint]}`;
-      } catch {
-        swapRatioEl.textContent = 'Rate fetch error';
-      }
-    }
-
-    async function handleSwap() {
-      const fromMint = document.getElementById('fromToken').value;
-      const toMint = document.getElementById('toToken').value;
-      const amount = parseFloat(document.getElementById('swapAmount').value);
-      const statusEl = document.getElementById('swapStatus');
-
-      if (!connected) return alert("Connect wallet");
-      if (!amount || fromMint === toMint) return alert("Invalid swap input");
-
-      try {
-        statusEl.textContent = 'Finding best route...';
-        const inputAmount = Math.floor(amount * 1e9);
-        const res = await fetch(`https://quote-api.jup.ag/v6/quote?inputMint=${fromMint}&outputMint=${toMint}&amount=${inputAmount}&slippageBps=50&feeBps=3&feeAccount=H4qKn8FMFha8jJuj8xMryMqRhH3h7GjLuxw7TVixpump`);
-        const { routes } = await res.json();
-        if (!routes.length) return (statusEl.textContent = 'No route');
-
-        statusEl.textContent = 'Preparing transaction...';
-        const swapRes = await fetch(`https://quote-api.jup.ag/v6/swap`, {
+        await fetch(LOG_API, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            route: routes[0],
-            userPublicKey: publicKey,
-            wrapAndUnwrapSol: true,
-            feeAccount: 'H4qKn8FMFha8jJuj8xMryMqRhH3h7GjLuxw7TVixpump'
+            type,
+            wallet: publicKey,
+            input: inputAmount,
+            output: outputAmount,
+            timestamp: Date.now()
           })
         });
-
-        const { swapTransaction } = await swapRes.json();
-        const tx = solanaWeb3.Transaction.from(Uint8Array.from(atob(swapTransaction), c => c.charCodeAt(0)));
-        const { signature } = await wallet.signAndSendTransaction(tx);
-        statusEl.innerHTML = `✅ <a href="https://solscan.io/tx/${signature}" target="_blank">View on Solscan</a>`;
-        await fetchBalances();
-      } catch (e) {
-        statusEl.textContent = 'Swap error: ' + (e.message || e);
+      } catch (err) {
+        console.warn('Failed to log fiat transaction', err);
       }
-    }
-
-    function renderSignalBot() {
-      const el = document.getElementById('signalBot');
-      const tokens = ["SOL", "USDC", "FIXERCOIN"];
-      function update() {
-        el.innerHTML = tokens.map(t => {
-          const sig = Math.random() > 0.5 ? 'BUY' : 'SELL';
-          return `<div>${t}: <span class="signal-${sig.toLowerCase()}">${sig}</span></div>`;
-        }).join('');
-      }
-      update(); setInterval(update, 2000);
     }
   </script>
 </body>
