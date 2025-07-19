@@ -1,17 +1,15 @@
  import { useState, useEffect } from 'react';
 import { Connection, PublicKey } from '@solana/web3.js';
-import { Jupiter, RouteInfo } from '@jup-ag/core';
-
-const connection = new Connection('https://api.devnet.solana.com');
+import { Jupiter } from '@jup-ag/core';
 
 const inputMints = {
   SOL: 'So11111111111111111111111111111111111111112',
-  USDC: 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v',
+  USDC: 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v'
 };
 
 const outputMints = {
   USDC: 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v',
-  SOL: 'So11111111111111111111111111111111111111112',
+  SOL: 'So11111111111111111111111111111111111111112'
 };
 
 const SwapComponent = () => {
@@ -21,16 +19,20 @@ const SwapComponent = () => {
   const [quote, setQuote] = useState(null);
   const [jupiter, setJupiter] = useState(null);
 
-  // Initialize Jupiter instance once
   useEffect(() => {
     const initJupiter = async () => {
-      const jup = await Jupiter.load({
-        connection,
-        cluster: 'devnet',
-        userPublicKey: new PublicKey('YOUR_WALLET_PUBLIC_KEY'), // Replace with connected wallet
-        routeCacheDuration: 0,
-      });
-      setJupiter(jup);
+      const connection = new Connection('https://api.devnet.solana.com');
+      try {
+        const jup = await Jupiter.load({
+          connection,
+          cluster: 'devnet',
+          userPublicKey: new PublicKey('11111111111111111111111111111111'), // Dummy wallet
+          routeCacheDuration: 0
+        });
+        setJupiter(jup);
+      } catch (err) {
+        console.error('Jupiter init failed:', err);
+      }
     };
 
     initJupiter();
@@ -47,8 +49,8 @@ const SwapComponent = () => {
         const routes = await jupiter.computeRoutes({
           inputMint,
           outputMint,
-          amount: Math.floor(Number(amount) * 1e9), // assuming 9 decimals for input
-          slippageBps: 100, // 1%
+          amount: Math.floor(Number(amount) * 1e9),
+          slippageBps: 100
         });
 
         if (routes && routes.routesInfos.length > 0) {
@@ -57,7 +59,7 @@ const SwapComponent = () => {
           setQuote(null);
         }
       } catch (err) {
-        console.error('Failed to get quote:', err);
+        console.error('Quote fetch failed:', err);
         setQuote(null);
       }
     };
@@ -70,7 +72,7 @@ const SwapComponent = () => {
 
     try {
       const { execute } = await jupiter.exchange({
-        routeInfo: quote,
+        routeInfo: quote
       });
 
       const txid = await execute();
@@ -81,21 +83,25 @@ const SwapComponent = () => {
   };
 
   return (
-    <div>
+    <div className="container">
+      <h2>Solana Token Swap</h2>
       <input
         type="number"
         placeholder="Amount"
         value={amount}
         onChange={(e) => setAmount(e.target.value)}
       />
-      <select value={inputToken} onChange={(e) => setInputToken(e.target.value)}>
-        <option value="SOL">SOL</option>
-        <option value="USDC">USDC</option>
-      </select>
-      <select value={outputToken} onChange={(e) => setOutputToken(e.target.value)}>
-        <option value="USDC">USDC</option>
-        <option value="SOL">SOL</option>
-      </select>
+      <div className="row">
+        <select value={inputToken} onChange={(e) => setInputToken(e.target.value)}>
+          <option value="SOL">SOL</option>
+          <option value="USDC">USDC</option>
+        </select>
+        <span style={{ margin: '0 10px' }}>→</span>
+        <select value={outputToken} onChange={(e) => setOutputToken(e.target.value)}>
+          <option value="USDC">USDC</option>
+          <option value="SOL">SOL</option>
+        </select>
+      </div>
       <button onClick={handleSwap} disabled={!quote}>Swap</button>
       {quote && (
         <p>
@@ -107,3 +113,4 @@ const SwapComponent = () => {
 };
 
 export default SwapComponent;
+         
