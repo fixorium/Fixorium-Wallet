@@ -1,4 +1,4 @@
- {
+{
   "name": "fixorium-wallet",
   "version": "1.0.0",
   "private": true,
@@ -12,11 +12,11 @@
     "next": "14.2.30",
     "react": "18.2.0",
     "react-dom": "18.2.0",
-    "@solana/web3.js": "^1.89.0",
+    "@solana/web3.js": "0.86.1",
     "@jup-ag/core": "^1.0.0"
   },
   "devDependencies": {
     "eslint": "8.57.0",
     "eslint-config-next": "14.2.30"
   }
- }
+}
