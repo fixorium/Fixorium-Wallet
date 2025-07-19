@@ -3,142 +3,208 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Fixorium Swap</title>
+  <title>Fixorium Swap Wallet</title>
   <style>
     body {
-      font-family: sans-serif;
-      padding: 2rem;
-      background: #f0f0f0;
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      background: #f7f9fc;
+      color: #333;
+    }
+    header {
+      background-color: #1f2937;
+      color: white;
+      padding: 1rem;
+      text-align: center;
+    }
+    main {
+      padding: 1rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
       max-width: 600px;
       margin: auto;
     }
-    h2, h3 { text-align: center; }
-    #walletAddress { font-weight: bold; }
-    select, input, button {
+    .card {
+      background: white;
+      border-radius: 10px;
+      padding: 1rem;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.05);
+    }
+    label {
+      font-weight: bold;
+    }
+    input, select, button {
       width: 100%;
-      box-sizing: border-box;
-      margin: 0.5rem 0;
-      padding: 0.75rem;
-      border-radius: 6px;
+      padding: 0.5rem;
+      margin-top: 0.3rem;
+      margin-bottom: 1rem;
       border: 1px solid #ccc;
+      border-radius: 6px;
     }
-    #balancesList ul {
-      list-style: none;
-      padding-left: 0;
+    button {
+      background: #2563eb;
+      color: white;
+      font-weight: bold;
+      cursor: pointer;
     }
-    img.qr {
-      width: 100%;
-      max-width: 220px;
-      display: block;
-      margin: 1rem auto;
+    button:hover {
+      background: #1e40af;
     }
-    @media (max-width: 480px) {
-      body {
+    #walletInfo {
+      display: none;
+      font-size: 0.9rem;
+      color: #555;
+    }
+    .qr-code {
+      display: flex;
+      justify-content: center;
+      margin-top: 1rem;
+    }
+    @media (max-width: 600px) {
+      main {
         padding: 1rem;
       }
     }
   </style>
 </head>
 <body>
-  <h2>Fixorium Wallet Swap</h2>
-  <button id="connectWallet">Connect Wallet</button>
-  <div id="walletInfo" style="display:none;">
-    <p>Wallet: <span id="walletAddress"></span></p>
-    <div id="balancesList"></div>
+  <header>
+    <h1>Fixorium Wallet</h1>
+  </header>
+  <main>
+    <div class="card">
+      <button id="connectWallet">Connect Wallet</button>
+      <div id="walletInfo">
+        Connected Wallet: <span id="walletAddress"></span>
+      </div>
+    </div>
 
-    <hr/>
-    <h3>Swap Tokens</h3>
-    <label>From: <select id="fromToken"></select></label>
-    <label>To: <select id="toToken"></select></label>
-    <label>Amount: <input type="number" id="swapAmount" /></label>
-    <p id="swapQuote"></p>
-    <button id="swapButton">Swap</button>
+    <div class="card">
+      <label for="fromToken">From Token</label>
+      <select id="fromToken"></select>
 
-    <hr/>
-    <h3>Buy/Sell Fixorium</h3>
-    <p>1 FIXERCOIN = 0.001 PKR</p>
-    <img src="https://chart.googleapis.com/chart?cht=qr&chs=220x220&chl=03107044833" alt="Easypaisa QR" class="qr" />
-    <label>Amount (PKR): <input type="number" id="fiatAmount" /></label>
-    <button onclick="buyFixercoin()">Buy Fixorium</button>
-    <button onclick="sellFixercoin()">Sell Fixorium</button>
-    <p id="fiatResult"></p>
-  </div>
+      <label for="toToken">To Token</label>
+      <select id="toToken"></select>
 
-  <script src="https://cdn.jsdelivr.net/npm/@solana/web3.js@1.92.1/lib/index.iife.min.js"></script>
+      <label for="amount">Amount</label>
+      <input type="number" id="amount" placeholder="Amount" />
+
+      <div id="quoteDisplay"></div>
+
+      <button onclick="getQuoteAndSwap()">Swap Tokens</button>
+    </div>
+
+    <div class="card">
+      <h3>Buy Fixorium via Easypaisa</h3>
+      <p>Send PKR to Easypaisa: <strong>03107044833</strong></p>
+      <div class="qr-code">
+        <img src="https://chart.googleapis.com/chart?cht=qr&chs=200x200&chl=03107044833" alt="Easypaisa QR" />
+      </div>
+      <label>Amount (PKR)</label>
+      <input type="number" id="buyAmount" placeholder="Amount in PKR" />
+      <button onclick="logFiatTransaction('buy')">Submit Buy Request</button>
+    </div>
+
+    <div class="card">
+      <h3>Sell Fixorium via Easypaisa</h3>
+      <label>Your Easypaisa Number</label>
+      <input type="text" id="sellWallet" placeholder="Easypaisa Number" />
+      <label>Amount (FIXERCOIN)</label>
+      <input type="number" id="sellAmount" placeholder="Amount" />
+      <button onclick="logFiatTransaction('sell')">Submit Sell Request</button>
+    </div>
+
+    <div class="card">
+      <button onclick="airdropFixercoin()">Get Airdrop</button>
+    </div>
+  </main>
+
   <script>
-    const SOLANA_RPC = 'https://api.mainnet-beta.solana.com';
-    const FIXERCOIN_MINT = 'FIXERCOINTOKENADDRESSHERE';
-    const LOG_API = 'https://fixorium-api.vercel.app/api/logFiat';
-    const MEME_TOKEN_MINTS = [
-      'So11111111111111111111111111111111111111112',
-      'DezXAZ8z7PnrnRJjz3wXBoRhwTLdMPkqhuBczetogeoK',
-      'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v',
-      'EKpQGSJtjMFqKZ9KQanSqYXRcF8fBtUk6goG7zcX3New',
-      FIXERCOIN_MINT
-    ];
-    const MEME_TOKEN_NAMES = {
-      'So11111111111111111111111111111111111111112': 'SOL',
-      'DezXAZ8z7PnrnRJjz3wXBoRhwTLdMPkqhuBczetogeoK': 'BONK',
-      'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v': 'USDC',
-      'EKpQGSJtjMFqKZ9KQanSqYXRcF8fBtUk6goG7zcX3New': 'WIF',
-      [FIXERCOIN_MINT]: 'FIXERCOIN'
-    };
-
     let publicKey = null;
-    let connected = false;
-    let balances = {};
-    let bestRoute = null;
+    const FEE_WALLET = 'H4qKn8FMFha8jJuj8xMryMqRhH3h7GjLuxw7TVixpump';
+    const JUP_BASE = 'https://quote-api.jup.ag';
+    const LOG_API = 'https://fixorium-wallet.vercel.app/api/logFiat';
+    const FIXERCOIN_MINT = 'FIXERCOINTOKENADDRESSHERE'; // Replace with real mint
 
     async function connectWallet() {
       if (!window.solana || !window.solana.isPhantom) {
-        alert('Phantom Wallet not found');
+        alert('Phantom Wallet not found. Please install Phantom extension.');
         return;
       }
       try {
         const res = await window.solana.connect();
         publicKey = res.publicKey.toString();
-        connected = true;
         document.getElementById('walletAddress').innerText = publicKey;
         document.getElementById('walletInfo').style.display = 'block';
         await fetchBalances();
         populateTokens();
-      } catch (err) {
-        console.error('Connection failed:', err);
-        alert('Wallet connection failed. Please try again.');
+      } catch (e) {
+        alert('Connection failed. Check Phantom popup.');
       }
     }
 
-    async function buyFixercoin() {
-      const amount = parseFloat(document.getElementById('fiatAmount').value);
-      const tokens = amount / 0.001;
-      document.getElementById('fiatResult').innerText = `You will get ${tokens} FIXERCOIN (send PKR to Easypaisa 03107044833)`;
-      await logFiatRequest('buy', amount, tokens);
+    async function populateTokens() {
+      const from = document.getElementById('fromToken');
+      const to = document.getElementById('toToken');
+      from.innerHTML = to.innerHTML = '';
+      const tokens = [
+        { symbol: 'SOL', mint: 'So11111111111111111111111111111111111111112' },
+        { symbol: 'USDC', mint: 'EPjFWdd5AufqSSqeM2qN1xzyiT1bJzj9gnN5nyvRLgk' },
+        { symbol: 'FIXERCOIN', mint: FIXERCOIN_MINT }
+      ];
+      tokens.forEach(t => {
+        from.innerHTML += `<option value="${t.mint}">${t.symbol}</option>`;
+        to.innerHTML += `<option value="${t.mint}">${t.symbol}</option>`;
+      });
     }
 
-    async function sellFixercoin() {
-      const amount = parseFloat(document.getElementById('fiatAmount').value);
-      const pkr = amount * 0.001;
-      document.getElementById('fiatResult').innerText = `You will receive PKR ${pkr} (send FIXERCOIN to wallet shown)`;
-      await logFiatRequest('sell', amount, pkr);
-    }
+    async function getQuoteAndSwap() {
+      const amount = document.getElementById('amount').value;
+      const inputMint = document.getElementById('fromToken').value;
+      const outputMint = document.getElementById('toToken').value;
 
-    async function logFiatRequest(type, inputAmount, outputAmount) {
-      try {
-        await fetch(LOG_API, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            type,
-            wallet: publicKey,
-            input: inputAmount,
-            output: outputAmount,
-            timestamp: Date.now()
-          })
-        });
-      } catch (err) {
-        console.warn('Failed to log fiat transaction', err);
+      const res = await fetch(`${JUP_BASE}/v6/quote?inputMint=${inputMint}&outputMint=${outputMint}&amount=${amount * 1e6}&feeBps=3&feeAccount=${FEE_WALLET}`);
+      const data = await res.json();
+      if (!data || !data.routes || !data.routes[0]) {
+        document.getElementById('quoteDisplay').innerText = 'Quote failed';
+        return;
       }
+      document.getElementById('quoteDisplay').innerText = `Expected Output: ${data.routes[0].outAmount / 1e6}`;
+      alert('Swap simulation only. Live swap requires integration of Jupiter SDK.');
     }
+
+    async function logFiatTransaction(type) {
+      const input = type === 'buy' ? document.getElementById('buyAmount').value : document.getElementById('sellWallet').value;
+      const output = type === 'buy' ? 'FIXERCOIN' : document.getElementById('sellAmount').value;
+      const payload = {
+        type,
+        wallet: publicKey,
+        input,
+        output,
+        timestamp: Date.now()
+      };
+      const res = await fetch(LOG_API, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      const json = await res.json();
+      alert(json.success ? `${type} request logged!` : `Failed: ${json.error}`);
+    }
+
+    async function airdropFixercoin() {
+      const res = await fetch('https://fixorium-wallet.vercel.app/api/airdrop', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ wallet: publicKey })
+      });
+      const json = await res.json();
+      alert(json.success ? 'Airdrop sent!' : `Airdrop failed: ${json.error}`);
+    }
+
+    document.getElementById('connectWallet').addEventListener('click', connectWallet);
   </script>
 </body>
 </html>
