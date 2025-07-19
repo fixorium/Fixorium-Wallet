@@ -1,552 +1,64 @@
- <!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <title>FIXORIUM Swap System</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <style>
-    body {
-      margin: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen,
-      Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
-      background: #181a20; min-height: 100vh; padding-bottom: 64px; color: white;
-      display: flex; flex-direction: column; align-items: center; justify-content: flex-start;
+import { useState, useEffect } from 'react';
+import { Connection, PublicKey } from '@solana/web3.js';
+import { Jupiter } from '@jup-ag/core';
+
+const connection = new Connection('https:                                
+const jupiter = new Jupiter(connection);
+
+const SwapComponent = () => {
+  const [inputToken, setInputToken] = useState('SOL');
+  const [outputToken, setOutputToken] = useState('USDC');
+  const [amount, setAmount] = useState(0);
+  const [quote, setQuote] = useState(null);
+
+  useEffect(() => {
+    const getQuote = async () => {
+      try {
+        const quoteResponse = await jupiter.quote({
+          amount: amount * 10 ** 9,                       
+          inputMint: new PublicKey(inputToken === 'SOL' ? 'So11111111111111111111111111111111111111112' : inputToken),
+          outputMint: new PublicKey(outputToken === 'USDC' ? 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v' : outputToken),
+          slippageBps: 100,               
+        });
+        setQuote(quoteResponse);
+      } catch (error) {
+        console.error(error);
+      }
+    };
+    getQuote();
+  }, [amount, inputToken, outputToken]);
+
+  const handleSwap = async () => {
+    try {
+      const swapResponse = await jupiter.swap({
+        quoteResponse: quote,
+        userPublicKey: new PublicKey('YOUR_WALLET_PUBLIC_KEY'),
+      });
+      console.log(swapResponse);
+    } catch (error) {
+      console.error(error);
     }
-    .fixorium-header {
-      width: 100%; max-width: 500px;
-      display: flex; align-items: center; justify-content: space-between;
-      padding: 12px 24px; background: #23272f; flex-wrap: wrap; gap: 12px;
-      box-sizing: border-box; margin-top: 16px;
-    }
-    .fixorium-logo {
-      height: 36px; width: 36px; margin-right: 10px;
-    }
-    .fixorium-title {
-      color: #fff; font-size: 24px; font-weight: bold; white-space: nowrap;
-    }
-    #walletSection {
-      background: #31363f; border-radius: 6px; padding: 5px 15px;
-      display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
-      justify-content: flex-end; min-width: 220px; font-size: 14px; box-sizing: border-box;
-    }
-    button.wallet-button, button.copy-btn, button.disconnect-btn {
-      cursor: pointer; background: #29d6b6; border: none; border-radius: 6px;
-      padding: 6px 12px; font-weight: 700; color: #23272f; font-size: 14px;
-      transition: background-color 0.3s ease; user-select: none;
-    }
-    button.copy-btn, button.disconnect-btn {
-      background: #444c56; color: white;
-    }
-    button.wallet-button:hover { background-color: #22bca7; }
-    button.copy-btn:hover, button.disconnect-btn:hover { background-color: #555f70; }
-    main {
-      width: 100%; max-width: 500px; margin: 24px 0; padding: 0 24px; box-sizing: border-box;
-    }
-    .swap-card {
-      background: #23272f; border-radius: 16px; box-shadow: 0 8px 24px #0003;
-      padding: 32px 24px; width: 100%; box-sizing: border-box;
-    }
-    .swap-label {
-      color: #fff; font-weight: bold; margin-top: 10px; display: block; font-size: 14px;
-    }
-    select, input.swap-input {
-      width: 100%; padding: 6px 10px; border-radius: 4px; border: none;
-      background: #31363f; color: #fff; margin: 6px 0 14px; font-size: 14px;
-      box-sizing: border-box; font-family: inherit;
-    }
-    button.swap-btn {
-      background: #29d6b6; color: #23272f; font-weight: 700; padding: 10px 0;
-      width: 100%; border: none; border-radius: 6px; margin-top: 10px;
-      cursor: pointer; font-size: 16px; transition: background-color 0.3s;
-      user-select: none;
-    }
-    button.swap-btn:disabled {
-      opacity: 0.5; cursor: not-allowed;
-    }
-    #swapRatio {
-      color: #ccc; font-size: 14px; min-height: 18px; margin-bottom: 8px;
-      min-height: 20px; font-style: italic;
-    }
-    #swapStatus {
-      color: #29d6b6; margin-top: 12px; min-height: 20px; word-break: break-word;
-    }
-    .balances-list {
-      color: #fff; margin-top: 20px; font-size: 14px; line-height: 1.5;
-      min-height: 50px; white-space: pre-wrap; word-break: break-word;
-    }
-    .signal-bot {
-      position: fixed; bottom: 0; left: 0; width: 100%; background: #23272f;
-      padding: 16px 0; display: flex; justify-content: center; border-top: 1px solid #23272f;
-      z-index: 1000; gap: 36px; user-select: none; flex-wrap: wrap;
-      font-size: 18px; color: #fff; box-sizing: border-box;
-      min-height: 40px;
-    }
-    .signal {
-      display: flex; align-items: center; gap: 8px; white-space: nowrap;
-      font-weight: 700; font-family: monospace, monospace;
-    }
-    .signal-buy {
-      color: #29d6b6; animation: blinkBuy 1.5s ease-in-out infinite;
-    }
-    .signal-sell {
-      color: #f73e3e; animation: blinkSell 1.5s ease-in-out infinite;
-    }
-    @keyframes blinkBuy {
-      0%, 100% {opacity: 1;}
-      50% {opacity: 0.3;}
-    }
-    @keyframes blinkSell {
-      0%, 100% {opacity: 1;}
-      50% {opacity: 0.3;}
-    }
-    a.swap-link {
-      color: #29d6b6; text-decoration: underline; word-break: break-word; font-size: 13px;
-    }
-    .toast-container {
-      position: fixed;
-      top: 24px;
-      right: 24px;
-      z-index: 2000;
-      min-width: 200px;
-      background: #f73e3e;
-      color: #fff;
-      padding: 14px 24px;
-      border-radius: 8px;
-      box-shadow: 0 4px 16px #0005;
-      font-size: 16px;
-      opacity: 0;
-      pointer-events: none;
-      transition: opacity 0.3s;
-    }
-    .toast-container.show {
-      opacity: 1;
-      pointer-events: auto;
-    }
-    .token-select-row {
-      display: flex; align-items: center; gap: 8px;
-    }
-    .token-icon {
-      width: 24px; height: 24px; border-radius: 50%; background: #31363f;
-      object-fit: contain; display: inline-block;
-    }
-    @media (max-width: 480px) {
-      main { padding: 0 12px; }
-      .signal-bot { font-size: 14px; gap: 16px; padding: 12px 8px; }
-      .toast-container { top: 12px; right: 12px; font-size: 14px; padding: 10px 14px; }
-    }
-  </style>
-</head>
-<body>
-<header class="fixorium-header">
-  <div style="display:flex;align-items:center;">
-    <svg class="fixorium-logo" viewBox="0 0 64 64" aria-hidden="true" focusable="false">
-      <circle cx="32" cy="32" r="32" fill="#29D6B6" />
-      <text x="32" y="42" text-anchor="middle" font-size="28" fill="#23272F" font-family="Arial" font-weight="bold">F</text>
-    </svg>
-    <span class="fixorium-title">FIXORIUM</span>
-  </div>
-  <div id="walletSection" aria-live="polite" aria-label="Wallet connection status"></div>
-</header>
-<main>
-  <section class="swap-card" role="main" aria-label="Token swap interface">
-    <form id="swapForm" aria-describedby="swapStatus">
-      <label for="fromToken" class="swap-label">From Token</label>
-      <div class="token-select-row">
-        <img id="fromTokenIcon" class="token-icon" src="" alt="" style="display:none;" />
-        <select id="fromToken" name="fromToken" aria-required="true" aria-label="From token"></select>
-      </div>
-      <label for="toToken" class="swap-label">To Token</label>
-      <div class="token-select-row">
-        <img id="toTokenIcon" class="token-icon" src="" alt="" style="display:none;" />
-        <select id="toToken" name="toToken" aria-required="true" aria-label="To token"></select>
-      </div>
-      <label for="swapAmount" class="swap-label">Amount</label>
-      <input id="swapAmount" name="swapAmount" class="swap-input" type="number" min="0" step="any" placeholder="Enter amount" aria-required="true" aria-label="Swap amount" autocomplete="off" />
-      <div id="swapRatio" aria-live="polite" aria-atomic="true"></div>
-      <button id="swapBtn" class="swap-btn" disabled aria-busy="false" type="submit">Swap</button>
-      <div id="swapStatus" role="status" aria-live="polite" aria-atomic="true"></div>
-    </form>
-    <div id="balancesList" class="balances-list" aria-label="Wallet balances"></div>
-  </section>
-</main>
-<footer class="signal-bot" id="signalBot" aria-label="Market signals"></footer>
-<div id="toast" class="toast-container" aria-live="polite" aria-atomic="true"></div>
-<script type="module">
-  // --- Token Icons for well-known tokens (add more as needed) ---
-  const TOKEN_ICONS = {
-    SOL: "https://cryptologos.cc/logos/solana-sol-logo.png",
-    BONK: "https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/DezXAZ8z7PnrnRJjz3wXBoRhwTLdMPkqhuBczetogeoK/logo.png",
-    USDC: "https://cryptologos.cc/logos/usd-coin-usdc-logo.png",
-    WIF: "https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/EKpQGSJtjMFqKZ9KQanSqYXRcF8fBtUk6goG7zcX3New/logo.png"
   };
 
-  const SIGNAL_BOT_TOKENS = ["BTC", "SOL", "FIXERCOIN"];
+  return (
+    <div>
+      <input type="number" value={amount} onChange={(e) => setAmount(e.target.value)} />
+      <select value={inputToken} onChange={(e) => setInputToken(e.target.value)}>
+        <option value="SOL">SOL</option>
+        <option value="USDC">USDC</option>
+      </select>
+      <select value={outputToken} onChange={(e) => setOutputToken(e.target.value)}>
+        <option value="USDC">USDC</option>
+        <option value="SOL">SOL</option>
+      </select>
+      <button onClick={handleSwap}>Swap</button>
+      {quote && (
+        <p>
+          You will receive {quote.outAmount / 10 ** 6} {outputToken}
+        </p>
+      )}
+    </div>
+  );
+};
 
-  // --- Error Toast ---
-  function showToast(message, duration = 3000) {
-    const toast = document.getElementById("toast");
-    toast.textContent = message;
-    toast.classList.add("show");
-    setTimeout(() => toast.classList.remove("show"), duration);
-  }
-
-  // --- Solana/Web3/Jupiter Imports ---
-  import { Connection, PublicKey, Transaction } from "https://cdn.jsdelivr.net/npm/@solana/web3.js@1.92.1/lib/index.esm.js";
-  import { PhantomWalletAdapter } from "https://cdn.jsdelivr.net/npm/@solana/wallet-adapter-wallets@0.21.0/lib/index.esm.js";
-
-  const RPC_ENDPOINT = "https://api.mainnet-beta.solana.com";
-  const connection = new Connection(RPC_ENDPOINT, "confirmed");
-
-  const BASE_TOKENS = [
-    { mint: "So11111111111111111111111111111111111111112", symbol: "SOL", decimals: 9 },
-    { mint: "DezXAZ8z7PnrnRJjz3wXBoRhwTLdMPkqhuBczetogeoK", symbol: "BONK", decimals: 9 },
-    { mint: "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v", symbol: "USDC", decimals: 6 },
-    { mint: "EKpQGSJtjMFqKZ9KQanSqYXRcF8fBtUk6goG7zcX3New", symbol: "WIF", decimals: 9 }
-  ];
-
-  let walletAdapter = null;
-  let walletConnected = false;
-  let publicKey = null;
-  let tokens = [...BASE_TOKENS];
-  let balances = {};
-
-  // --- Phantom Detection ---
-  function detectPhantom() {
-    if (window.solana && window.solana.isPhantom) {
-      const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-      return { detected: true, environment: isMobile ? "mobile" : "desktop" };
-    } else {
-      return { detected: false };
-    }
-  }
-
-  // Shorten address like 1234..abcd
-  const shortenAddress = (address) => `${address.slice(0, 4)}...${address.slice(-4)}`;
-
-  // --- Wallet Section ---
-  function renderWalletSection() {
-    const walletSection = document.getElementById("walletSection");
-    walletSection.innerHTML = "";
-    const phantomStatus = detectPhantom();
-    if (walletConnected && publicKey) {
-      const addr = publicKey.toBase58();
-      walletSection.innerHTML = `
-        <span aria-label="Connected wallet address" title="${addr}" style="color:#fff;font-size:14px;">${shortenAddress(addr)}</span>
-        <button id="copyAddressBtn" class="copy-btn" aria-label="Copy wallet address" type="button">Copy</button>
-        <button id="disconnectWalletBtn" class="disconnect-btn" aria-label="Disconnect wallet" type="button">Disconnect</button>
-      `;
-      document.getElementById("copyAddressBtn").onclick = () => navigator.clipboard.writeText(addr).then(() => showToast("Copied to clipboard!"));
-      document.getElementById("disconnectWalletBtn").onclick = disconnectWallet;
-    } else if (phantomStatus.detected) {
-      walletSection.innerHTML =
-        `<button id="connectWalletBtn" class="wallet-button" type="button">
-        Connect Phantom (${phantomStatus.environment === "mobile" ? "Mobile" : "Extension"})
-        </button>`;
-      document.getElementById("connectWalletBtn").onclick = connectWallet;
-    } else {
-      walletSection.innerHTML = `
-        <button id="connectWalletBtn" class="wallet-button" type="button">Connect Phantom</button>
-        <span style="color:#f73e3e;font-size:13px;margin-left:8px;">
-          Phantom wallet not detected. <a href="https://phantom.app/" target="_blank" style="color:#29d6b6;">Install Phantom</a>
-        </span>
-      `;
-      document.getElementById("connectWalletBtn").onclick = connectWallet;
-    }
-  }
-
-  // --- Phantom Connect ---
-  async function connectWallet() {
-    if (window.solana && window.solana.isPhantom) {
-      try {
-        const resp = await window.solana.connect();
-        publicKey = resp.publicKey;
-        walletConnected = true;
-        walletAdapter = null;
-        window.solana.on("disconnect", disconnectWallet);
-        await postConnectSetup();
-      } catch (e) {
-        showToast(`Phantom connect error: ${e.message || e}`);
-      }
-    } else {
-      try {
-        walletAdapter = new PhantomWalletAdapter();
-        walletAdapter.on("disconnect", disconnectWallet);
-        await walletAdapter.connect();
-        publicKey = walletAdapter.publicKey;
-        walletConnected = walletAdapter.connected;
-        await postConnectSetup();
-      } catch (e) {
-        showToast(`WalletAdapter connect error: ${e.message || e}`);
-      }
-    }
-  }
-
-  async function postConnectSetup() {
-    renderWalletSection();
-    await fetchTokenBalancesAndAppend();
-    renderSwapForm();
-  }
-
-  function disconnectWallet() {
-    if (walletConnected) {
-      try { if (window.solana && window.solana.isPhantom) window.solana.disconnect(); } catch {}
-      if (walletAdapter && walletAdapter.connected) walletAdapter.disconnect();
-    }
-    walletConnected = false;
-    publicKey = null;
-    walletAdapter = null;
-    tokens = [...BASE_TOKENS];
-    balances = {};
-    renderWalletSection();
-    renderSwapForm();
-    clearSwapStatus();
-    renderBalances();
-  }
-
-  async function fetchTokenBalancesAndAppend() {
-    if (!walletConnected || !publicKey) {
-      balances = {};
-      renderBalances();
-      return;
-    }
-    try {
-      balances = {};
-      const solBalance = await connection.getBalance(publicKey);
-      balances["SOL"] = solBalance / 1e9;
-      const tokenAccounts = await connection.getParsedTokenAccountsByOwner(publicKey, {
-        programId: new PublicKey("TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA")
-      });
-      const seenMints = new Set(tokens.map(t => t.mint));
-      for (const tokenAccount of tokenAccounts.value) {
-        const info = tokenAccount.account.data.parsed.info;
-        const mint = info.mint;
-        const amount = parseFloat(info.tokenAmount.uiAmountString) || 0;
-        if (amount === 0) continue;
-        balances[mint] = (balances[mint] || 0) + amount;
-        if (!seenMints.has(mint)) {
-          tokens.push({ mint, symbol: mint.slice(0, 6), decimals: info.tokenAmount.decimals || 0 });
-          seenMints.add(mint);
-        }
-      }
-      renderBalances();
-    } catch (e) {
-      console.error("Failed to fetch balances", e);
-      showToast("Failed to fetch balances");
-    }
-  }
-
-  function renderBalances() {
-    const el = document.getElementById("balancesList");
-    if (!walletConnected) {
-      el.innerHTML = "<em>Wallet not connected</em>";
-      return;
-    }
-    if (!balances || Object.keys(balances).length === 0) {
-      el.innerHTML = "<em>Loading balances...</em>";
-      return;
-    }
-    let html = "<ul>";
-    for (const token of tokens) {
-      const bal = balances[token.mint] || balances[token.symbol] || 0;
-      const icon = TOKEN_ICONS[token.symbol];
-      html += `<li style="display:flex;align-items:center;gap:8px;">
-        ${icon ? `<img src="${icon}" alt="${token.symbol}" style="width:18px;height:18px;border-radius:50%;" />` : ""}
-        <b>${token.symbol}:</b> ${bal.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: token.decimals })}
-      </li>`;
-    }
-    html += "</ul>";
-    el.innerHTML = html;
-  }
-
-  function renderSwapForm() {
-    const fromSelect = document.getElementById("fromToken");
-    const toSelect = document.getElementById("toToken");
-    fromSelect.innerHTML = "";
-    toSelect.innerHTML = "";
-    for (const token of tokens) {
-      fromSelect.appendChild(new Option(token.symbol, token.mint));
-      toSelect.appendChild(new Option(token.symbol, token.mint));
-    }
-    fromSelect.value = tokens.length ? tokens[0].mint : "";
-    toSelect.value = tokens.length > 1 ? tokens[1].mint : fromSelect.value;
-    document.getElementById("swapBtn").disabled = !walletConnected;
-    document.getElementById("swapAmount").value = "";
-    document.getElementById("swapRatio").textContent = "";
-    clearSwapStatus();
-    fromSelect.onchange = () => { updateSwapRatio(); updateTokenIcons(); };
-    toSelect.onchange = () => { updateSwapRatio(); updateTokenIcons(); };
-    document.getElementById("swapAmount").oninput = updateSwapRatio;
-    document.getElementById("swapForm").onsubmit = handleSwap;
-    updateTokenIcons();
-  }
-
-  function updateTokenIcons() {
-    const fromMint = document.getElementById("fromToken").value;
-    const toMint = document.getElementById("toToken").value;
-    const fromToken = tokens.find(t => t.mint === fromMint);
-    const toToken = tokens.find(t => t.mint === toMint);
-    const fromIcon = TOKEN_ICONS[fromToken?.symbol];
-    const toIcon = TOKEN_ICONS[toToken?.symbol];
-    const fromTokenIcon = document.getElementById("fromTokenIcon");
-    if (fromIcon) {
-      fromTokenIcon.src = fromIcon;
-      fromTokenIcon.style.display = "inline-block";
-    } else {
-      fromTokenIcon.style.display = "none";
-    }
-    const toTokenIcon = document.getElementById("toTokenIcon");
-    if (toIcon) {
-      toTokenIcon.src = toIcon;
-      toTokenIcon.style.display = "inline-block";
-    } else {
-      toTokenIcon.style.display = "none";
-    }
-  }
-
-  let lastQuoteKey = null;
-
-  async function updateSwapRatio() {
-    clearSwapStatus();
-    const fromMint = document.getElementById("fromToken").value;
-    const toMint = document.getElementById("toToken").value;
-    const amountStr = document.getElementById("swapAmount").value.trim();
-    const ratioEl = document.getElementById("swapRatio");
-    ratioEl.textContent = "";
-    if (!walletConnected) {
-      ratioEl.textContent = "Connect wallet to fetch rates.";
-      return;
-    }
-    if (!amountStr || isNaN(amountStr) || Number(amountStr) <= 0) return;
-    if (fromMint === toMint) {
-      ratioEl.textContent = "Select different tokens to swap.";
-      return;
-    }
-    const amount = Number(amountStr);
-    lastQuoteKey = `${fromMint}_${toMint}_${amount}`;
-    try {
-      const fromToken = tokens.find(t => t.mint === fromMint);
-      if (!fromToken) return;
-      const inputAmount = Math.floor(amount * 10 ** fromToken.decimals);
-      const quoteUrl = `https://quote-api.jup.ag/v6/quote?inputMint=${fromMint}&outputMint=${toMint}&amount=${inputAmount}&slippageBps=50`;
-      const res = await fetch(quoteUrl);
-      const data = await res.json();
-      if (lastQuoteKey !== `${fromMint}_${toMint}_${amount}`) return;
-      if (!data.routes || data.routes.length === 0) {
-        ratioEl.textContent = "No swap route found.";
-        return;
-      }
-      const bestRoute = data.routes[0];
-      const rate = bestRoute.outAmountUI / amount;
-      const toToken = tokens.find(t => t.mint === toMint);
-      ratioEl.textContent = `Est. rate: 1 ${fromToken.symbol} ≈ ${rate.toFixed(6)} ${toToken ? toToken.symbol : toMint.slice(0, 6)}`;
-    } catch (error) {
-      console.error("Failed to fetch swap rate:", error);
-      showToast("Failed to fetch swap rate.");
-      ratioEl.textContent = "Failed to fetch swap rate.";
-    }
-  }
-
-  async function handleSwap(event) {
-    event.preventDefault();
-    clearSwapStatus();
-    const statusEl = document.getElementById("swapStatus");
-    if (!walletConnected || !publicKey) {
-      showToast("Please connect your wallet first.");
-      return;
-    }
-    const fromMint = document.getElementById("fromToken").value;
-    const toMint = document.getElementById("toToken").value;
-    const amountStr = document.getElementById("swapAmount").value.trim();
-    if (!amountStr || isNaN(amountStr) || Number(amountStr) <= 0) {
-      showToast("Enter a valid amount");
-      return;
-    }
-    if (fromMint === toMint) {
-      showToast("Select different tokens to swap");
-      return;
-    }
-    try {
-      const amount = Number(amountStr);
-      const fromToken = tokens.find(t => t.mint === fromMint);
-      if (!fromToken) throw new Error("From token info not found");
-      const inputAmount = Math.floor(amount * 10 ** fromToken.decimals);
-      statusEl.textContent = "Fetching swap routes from Jupiter...";
-      const quoteResponse = await fetch(
-        `https://quote-api.jup.ag/v6/quote?inputMint=${fromMint}&outputMint=${toMint}&amount=${inputAmount}&slippageBps=50`
-      );
-      const quoteJson = await quoteResponse.json();
-      if (!quoteJson.routes || !quoteJson.routes.length) {
-        statusEl.textContent = "No swap routes found.";
-        showToast("No swap routes found");
-        return;
-      }
-      const route = quoteJson.routes[0];
-      statusEl.textContent = "Building swap transaction...";
-      const swapResponse = await fetch("https://quote-api.jup.ag/v6/swap", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ route, userPublicKey: publicKey.toBase58(), wrapAndUnwrapSol: true }),
-      });
-      const swapJson = await swapResponse.json();
-      if (!swapJson.swapTransaction) {
-        statusEl.textContent = "Failed to build swap transaction.";
-        showToast("Failed to build swap transaction");
-        return;
-      }
-      statusEl.textContent = "Signing and sending transaction...";
-      const txBuffer = Uint8Array.from(atob(swapJson.swapTransaction), c => c.charCodeAt(0));
-      const transaction = Transaction.from(txBuffer);
-      let signature;
-      if (walletAdapter && walletAdapter.connected) {
-        signature = await walletAdapter.sendTransaction(transaction, connection);
-      } else if (window.solana && window.solana.isPhantom) {
-        signature = await window.solana.signAndSendTransaction(transaction).then(r => r.signature);
-      } else {
-        statusEl.textContent = "No wallet available for signing transaction";
-        showToast("No wallet available for signing transaction");
-        return;
-      }
-      statusEl.innerHTML = `Transaction sent! <a class="swap-link" href="https://solscan.io/tx/${signature}" target="_blank" rel="noopener noreferrer">View on Solscan</a>`;
-      showToast("Swap transaction sent!");
-      await fetchTokenBalancesAndAppend();
-      updateSwapRatio();
-    } catch (e) {
-      statusEl.textContent = "Swap failed: " + (e.message || e);
-      showToast("Swap failed: " + (e.message || e));
-      console.error(e);
-    }
-  }
-
-  function clearSwapStatus() {
-    document.getElementById("swapStatus").textContent = "";
-  }
-
-  function renderSignalBot() {
-    const container = document.getElementById("signalBot");
-    function randomSignal() {
-      return Math.random() > 0.5 ? "BUY" : "SELL";
-    }
-    function update() {
-      container.innerHTML = SIGNAL_BOT_TOKENS.map(t => {
-        const sig = randomSignal();
-        return `<div class="signal signal-${sig.toLowerCase()}" aria-live="polite">
-                  ${t} <span aria-label="${sig} signal">${sig}</span>
-                </div>`;
-      }).join("");
-    }
-    update();
-    setInterval(update, 1800);
-  }
-
-  window.addEventListener("DOMContentLoaded", () => {
-    try {
-      renderWalletSection();
-      renderSwapForm();
-      renderSignalBot();
-    } catch (e) {
-      console.error("Startup error:", e);
-      showToast("Startup error: " + (e.message || e));
-    }
-  });
-</script>
-</body>
-</html>
+export default SwapComponent;
