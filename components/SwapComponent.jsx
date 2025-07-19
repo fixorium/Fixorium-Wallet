@@ -1,60 +1,79 @@
- import { useState } from "react";
-
-const SOL_MINT = "So11111111111111111111111111111111111111112"; // Native SOL wrapped token
-
-const presetTokens = [
-  {
-    name: "Dogecoin (wDOGE)",
-    mint: "Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkgMQg85NVh9Z"
-  },
-  {
-    name: "Bonk",
-    mint: "So11111111111111111111111111111111111111112"
-  },
-  {
-    name: "Samoyedcoin",
-    mint: "3WnvAX9TvMuBFhVZxrTZp4XqF6Yp3JeCvM6DtrrCUn8d"
-  }
-];
+ import { useState, useEffect } from "react";
+import { PublicKey } from "@solana/web3.js";
+import { Jupiter, RouteInfo } from "@jup-ag/api";
+import {
+  connection,
+  WRAPPED_SOL_MINT,
+  USDC_MINT,
+  FIXERCOIN_MINT
+} from "../lib/solana";
 
 export default function SwapComponent({ walletAddress }) {
-  const [selectedMint, setSelectedMint] = useState(presetTokens[0].mint);
+  const [jupiter, setJupiter] = useState(null);
   const [amount, setAmount] = useState("");
+  const [quote, setQuote] = useState(null);
 
-  const handleSwap = () => {
-    if (!walletAddress) return alert("Please connect your wallet first.");
-    alert(
-      `Swap initiated (mock): ${amount} SOL to ${selectedMint}\nFrom: ${walletAddress}`
-    );
-    // Real swap logic using Jupiter or your backend would go here
+  useEffect(() => {
+    if (!walletAddress) return;
+    (async () => {
+      const jup = await Jupiter.load({
+        connection,
+        cluster: "mainnet-beta",
+        userPublicKey: new PublicKey(walletAddress),
+        routeCacheDuration: 0
+      });
+      setJupiter(jup);
+    })();
+  }, [walletAddress]);
+
+  useEffect(() => {
+    if (!jupiter || !amount) return;
+    (async () => {
+      const routes = await jupiter.computeRoutes({
+        inputMint: WRAPPED_SOL_MINT,
+        outputMint: USDC_MINT, // or FIXERCOIN_MINT
+        amount: Math.floor(amount * 1e9),
+        slippageBps: 50
+      });
+      setQuote(routes.routesInfos[0] || null);
+    })();
+  }, [jupiter, amount]);
+
+  const handleSwap = async () => {
+    if (!jupiter || !quote) return;
+    const feeBps = 10; // 0.10%
+    const inAmt = quote.inAmount / 1e9;
+    const fee = (inAmt * feeBps) / 10000;
+    const reducedAmt = inAmt - fee;
+
+    const bestRoute = await jupiter.computeRoutes({
+      ...quote,
+      amount: Math.floor(reducedAmt * 1e9)
+    });
+
+    const { execute } = await jupiter.exchange({ routeInfo: bestRoute.routesInfos[0] });
+    const txid = await execute();
+    alert(`Swap done—TXID: ${txid}`);
   };
 
-  return (
-    <div style={{ border: "1px solid #ccc", padding: "1rem", borderRadius: "10px" }}>
-      <h3>Swap SOL to Meme Tokens (Devnet)</h3>
-      <select
-        value={selectedMint}
-        onChange={(e) => setSelectedMint(e.target.value)}
-        style={{ padding: "6px", width: "100%", marginBottom: "1rem" }}
-      >
-        {presetTokens.map((token) => (
-          <option key={token.mint} value={token.mint}>
-            {token.name}
-          </option>
-        ))}
-      </select>
-
+  return !walletAddress ? null : (
+    <div style={{ marginTop: 20, padding: 16, border:"1px solid #ccc", borderRadius:8 }}>
+      <h3>Swap SOL → USDC</h3>
       <input
         type="number"
-        placeholder="Amount in SOL"
+        placeholder="Amount SOL"
         value={amount}
-        onChange={(e) => setAmount(e.target.value)}
-        style={{ padding: "6px", width: "100%", marginBottom: "1rem" }}
+        onChange={e => setAmount(e.target.value)}
+        style={{ width: "100%", padding: 8 }}
       />
-
-      <button onClick={handleSwap} style={{ padding: "10px", width: "100%" }}>
-        Swap
+      <button disabled={!quote} onClick={handleSwap} style={{ marginTop: 8 }}>
+        Swap {amount} SOL
       </button>
+      {quote && (
+        <p>
+          You’ll receive ~{(quote.outAmount / 1e6).toFixed(4)} tokens (~0.10% fee applied)
+        </p>
+      )}
     </div>
   );
 }
