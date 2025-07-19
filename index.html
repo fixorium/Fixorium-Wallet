@@ -76,9 +76,10 @@
   </header>
   <main>
     <div class="card">
-      <button id="connectWallet">Connect Wallet</button>
+      <button id="connectWallet" onclick="connectWallet()">Connect Wallet</button>
       <div id="walletInfo">
         Connected Wallet: <span id="walletAddress"></span>
+        <button onclick="disconnectWallet()">Disconnect</button>
       </div>
     </div>
 
@@ -158,8 +159,17 @@
       }
     }
 
+    function disconnectWallet() {
+      if (window.solana && window.solana.isPhantom) {
+        window.solana.disconnect();
+        publicKey = null;
+        document.getElementById('walletAddress').innerText = '';
+        document.getElementById('walletInfo').style.display = 'none';
+      }
+    }
+
     async function fetchBalances() {
-      const connection = new window.solanaWeb3.Connection(window.solana.network.rpcUrl || 'https://api.mainnet-beta.solana.com');
+      const connection = new window.solanaWeb3.Connection(window.solana.network?.rpcUrl || 'https://api.mainnet-beta.solana.com');
       const balancesUl = document.getElementById('balances');
       balancesUl.innerHTML = '';
 
@@ -172,8 +182,9 @@
             mint: new window.solanaWeb3.PublicKey(token.mint)
           });
           if (accounts.value.length > 0) {
-            const data = window.solanaWeb3.AccountLayout.decode(accounts.value[0].account.data);
-            balance = data.amount / Math.pow(10, token.decimals);
+            const raw = accounts.value[0].account.data;
+            const data = raw.slice(64, 72);
+            balance = Number(BigInt('0x' + [...data].map(b => ('00' + b.toString(16)).slice(-2)).reverse().join(''))) / Math.pow(10, token.decimals);
           }
         }
         balancesUl.innerHTML += `<li><img class="token-logo" src="${token.logo}"/>${token.symbol}: ${balance.toFixed(4)}</li>`;
@@ -184,6 +195,7 @@
       const amount = document.getElementById('amount').value;
       const inputMint = document.getElementById('fromToken').value;
       const outputMint = document.getElementById('toToken').value;
+
       try {
         const res = await fetch(`${JUP_BASE}/v6/quote?inputMint=${inputMint}&outputMint=${outputMint}&amount=${amount * 1e6}&feeBps=3&feeAccount=${FEE_WALLET}`);
         const data = await res.json();
@@ -202,11 +214,6 @@
     }, 10000);
 
     window.addEventListener('DOMContentLoaded', () => {
-      const connectButton = document.getElementById('connectWallet');
-      if (connectButton) {
-        connectButton.addEventListener('click', connectWallet);
-      }
-
       if (window.solana && window.solana.isPhantom) {
         window.solana.on('connect', () => {
           console.log('Wallet connected:', window.solana.publicKey.toString());
