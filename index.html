@@ -3,7 +3,7 @@
 
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Fixorium Swap</title>
   <script src="https://unpkg.com/@solana/web3.js@1.89.0/lib/index.iife.js"></script>
   <style>
@@ -106,8 +106,21 @@
 
   <script>
     const { Connection, PublicKey, Transaction } = solanaWeb3;
-    const connection = new Connection("https://api.mainnet-beta.solana.com");
+    const connection = new Connection("https://api.mainnet-beta.solana.com", 'confirmed');
     let wallet, publicKey, tokenMap;
+
+    // Support multiple phantom environments (browser extension, mobile app, and mobile browser)
+    // Following Phantom dApp docs and recommended detection logic
+    function getProvider() {
+      if ("solana" in window) {
+        const provider = window.solana;
+        if (provider.isPhantom) {
+          return provider;
+        }
+      }
+      // fallback: check if inside Brave Wallet or other injected wallets may be present (extend if needed)
+      return null;
+    }
 
     async function fetchTokens() {
       try {
@@ -135,7 +148,6 @@
         // Set default tokens
         fromSelect.value = "So11111111111111111111111111111111111111112"; // SOL
         toSelect.value = "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"; // USDC
-
       } catch (err) {
         console.error("Token fetch error:", err);
         alert("Failed to fetch tokens.");
@@ -174,21 +186,23 @@
     }
 
     async function connectWallet() {
-      if (!window.solana || !window.solana.isPhantom) {
-        alert("Phantom wallet not found, please install it: https://phantom.app/");
+      let provider = getProvider();
+      if (!provider) {
+        alert("Phantom wallet not found. Please install Phantom: https://phantom.app/");
         return;
       }
       try {
-        const res = await window.solana.connect({ onlyIfTrusted: false });
-        wallet = window.solana;
-        publicKey = res.publicKey;
+        // Use onlyIfTrusted false to always prompt (user must approve)
+        const resp = await provider.connect({ onlyIfTrusted: false });
+        wallet = provider;
+        publicKey = resp.publicKey;
         document.getElementById("walletAddress").innerText = `Wallet: ${publicKey.toBase58()}`;
         await showBalances();
         document.getElementById("swapBtn").disabled = false;
-        updateQuote(); // Load quote immediately after connect
+        updateQuote();
       } catch (err) {
         console.error("Wallet connect error:", err);
-        alert("Failed to connect wallet.");
+        alert("Failed to connect wallet or permission denied.");
       }
     }
 
@@ -227,7 +241,6 @@
       }
     }
 
-    // Update quote automatically when inputs change
     function updateQuote() {
       const amountRaw = parseFloat(document.getElementById("amount").value || 0);
       const inputMint = document.getElementById("fromToken").value;
@@ -259,6 +272,7 @@
             feeAccount: "H4qKn8FMFha8jJuj8xMryMqRhH3h7GjLuxw7TVixpump",
           }),
         });
+
         if (!res.ok) throw new Error(`Swap API error: ${res.statusText}`);
 
         const swapData = await res.json();
@@ -284,13 +298,27 @@
     }
 
     // Event listeners for realtime quote updates
-    document.getElementById("fromToken").addEventListener("change", () => { updateQuote(); });
-    document.getElementById("toToken").addEventListener("change", () => { updateQuote(); });
-    document.getElementById("amount").addEventListener("input", () => { updateQuote(); });
-    document.getElementById("slippage").addEventListener("input", () => { updateQuote(); });
+    document.getElementById("fromToken").addEventListener("change", updateQuote);
+    document.getElementById("toToken").addEventListener("change", updateQuote);
+    document.getElementById("amount").addEventListener("input", updateQuote);
+    document.getElementById("slippage").addEventListener("input", updateQuote);
 
-    document.getElementById("connectBtn").onclick = connectWallet;
-    document.getElementById("swapBtn").onclick = executeSwap;
+    // Connect button handler
+    document.getElementById("connectBtn").addEventListener("click", connectWallet);
+    document.getElementById("swapBtn").addEventListener("click", executeSwap);
+
+    // If Phantom is already connected (trusted), auto connect on page load
+    window.addEventListener('load', () => {
+      const provider = getProvider();
+      if (provider && provider.isConnected) {
+        wallet = provider;
+        publicKey = provider.publicKey;
+        document.getElementById("walletAddress").innerText = `Wallet: ${publicKey.toBase58()}`;
+        showBalances();
+        document.getElementById("swapBtn").disabled = false;
+        updateQuote();
+      }
+    });
 
     fetchTokens();
   </script>
