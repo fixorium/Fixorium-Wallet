@@ -5,40 +5,48 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Fixorium Swap</title>
     <script src="https://unpkg.com/@solana/web3.js@1.89.0/lib/index.iife.js"></script>
+    <style>
+      body { font-family: sans-serif; background: #f3f4f6; padding: 1rem; }
+      .container { max-width: 400px; margin: auto; background: white; border-radius: 0.75rem; padding: 1.5rem; box-shadow: 0 2px 6px rgba(0,0,0,0.1); }
+      .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; }
+      .button { background: #16a34a; color: white; padding: 0.5rem 1rem; border: none; border-radius: 0.375rem; cursor: pointer; }
+      .button:hover { background: #15803d; }
+      .input, select { width: 100%; padding: 0.5rem; margin-bottom: 1rem; border-radius: 0.375rem; border: 1px solid #ccc; }
+      #spinner { text-align: center; color: #4b5563; animation: pulse 2s infinite; }
+      @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+    </style>
   </head>
-  <body style="background-color: #f3f4f6; padding: 1rem; font-family: sans-serif;">
-    <div style="max-width: 400px; margin: 0 auto; background: white; border-radius: 0.75rem; box-shadow: 0 1px 3px rgba(0,0,0,0.1); padding: 1.5rem;">
-      <div style="display: flex; justify-content: space-between; align-items: center;">
-        <h1 style="font-size: 1.25rem; font-weight: bold;">Fixorium Swap</h1>
-        <button id="connectBtn" style="background-color: #16a34a; color: white; padding: 0.25rem 0.75rem; border-radius: 0.375rem; border: none; cursor: pointer;">Connect Wallet</button>
+  <body>
+    <div class="container">
+      <div class="header">
+        <h1>Fixorium Swap</h1>
+        <button id="connectBtn" class="button">Connect Wallet</button>
       </div>
 
-      <div id="walletAddress" style="font-size: 0.875rem; color: #6b7280; overflow-wrap: break-word;"></div>
+      <div id="walletAddress" style="font-size: 0.875rem; color: #6b7280;"></div>
+      <div id="walletBalance" style="font-size: 0.875rem; color: #6b7280;"></div>
 
-      <div style="display: flex; flex-direction: column; gap: 0.75rem; margin-top: 1rem;">
-        <label>From Token</label>
-        <select id="fromToken" style="padding: 0.5rem; border: 1px solid #d1d5db; border-radius: 0.375rem;"></select>
+      <div id="tokenBalances" style="font-size: 0.875rem; color: #6b7280;"></div>
 
-        <label>To Token</label>
-        <select id="toToken" style="padding: 0.5rem; border: 1px solid #d1d5db; border-radius: 0.375rem;"></select>
+      <label>From Token</label>
+      <select id="fromToken" class="input"></select>
 
-        <label>Amount</label>
-        <input id="amount" type="number" step="any" placeholder="Enter amount" style="padding: 0.5rem; border: 1px solid #d1d5db; border-radius: 0.375rem;" />
+      <label>To Token</label>
+      <select id="toToken" class="input"></select>
 
-        <label>Slippage (%)</label>
-        <input id="slippage" type="number" value="0.5" step="0.1" style="padding: 0.5rem; border: 1px solid #d1d5db; border-radius: 0.375rem;" />
+      <label>Amount</label>
+      <input id="amount" type="number" step="any" class="input" placeholder="Enter amount" />
 
-        <button id="quoteBtn" style="background-color: #2563eb; color: white; padding: 0.5rem; border-radius: 0.375rem; border: none; cursor: pointer;">Get Quote</button>
-        <div id="quoteResult" style="font-size: 0.875rem; color: #374151;"></div>
+      <label>Slippage (%)</label>
+      <input id="slippage" type="number" value="0.5" step="0.1" class="input" />
 
-        <button id="swapBtn" style="background-color: #16a34a; color: white; padding: 0.5rem; border-radius: 0.375rem; border: none; cursor: pointer;">Execute Swap</button>
-      </div>
+      <button id="quoteBtn" class="button" style="background: #2563eb;">Get Quote</button>
+      <div id="quoteResult" style="font-size: 0.875rem; color: #374151;"></div>
 
-      <div id="spinner" style="display: none; text-align: center; margin-top: 1rem;">
-        <span style="color: #4b5563;">Loading...</span>
-      </div>
+      <button id="swapBtn" class="button">Execute Swap</button>
 
-      <div id="status" style="font-size: 0.875rem; text-align: center; margin-top: 0.75rem;"></div>
+      <div id="spinner" class="hidden">Loading...</div>
+      <div id="status" style="font-size: 0.875rem; text-align: center;"></div>
     </div>
 
     <script>
@@ -48,7 +56,7 @@
 
       async function fetchTokens() {
         try {
-          document.getElementById("spinner").style.display = "block";
+          document.getElementById("spinner").classList.remove("hidden");
           const res = await fetch("https://quote-api.jup.ag/v6/tokens");
           const data = await res.json();
           tokenMap = data.reduce((acc, t) => (acc[t.address] = t, acc), {});
@@ -59,10 +67,32 @@
           }
         } catch (err) {
           console.error("Token fetch error:", err);
-          alert("Failed to fetch token list.");
+          alert("Failed to fetch tokens.");
         } finally {
-          document.getElementById("spinner").style.display = "none";
+          document.getElementById("spinner").classList.add("hidden");
         }
+      }
+
+      async function showBalances() {
+        if (!publicKey || !tokenMap) return;
+
+        // Show SOL balance
+        const lamports = await connection.getBalance(publicKey);
+        document.getElementById("walletBalance").innerText = `SOL Balance: ${(lamports / 1e9).toFixed(4)} SOL`;
+
+        // Show token balances
+        const accounts = await connection.getParsedTokenAccountsByOwner(publicKey, { programId: new PublicKey("TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA") });
+        const tokenDisplay = [];
+
+        for (const acc of accounts.value) {
+          const info = acc.account.data.parsed.info;
+          const mint = info.mint;
+          const amount = info.tokenAmount.uiAmount;
+          if (tokenMap[mint] && amount > 0) {
+            tokenDisplay.push(`${tokenMap[mint].symbol}: ${amount.toFixed(4)}`);
+          }
+        }
+        document.getElementById("tokenBalances").innerText = tokenDisplay.join("\n");
       }
 
       async function connectWallet() {
@@ -71,6 +101,7 @@
         wallet = window.solana;
         publicKey = resp.publicKey;
         document.getElementById("walletAddress").innerText = `Wallet: ${publicKey.toBase58()}`;
+        await showBalances();
       }
 
       async function getQuote() {
@@ -133,7 +164,8 @@
           const tx = Transaction.from(txBuf);
           const signed = await wallet.signTransaction(tx);
           const sig = await connection.sendRawTransaction(signed.serialize());
-          document.getElementById("status").innerHTML = `✅ <a href='https://solscan.io/tx/${sig}' style='color: #2563eb; text-decoration: underline;' target='_blank'>View on Solscan</a>`;
+          document.getElementById("status").innerHTML = `✅ <a href='https://solscan.io/tx/${sig}' target='_blank'>View on Solscan</a>`;
+          await showBalances();
         } catch (err) {
           console.error("Swap error:", err);
           document.getElementById("status").innerText = `Swap failed: ${err.message}`;
