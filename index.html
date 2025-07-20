@@ -1,219 +1,88 @@
  <!DOCTYPE html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Fixorium Swap</title>
-  <link rel="icon" href="https://fixorium.com/logo.png" type="image/png">
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script src="https://unpkg.com/@solana/web3.js@1.92.1/lib/index.iife.js"></script>
-  <script src="https://unpkg.com/@jup-ag/core@4.0.0-beta.15/dist/index.iife.min.js"></script>
-  <script src="https://unpkg.com/@jup-ag/limit-order-sdk@1.0.0-beta.12/dist/index.iife.js"></script>
-  <style>
-    @keyframes dots {
-      0%, 20% { content: '.'; }
-      40% { content: '..'; }
-      60% { content: '...'; }
-    }
-    .dot-loader::after {
-      display: inline-block;
-      content: '.';
-      animation: dots 1.5s infinite steps(1);
-    }
-  </style>
-</head>
-<body class="bg-gradient-to-br from-gray-100 to-white min-h-screen font-sans text-sm">
-  <div id="loader" class="fixed inset-0 bg-white bg-opacity-90 z-50 flex items-center justify-center hidden">
-    <div class="text-violet-700 text-xl font-bold dot-loader">Loading</div>
-  </div>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Fixorium Swap</title>
 
-  <div class="w-full px-4 py-4 flex justify-between items-center bg-white shadow-sm sticky top-0 z-10">
-    <div class="flex items-center space-x-2">
-      <img src="https://fixorium.com/logo.png" class="w-8 h-8">
-      <h1 class="font-bold text-lg text-violet-700">Fixorium Swap</h1>
-    </div>
-    <div class="flex items-center">
-      <div id="walletInfo" class="text-xs text-gray-600 mr-2"></div>
-      <button id="connectWalletBtn" class="bg-violet-600 text-white px-3 py-1 rounded-md text-xs">Connect Wallet</button>
-      <button id="disconnectBtn" class="bg-red-500 text-white px-3 py-1 rounded-md text-xs ml-2 hidden">Disconnect</button>
-    </div>
-  </div>
+    <!-- ✅ Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        safelist: [
+          'bg-violet-600', 'text-white', 'rounded-md', 'hover:bg-violet-700',
+          'text-green-600', 'bg-red-500', 'text-sm', 'p-2', 'p-4',
+          'text-center', 'w-full', 'flex', 'justify-between', 'items-center',
+          'rounded-lg', 'shadow', 'hover:bg-violet-800'
+        ]
+      }
+    </script>
 
-  <main class="flex justify-center items-center px-4 py-6">
-    <div class="w-full max-w-md bg-white rounded-2xl shadow-lg p-6">
-      <form id="swapForm" class="space-y-4">
-        <div class="flex justify-between items-center mb-2">
-          <label class="font-semibold text-gray-700">Swap</label>
-          <button type="button" id="directionBtn" class="text-sm text-violet-700">Switch to: <span id="dirText">SOL → Token</span></button>
+    <!-- ✅ Fixorium Logo -->
+    <link rel="icon" type="image/png" href="https://fixorium.com/logo.png" />
+  </head>
+  <body class="bg-gray-100 min-h-screen text-gray-900">
+    <div id="app" class="max-w-xl mx-auto p-4">
+      <!-- Navbar -->
+      <div class="flex justify-between items-center mb-6">
+        <img src="https://fixorium.com/logo.png" alt="Fixorium Logo" class="h-10">
+        <button id="connectWallet" class="bg-violet-600 text-white px-4 py-2 rounded-md hover:bg-violet-700">
+          Connect Wallet
+        </button>
+        <span id="walletAddress" class="text-sm ml-2 hidden"></span>
+      </div>
+
+      <!-- Swap Card -->
+      <div class="bg-white p-4 rounded-lg shadow-md">
+        <div class="flex justify-between mb-2">
+          <h2 class="text-lg font-semibold">Fixorium Swap</h2>
+          <select id="slippage" class="border p-1 rounded text-sm">
+            <option value="0.1">0.1%</option>
+            <option value="0.5" selected>0.5%</option>
+            <option value="1">1%</option>
+          </select>
         </div>
 
-        <div>
-          <label class="block font-medium text-gray-700 mb-1">From</label>
-          <div class="relative">
-            <select id="fromToken" class="w-full p-2 border rounded-md appearance-none pr-10"></select>
-            <div class="absolute inset-y-0 right-2 flex items-center pointer-events-none">▼</div>
+        <!-- Swap Form -->
+        <div class="space-y-4">
+          <div>
+            <label class="text-sm">From</label>
+            <div class="flex items-center space-x-2">
+              <select id="fromToken" class="border rounded p-2 w-1/2"></select>
+              <input id="fromAmount" type="number" placeholder="Amount" class="border rounded p-2 w-1/2" />
+            </div>
           </div>
+
+          <button id="toggleDirection" class="block mx-auto bg-gray-300 text-xs px-2 py-1 rounded-full">⇅ Swap Direction</button>
+
+          <div>
+            <label class="text-sm">To</label>
+            <div class="flex items-center space-x-2">
+              <select id="toToken" class="border rounded p-2 w-1/2"></select>
+              <input id="toAmount" type="text" disabled class="border rounded p-2 w-1/2 bg-gray-100" />
+            </div>
+          </div>
+
+          <div class="text-sm text-gray-600">Estimated: <span id="quotePreview">-</span></div>
+          <div class="text-xs text-gray-500">Fee: 0.03% to Fixorium</div>
+
+          <button id="swapButton" class="w-full bg-violet-600 text-white p-2 rounded-md hover:bg-violet-700">
+            Swap
+          </button>
         </div>
 
-        <div>
-          <label class="block font-medium text-gray-700 mb-1">Amount</label>
-          <input type="number" id="amount" class="w-full p-2 border rounded-md" placeholder="Enter amount" />
+        <!-- Loader -->
+        <div id="loadingSpinner" class="mt-4 hidden text-center">
+          <div class="w-6 h-6 border-4 border-dashed border-violet-600 rounded-full animate-spin mx-auto"></div>
+          <p class="text-sm text-gray-500 mt-1">Swapping...</p>
         </div>
 
-        <div>
-          <label class="block font-medium text-gray-700 mb-1">Slippage Tolerance (%)</label>
-          <input type="number" id="slippage" class="w-full p-2 border rounded-md" value="1" step="0.1" min="0" />
-        </div>
-
-        <div>
-          <label class="block font-medium text-gray-700 mb-1">Limit Price (optional)</label>
-          <input type="number" id="limitPrice" class="w-full p-2 border rounded-md" placeholder="Leave blank for market order" />
-        </div>
-
-        <div id="priceQuote" class="text-xs text-gray-600 font-medium"></div>
-        <div id="gasInfo" class="text-xs text-gray-500 italic"></div>
-
-        <button type="submit" id="swapBtn" class="w-full bg-violet-600 hover:bg-violet-700 text-white py-2 rounded-md font-semibold">Swap</button>
-      </form>
-
-      <div id="statusMsg" class="mt-4 text-sm text-green-600"></div>
+        <!-- Success message -->
+        <div id="txStatus" class="mt-4 text-center text-green-600 text-sm hidden"></div>
+      </div>
     </div>
-  </main>
 
-  <script>
-    const provider = window.solana;
-    let wallet = null;
-    let connection = new solanaWeb3.Connection("https://api.mainnet-beta.solana.com");
-    let tokenList = [];
-
-    const walletInfo = document.getElementById("walletInfo");
-    const fromToken = document.getElementById("fromToken");
-    const directionBtn = document.getElementById("directionBtn");
-    const dirText = document.getElementById("dirText");
-    const amountInput = document.getElementById("amount");
-    const priceQuote = document.getElementById("priceQuote");
-    const gasInfo = document.getElementById("gasInfo");
-    const limitInput = document.getElementById("limitPrice");
-
-    let isSolToToken = true;
-    let currentQuote = null;
-
-    async function fetchTokenList() {
-      const res = await fetch("https://token.jup.ag/all");
-      tokenList = await res.json();
-    }
-
-    function updateDirection() {
-      isSolToToken = !isSolToToken;
-      dirText.innerText = isSolToToken ? "SOL → Token" : "Token → SOL";
-      updateTokenDropdown();
-    }
-
-    function updateTokenDropdown() {
-      fromToken.innerHTML = '';
-      const tokens = isSolToToken ? [
-        { symbol: "SOL", address: "So11111111111111111111111111111111111111112", logoURI: "https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/solana/info/logo.png" }
-      ].concat(tokenList.slice(0, 20)) : tokenList.slice(0, 20);
-
-      tokens.forEach(token => {
-        const opt = document.createElement("option");
-        opt.value = token.address;
-        opt.innerText = `${token.symbol}`;
-        opt.dataset.logo = token.logoURI;
-        fromToken.appendChild(opt);
-      });
-    }
-
-    async function connectWallet() {
-      if (!provider || !provider.isPhantom) return alert("Install Phantom Wallet");
-      try {
-        const res = await provider.connect();
-        wallet = res.publicKey;
-        walletInfo.innerText = wallet.toString().slice(0, 4) + "..." + wallet.toString().slice(-4);
-        document.getElementById("connectWalletBtn").classList.add("hidden");
-        document.getElementById("disconnectBtn").classList.remove("hidden");
-      } catch (e) {
-        console.error(e);
-      }
-    }
-
-    function disconnectWallet() {
-      wallet = null;
-      walletInfo.innerText = "";
-      document.getElementById("connectWalletBtn").classList.remove("hidden");
-      document.getElementById("disconnectBtn").classList.add("hidden");
-    }
-
-    async function fetchQuote() {
-      const amt = parseFloat(amountInput.value);
-      if (!amt || amt <= 0) return priceQuote.innerText = "";
-
-      const inputMint = fromToken.value;
-      const outputMint = isSolToToken ? tokenList.find(t => t.address !== inputMint)?.address : "So11111111111111111111111111111111111111112";
-      const baseAmount = amt * (isSolToToken ? 1e9 : 1e6);
-      const revenueAddress = "H4qKn8FMFha8jJuj8xMryMqRhH3h7GjLuxw7TVixpump";
-
-      try {
-        const res = await fetch(`https://quote-api.jup.ag/v6/quote?inputMint=${inputMint}&outputMint=${outputMint}&amount=${baseAmount.toFixed(0)}&feeBps=3&feeAccount=${revenueAddress}`);
-        const data = await res.json();
-        if (data?.data?.length > 0) {
-          currentQuote = data.data[0];
-          const outAmt = (currentQuote.outAmount / 1e6).toFixed(6);
-          priceQuote.innerText = `Estimated: ${outAmt} ${isSolToToken ? tokenList.find(t => t.address === outputMint)?.symbol : "SOL"}`;
-          gasInfo.innerText = `~${(currentQuote.computeUnitsEstimate || 0) / 1_000}k CU (~${(currentQuote.feeAmount || 0) / 1e6} SOL gas)`;
-        }
-      } catch (err) {
-        console.error(err);
-        priceQuote.innerText = "Quote unavailable";
-      }
-    }
-
-    document.getElementById("swapForm").onsubmit = async (e) => {
-      e.preventDefault();
-      if (!wallet || !currentQuote) return alert("Wallet not connected or quote missing");
-      document.getElementById("loader").classList.remove("hidden");
-
-      try {
-        if (limitInput.value && parseFloat(limitInput.value) > 0) {
-          const sdk = new JupiterLimit.LimitOrderSDK({ connection, wallet });
-          const limitOrder = await sdk.createLimitOrder({
-            inputMint: currentQuote.inputMint,
-            outputMint: currentQuote.outputMint,
-            amount: currentQuote.inAmount,
-            minOutAmount: Math.floor(parseFloat(limitInput.value) * 1e6),
-          });
-          await sdk.submit(limitOrder);
-          document.getElementById("statusMsg").innerText = `✅ Limit order placed.`;
-        } else {
-          const jupiter = await Jupiter.init({
-            connection,
-            cluster: "mainnet-beta",
-            user: wallet,
-          });
-
-          const { swapTransaction } = await jupiter.exchange({ routeInfo: currentQuote });
-          const signed = await provider.signTransaction(swapTransaction);
-          const txid = await connection.sendRawTransaction(signed.serialize());
-          await connection.confirmTransaction(txid);
-          document.getElementById("statusMsg").innerHTML = `✅ Market swap done. <a href="https://solscan.io/tx/${txid}" target="_blank" class="underline text-blue-600">View</a>`;
-        }
-      } catch (err) {
-        console.error(err);
-        document.getElementById("statusMsg").innerText = "❌ Transaction failed.";
-      } finally {
-        document.getElementById("loader").classList.add("hidden");
-      }
-    };
-
-    document.getElementById("connectWalletBtn").onclick = connectWallet;
-    document.getElementById("disconnectBtn").onclick = disconnectWallet;
-    directionBtn.onclick = updateDirection;
-    amountInput.addEventListener("input", fetchQuote);
-    fromToken.addEventListener("change", fetchQuote);
-
-    fetchTokenList().then(() => {
-      updateTokenDropdown();
-    });
-  </script>
-</body>
+    <!-- Include your swap JS logic here -->
+    <script src="swap.js"></script>
+  </body>
 </html>
