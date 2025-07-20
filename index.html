@@ -1,4 +1,4 @@
- 
+ html
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -19,14 +19,15 @@
     .input-row { display: flex; gap: 12px; }
     .input-row > div { flex: 1; }
     #feeInfo { color: #444; font-size: 0.97rem; margin-bottom: 8px; }
+    #disconnectBtn { background: #e9004f; margin-top: 8px; }
   </style>
 </head>
 <body>
   <div class="container">
     <h2>Fixorium Swap</h2>
     <button id="connectWalletBtn">Connect Phantom Wallet</button>
+    <button id="disconnectBtn" style="display:none;">Disconnect</button>
     <div id="walletInfo" style="margin: 14px 0 0 0; font-size: .97rem;"></div>
-
     <form id="swapForm" style="display:none;">
       <div class="input-row">
         <div>
@@ -43,10 +44,8 @@
       <div id="feeInfo"></div>
       <button type="submit" id="swapBtn">Swap</button>
     </form>
-
     <div class="status" id="statusMsg"></div>
   </div>
-
 <script>
 const SOL_MINT = "So11111111111111111111111111111111111111112";
 const JUPITER_TOKEN_LIST_URL = "https://token.jup.ag/all";
@@ -57,6 +56,7 @@ let bestRoute = null, estimatedFeeSOL = null;
 
 // UI Elements
 const connectBtn = document.getElementById("connectWalletBtn");
+const disconnectBtn = document.getElementById("disconnectBtn");
 const walletInfo = document.getElementById("walletInfo");
 const fromTokenSel = document.getElementById("fromToken");
 const toTokenSel = document.getElementById("toToken");
@@ -65,6 +65,12 @@ const swapForm = document.getElementById("swapForm");
 const statusMsg = document.getElementById("statusMsg");
 const swapBtn = document.getElementById("swapBtn");
 const feeInfo = document.getElementById("feeInfo");
+
+// Helper UI functions
+function status(msg) { statusMsg.innerHTML = msg ? `<div>${msg}</div>` : ""; }
+function error(msg) { statusMsg.innerHTML = `<div class="error">${msg}</div>`; }
+function success(msg) { statusMsg.innerHTML = `<div class="success">${msg}</div>`; }
+function clearStatus() { statusMsg.innerHTML = ""; }
 
 // Fetch token list
 async function loadTokenList() {
@@ -79,12 +85,9 @@ async function loadTokenList() {
     error("Could not load token list.");
   }
 }
-
 function fillTokenDropdowns() {
   fromTokenSel.innerHTML = "";
   toTokenSel.innerHTML = "";
-
-  // Sort tokens: show SOL on top, then USDC, then alphabetical
   tokenList.sort((a, b) => {
     if (a.symbol === "SOL") return -1;
     if (b.symbol === "SOL") return 1;
@@ -92,14 +95,11 @@ function fillTokenDropdowns() {
     if (b.symbol === "USDC") return 1;
     return a.symbol.localeCompare(b.symbol);
   });
-
   tokenList.forEach(token => {
     let opt = `<option value="${token.address}">${token.symbol}</option>`;
     fromTokenSel.insertAdjacentHTML("beforeend", opt);
     toTokenSel.insertAdjacentHTML("beforeend", opt);
   });
-
-  // Make "toToken" default different than "fromToken"
   toTokenSel.selectedIndex = 1;
 }
 
@@ -111,18 +111,59 @@ async function connectWallet() {
   }
   try {
     wallet = window.solana;
+    // Connect and request signature for authentication
     const resp = await wallet.connect();
     publicKey = resp.publicKey.toString();
+
+    // Request a signature for authentication
+    const message = new TextEncoder().encode("Fixorium Swap Authentication " + new Date().toISOString());
+    try {
+      await wallet.signMessage(message, "utf8");
+    } catch (e) {
+      error("Signature rejected. Please approve the signature request.");
+      return;
+    }
+
     walletInfo.innerText = `Connected: ${publicKey.slice(0,6)}...${publicKey.slice(-4)}`;
     connectBtn.style.display = "none";
+    disconnectBtn.style.display = "";
     swapForm.style.display = "";
     status("");
+    showQuoteAndFee();
   } catch (e) {
     error("User rejected wallet connection.");
   }
 }
-
 connectBtn.onclick = connectWallet;
+
+// Disconnect wallet
+function disconnectWallet() {
+  if (wallet && wallet.disconnect) wallet.disconnect();
+  wallet = null;
+  publicKey = null;
+  walletInfo.innerText = "";
+  connectBtn.style.display = "";
+  disconnectBtn.style.display = "none";
+  swapForm.style.display = "none";
+  status("Wallet disconnected.");
+}
+disconnectBtn.onclick = disconnectWallet;
+
+// Listen for wallet events (real-time UI updates)
+if (window.solana && window.solana.isPhantom) {
+  window.solana.on("connect", () => {
+    publicKey = window.solana.publicKey.toString();
+    walletInfo.innerText = `Connected: ${publicKey.slice(0,6)}...${publicKey.slice(-4)}`;
+    connectBtn.style.display = "none";
+    disconnectBtn.style.display = "";
+    swapForm.style.display = "";
+    status("");
+    showQuoteAndFee();
+  });
+  window.solana.on("disconnect", () => {
+    disconnectWallet();
+  });
+}
 
 // Input Validation
 function validate() {
@@ -141,7 +182,7 @@ function validate() {
     error("Enter valid amount.");
     return false;
   }
-  status("");
+  clearStatus();
   return true;
 }
 
@@ -149,9 +190,7 @@ function validate() {
 async function estimateFee() {
   try {
     const connection = new solanaWeb3.Connection("https://api.mainnet-beta.solana.com");
-    // Get recent blockhash and fee calculator
     const { feeCalculator } = await connection.getRecentBlockhash();
-    // Typical Jupiter swap is 1-2 signatures, so estimate for 2 signatures
     const feeLamports = feeCalculator.lamportsPerSignature * 2;
     estimatedFeeSOL = feeLamports / solanaWeb3.LAMPORTS_PER_SOL;
     return estimatedFeeSOL;
@@ -171,8 +210,6 @@ async function showQuoteAndFee() {
   const fromToken = tokenList.find(t => t.address === fromMint);
   if (!fromToken) return;
   const rawAmount = parseFloat(amountInput.value) * (10 ** fromToken.decimals);
-
-  // Fetch quote
   try {
     const quoteUrl = `${JUPITER_QUOTE_API}?inputMint=${fromMint}&outputMint=${toMint}&amount=${Math.floor(rawAmount)}&slippageBps=100`;
     const quoteRes = await fetch(quoteUrl);
@@ -184,8 +221,6 @@ async function showQuoteAndFee() {
     bestRoute = quoteData.routes[0];
     const toToken = tokenList.find(t => t.address === toMint);
     const outAmount = bestRoute.outAmount / (10 ** toToken.decimals);
-
-    // Estimate fee
     const fee = await estimateFee();
     let feeText = fee ? `Estimated Network Fee: <b>${fee.toFixed(6)} SOL</b>` : "Fee: N/A";
     feeInfo.innerHTML = `Best route: ${bestRoute.marketInfos.map(m=>m.amm.label).join(" → ")}<br>
@@ -203,7 +238,6 @@ swapForm.onsubmit = async (e) => {
   swapBtn.disabled = true;
   status("Building transaction...");
   try {
-    // FETCH SWAP TRANSACTION
     const swapRes = await fetch(JUPITER_SWAP_API, {
       method: "POST",
       headers: {'Content-Type':'application/json'},
@@ -214,8 +248,6 @@ swapForm.onsubmit = async (e) => {
       })
     });
     const swapData = await swapRes.json();
-
-    // SIGN & SEND
     const tx = swapData.swapTransaction;
     if (!tx) { error("Failed to build transaction."); swapBtn.disabled = false; return;}
     const txBytes = Uint8Array.from(atob(tx), c => c.charCodeAt(0));
@@ -232,24 +264,11 @@ swapForm.onsubmit = async (e) => {
   swapBtn.disabled = false;
 };
 
-// UI helpers
-function status(msg) {
-  statusMsg.innerHTML = msg ? `<div>${msg}</div>` : "";
-}
-function error(msg) {
-  statusMsg.innerHTML = `<div class="error">${msg}</div>`;
-}
-function success(msg) {
-  statusMsg.innerHTML = `<div class="success">${msg}</div>`;
-}
-
 // Update quote/fee on input changes
 fromTokenSel.onchange = showQuoteAndFee;
 toTokenSel.onchange = showQuoteAndFee;
 amountInput.oninput = showQuoteAndFee;
-
 window.onload = loadTokenList;
-
 </script>
 </body>
 </html>
