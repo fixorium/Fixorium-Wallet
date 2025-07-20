@@ -75,7 +75,6 @@
     <div id="walletShort"></div>
     <div id="walletBalance"></div>
 
-    <input id="tokenSearch" type="text" placeholder="Search token..." />
     <select id="fromToken"></select>
     <select id="toToken"></select>
     <input id="amount" type="number" placeholder="Amount" />
@@ -106,7 +105,6 @@
   const swapBtn = document.getElementById("swapBtn");
   const quoteResult = document.getElementById("quoteResult");
   const status = document.getElementById("status");
-  const tokenSearch = document.getElementById("tokenSearch");
 
   function shortenAddress(addr) {
     return addr.slice(0, 4) + "..." + addr.slice(-4);
@@ -143,11 +141,6 @@
     fromToken.value = 'So11111111111111111111111111111111111111112';
     toToken.value = 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v';
   }
-
-  tokenSearch.addEventListener("input", () => {
-    const filtered = tokenList.filter(t => t.symbol.toLowerCase().includes(tokenSearch.value.toLowerCase()));
-    updateTokenDropdowns(filtered);
-  });
 
   async function connectWallet() {
     provider = await getProvider();
@@ -216,7 +209,7 @@
       const tx = solanaWeb3.Transaction.from(Uint8Array.from(atob(result.swapTransaction), c => c.charCodeAt(0)));
       const signed = await provider.signTransaction(tx);
       const txid = await connection.sendRawTransaction(signed.serialize());
-      status.innerHTML = `✅ Swap sent! <a href="https://solscan.io/tx/${txid}" target="_blank">View</a>`;
+      status.innerHTML = `✅ Swap sent! <a href=\"https://solscan.io/tx/${txid}\" target=\"_blank\">View</a>`;
     } catch (e) {
       status.textContent = `Swap failed: ${e.message}`;
     }
