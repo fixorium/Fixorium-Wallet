@@ -7,14 +7,62 @@
   <title>Fixorium Swap</title>
   <script src="https://unpkg.com/@solana/web3.js@1.89.0/lib/index.iife.js"></script>
   <style>
-    body { font-family: sans-serif; background: #f3f4f6; padding: 1rem; }
-    .container { max-width: 400px; margin: auto; background: white; border-radius: 0.75rem; padding: 1.5rem; box-shadow: 0 2px 6px rgba(0,0,0,0.1); }
-    .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; }
-    .button { background: #16a34a; color: white; padding: 0.5rem 1rem; border: none; border-radius: 0.375rem; cursor: pointer; }
-    .button:hover { background: #15803d; }
-    .input, select { width: 100%; padding: 0.5rem; margin-bottom: 1rem; border-radius: 0.375rem; border: 1px solid #ccc; }
-    #spinner { text-align: center; color: #4b5563; animation: pulse 2s infinite; }
-    @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+    body {
+      font-family: sans-serif;
+      background: #f3f4f6;
+      padding: 1rem;
+    }
+
+    .container {
+      max-width: 400px;
+      margin: auto;
+      background: white;
+      border-radius: 0.75rem;
+      padding: 1.5rem;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+    }
+
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1rem;
+    }
+
+    .button {
+      background: #16a34a;
+      color: white;
+      padding: 0.5rem 1rem;
+      border: none;
+      border-radius: 0.375rem;
+      cursor: pointer;
+      font-weight: 600;
+    }
+
+    .button:hover {
+      background: #15803d;
+    }
+
+    .input,
+    select {
+      width: 100%;
+      padding: 0.5rem;
+      margin-bottom: 1rem;
+      border-radius: 0.375rem;
+      border: 1px solid #ccc;
+    }
+
+    #status {
+      font-size: 0.875rem;
+      margin-top: 1rem;
+      color: #374151;
+      word-break: break-word;
+    }
+
+    #status a {
+      color: #2563eb;
+      text-decoration: underline;
+    }
   </style>
 </head>
 
@@ -28,7 +76,7 @@
     <div id="walletAddress" style="font-size: 0.875rem; color: #6b7280;"></div>
     <div id="walletBalance" style="font-size: 0.875rem; color: #6b7280;"></div>
 
-    <div id="tokenBalances" style="font-size: 0.875rem; color: #6b7280;"></div>
+    <div id="tokenBalances" style="font-size: 0.875rem; color: #6b7280; white-space: pre-line;"></div>
 
     <label>From Token</label>
     <select id="fromToken" class="input"></select>
@@ -47,8 +95,7 @@
 
     <button id="swapBtn" class="button">Execute Swap</button>
 
-    <div id="spinner" class="hidden">Loading...</div>
-    <div id="status" style="font-size: 0.875rem; text-align: center;"></div>
+    <div id="status"></div>
   </div>
 
   <script>
@@ -58,7 +105,7 @@
 
     async function fetchTokens() {
       try {
-        document.getElementById("spinner").classList.remove("hidden");
+        // Removed spinner display management
         const res = await fetch("https://quote-api.jup.ag/v6/tokens");
         const data = await res.json();
         tokenMap = data.reduce((acc, t) => (acc[t.address] = t, acc), {});
@@ -70,9 +117,7 @@
       } catch (err) {
         console.error("Token fetch error:", err);
         alert("Failed to fetch tokens.");
-      } finally {
-        document.getElementById("spinner").classList.add("hidden");
-      }
+      } /* no spinner removal needed */
     }
 
     async function showBalances() {
@@ -104,7 +149,6 @@
         return;
       }
       try {
-        // Force popup even if trusted
         const resp = await window.solana.connect({ onlyIfTrusted: false });
         wallet = window.solana;
         publicKey = resp.publicKey;
