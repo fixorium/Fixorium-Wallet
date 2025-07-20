@@ -4,85 +4,147 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Fixorium Swap</title>
-
-    <!-- ✅ Tailwind CSS CDN -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-      tailwind.config = {
-        safelist: [
-          'bg-violet-600', 'text-white', 'rounded-md', 'hover:bg-violet-700',
-          'text-green-600', 'bg-red-500', 'text-sm', 'p-2', 'p-4',
-          'text-center', 'w-full', 'flex', 'justify-between', 'items-center',
-          'rounded-lg', 'shadow', 'hover:bg-violet-800'
-        ]
-      }
-    </script>
-
-    <!-- ✅ Fixorium Logo -->
-    <link rel="icon" type="image/png" href="https://fixorium.com/logo.png" />
+    <script src="https://unpkg.com/@solana/web3.js@1.89.0/lib/index.iife.js"></script>
   </head>
-  <body class="bg-gray-100 min-h-screen text-gray-900">
-    <div id="app" class="max-w-xl mx-auto p-4">
-      <!-- Navbar -->
-      <div class="flex justify-between items-center mb-6">
-        <img src="https://fixorium.com/logo.png" alt="Fixorium Logo" class="h-10">
-        <button id="connectWallet" class="bg-violet-600 text-white px-4 py-2 rounded-md hover:bg-violet-700">
-          Connect Wallet
-        </button>
-        <span id="walletAddress" class="text-sm ml-2 hidden"></span>
+  <body style="background-color: #f3f4f6; padding: 1rem; font-family: sans-serif;">
+    <div style="max-width: 400px; margin: 0 auto; background: white; border-radius: 0.75rem; box-shadow: 0 1px 3px rgba(0,0,0,0.1); padding: 1.5rem;">
+      <div style="display: flex; justify-content: space-between; align-items: center;">
+        <h1 style="font-size: 1.25rem; font-weight: bold;">Fixorium Swap</h1>
+        <button id="connectBtn" style="background-color: #16a34a; color: white; padding: 0.25rem 0.75rem; border-radius: 0.375rem; border: none; cursor: pointer;">Connect Wallet</button>
       </div>
 
-      <!-- Swap Card -->
-      <div class="bg-white p-4 rounded-lg shadow-md">
-        <div class="flex justify-between mb-2">
-          <h2 class="text-lg font-semibold">Fixorium Swap</h2>
-          <select id="slippage" class="border p-1 rounded text-sm">
-            <option value="0.1">0.1%</option>
-            <option value="0.5" selected>0.5%</option>
-            <option value="1">1%</option>
-          </select>
-        </div>
+      <div id="walletAddress" style="font-size: 0.875rem; color: #6b7280; overflow-wrap: break-word;"></div>
 
-        <!-- Swap Form -->
-        <div class="space-y-4">
-          <div>
-            <label class="text-sm">From</label>
-            <div class="flex items-center space-x-2">
-              <select id="fromToken" class="border rounded p-2 w-1/2"></select>
-              <input id="fromAmount" type="number" placeholder="Amount" class="border rounded p-2 w-1/2" />
-            </div>
-          </div>
+      <div style="display: flex; flex-direction: column; gap: 0.75rem; margin-top: 1rem;">
+        <label>From Token</label>
+        <select id="fromToken" style="padding: 0.5rem; border: 1px solid #d1d5db; border-radius: 0.375rem;"></select>
 
-          <button id="toggleDirection" class="block mx-auto bg-gray-300 text-xs px-2 py-1 rounded-full">⇅ Swap Direction</button>
+        <label>To Token</label>
+        <select id="toToken" style="padding: 0.5rem; border: 1px solid #d1d5db; border-radius: 0.375rem;"></select>
 
-          <div>
-            <label class="text-sm">To</label>
-            <div class="flex items-center space-x-2">
-              <select id="toToken" class="border rounded p-2 w-1/2"></select>
-              <input id="toAmount" type="text" disabled class="border rounded p-2 w-1/2 bg-gray-100" />
-            </div>
-          </div>
+        <label>Amount</label>
+        <input id="amount" type="number" step="any" placeholder="Enter amount" style="padding: 0.5rem; border: 1px solid #d1d5db; border-radius: 0.375rem;" />
 
-          <div class="text-sm text-gray-600">Estimated: <span id="quotePreview">-</span></div>
-          <div class="text-xs text-gray-500">Fee: 0.03% to Fixorium</div>
+        <label>Slippage (%)</label>
+        <input id="slippage" type="number" value="0.5" step="0.1" style="padding: 0.5rem; border: 1px solid #d1d5db; border-radius: 0.375rem;" />
 
-          <button id="swapButton" class="w-full bg-violet-600 text-white p-2 rounded-md hover:bg-violet-700">
-            Swap
-          </button>
-        </div>
+        <button id="quoteBtn" style="background-color: #2563eb; color: white; padding: 0.5rem; border-radius: 0.375rem; border: none; cursor: pointer;">Get Quote</button>
+        <div id="quoteResult" style="font-size: 0.875rem; color: #374151;"></div>
 
-        <!-- Loader -->
-        <div id="loadingSpinner" class="mt-4 hidden text-center">
-          <div class="w-6 h-6 border-4 border-dashed border-violet-600 rounded-full animate-spin mx-auto"></div>
-          <p class="text-sm text-gray-500 mt-1">Swapping...</p>
-        </div>
-
-        <!-- Success message -->
-        <div id="txStatus" class="mt-4 text-center text-green-600 text-sm hidden"></div>
+        <button id="swapBtn" style="background-color: #16a34a; color: white; padding: 0.5rem; border-radius: 0.375rem; border: none; cursor: pointer;">Execute Swap</button>
       </div>
+
+      <div id="spinner" style="display: none; text-align: center; margin-top: 1rem;">
+        <span style="color: #4b5563;">Loading...</span>
+      </div>
+
+      <div id="status" style="font-size: 0.875rem; text-align: center; margin-top: 0.75rem;"></div>
     </div>
 
-    <!-- Include your swap JS logic here -->
-    <script src="swap.js"></script>
+    <script>
+      const { Connection, PublicKey, Transaction } = solanaWeb3;
+      const connection = new Connection("https://api.mainnet-beta.solana.com");
+      let wallet, publicKey, tokenMap;
+
+      async function fetchTokens() {
+        try {
+          document.getElementById("spinner").style.display = "block";
+          const res = await fetch("https://quote-api.jup.ag/v6/tokens");
+          const data = await res.json();
+          tokenMap = data.reduce((acc, t) => (acc[t.address] = t, acc), {});
+          for (const token of data) {
+            const opt = new Option(`${token.symbol} ($${token.price.toFixed(2)})`, token.address);
+            document.getElementById("fromToken").appendChild(opt.cloneNode(true));
+            document.getElementById("toToken").appendChild(opt);
+          }
+        } catch (err) {
+          console.error("Token fetch error:", err);
+          alert("Failed to fetch token list.");
+        } finally {
+          document.getElementById("spinner").style.display = "none";
+        }
+      }
+
+      async function connectWallet() {
+        if (!window.solana || !window.solana.isPhantom) return alert("Phantom wallet not found");
+        const resp = await window.solana.connect();
+        wallet = window.solana;
+        publicKey = resp.publicKey;
+        document.getElementById("walletAddress").innerText = `Wallet: ${publicKey.toBase58()}`;
+      }
+
+      async function getQuote() {
+        const inputMint = document.getElementById("fromToken").value;
+        const outputMint = document.getElementById("toToken").value;
+        const amountRaw = parseFloat(document.getElementById("amount").value || 0);
+        const slippageBps = parseFloat(document.getElementById("slippage").value || 0.5) * 100;
+
+        if (!inputMint || !outputMint || amountRaw <= 0) return alert("Invalid input");
+
+        const inputDecimals = tokenMap[inputMint].decimals;
+        const amount = Math.floor(amountRaw * 10 ** inputDecimals);
+
+        try {
+          const res = await fetch(`https://quote-api.jup.ag/v6/quote?inputMint=${inputMint}&outputMint=${outputMint}&amount=${amount}&slippageBps=${slippageBps}`);
+          const quote = await res.json();
+          if (quote?.outAmount) {
+            const outAmount = quote.outAmount / 10 ** tokenMap[outputMint].decimals;
+            document.getElementById("quoteResult").innerText = `You'll receive ≈ ${outAmount.toFixed(6)} ${tokenMap[outputMint].symbol}`;
+            window.latestRoute = quote;
+          } else {
+            document.getElementById("quoteResult").innerText = "No quote available.";
+          }
+        } catch (err) {
+          console.error("Quote fetch error:", err);
+          document.getElementById("quoteResult").innerText = "Failed to fetch quote.";
+        }
+      }
+
+      async function executeSwap() {
+        const route = window.latestRoute;
+        if (!route) return alert("No route to execute");
+
+        try {
+          const res = await fetch("https://quote-api.jup.ag/v6/swap", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              route,
+              userPublicKey: publicKey.toBase58(),
+              wrapUnwrapSOL: true,
+              feeAccount: "H4qKn8FMFha8jJuj8xMryMqRhH3h7GjLuxw7TVixpump"
+            }),
+          });
+
+          const body = await res.text();
+          let parsed;
+          try {
+            parsed = JSON.parse(body);
+          } catch (err) {
+            console.error("Invalid JSON response:", body);
+            document.getElementById("status").innerText = "Swap failed: Invalid response.";
+            return;
+          }
+
+          const { swapTransaction } = parsed;
+          if (!swapTransaction) throw new Error("No swap transaction returned");
+
+          const txBuf = Uint8Array.from(atob(swapTransaction), c => c.charCodeAt(0));
+          const tx = Transaction.from(txBuf);
+          const signed = await wallet.signTransaction(tx);
+          const sig = await connection.sendRawTransaction(signed.serialize());
+          document.getElementById("status").innerHTML = `✅ <a href='https://solscan.io/tx/${sig}' style='color: #2563eb; text-decoration: underline;' target='_blank'>View on Solscan</a>`;
+        } catch (err) {
+          console.error("Swap error:", err);
+          document.getElementById("status").innerText = `Swap failed: ${err.message}`;
+        }
+      }
+
+      document.getElementById("connectBtn").onclick = connectWallet;
+      document.getElementById("quoteBtn").onclick = getQuote;
+      document.getElementById("swapBtn").onclick = executeSwap;
+
+      fetchTokens();
+    </script>
   </body>
 </html>
