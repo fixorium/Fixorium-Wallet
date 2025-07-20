@@ -1,327 +1,217 @@
  <!DOCTYPE html>
 <html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Fixorium Swap</title>
+    <script src="https://unpkg.com/@solana/web3.js@1.89.0/lib/index.iife.js"></script>
+    <style>
+      body { font-family: sans-serif; background: #f3f4f6; padding: 1rem; }
+      .container { max-width: 400px; margin: auto; background: white; border-radius: 0.75rem; padding: 1.5rem; box-shadow: 0 2px 6px rgba(0,0,0,0.1); }
+      .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; }
+      .button { background: #16a34a; color: white; padding: 0.5rem 1rem; border: none; border-radius: 0.375rem; cursor: pointer; }
+      .button:hover { background: #15803d; }
+      .input, select { width: 100%; padding: 0.5rem; margin-bottom: 1rem; border-radius: 0.375rem; border: 1px solid #ccc; }
+      #spinner { text-align: center; color: #4b5563; animation: pulse 2s infinite; }
+      @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div class="header">
+        <h1>Fixorium Swap</h1>
+        <button id="connectBtn" class="button">Connect Wallet</button>
+      </div>
 
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Fixorium Swap</title>
-  <script src="https://unpkg.com/@solana/web3.js@1.89.0/lib/index.iife.js"></script>
-  <style>
-    body {
-      font-family: sans-serif;
-      background: #f3f4f6;
-      padding: 1rem;
-    }
+      <div id="walletAddress" style="font-size: 0.875rem; color: #6b7280;"></div>
+      <div id="walletBalance" style="font-size: 0.875rem; color: #6b7280;"></div>
+      <div id="tokenBalances" style="font-size: 0.875rem; color: #6b7280; white-space: pre-line;"></div>
 
-    .container {
-      max-width: 400px;
-      margin: auto;
-      background: white;
-      border-radius: 0.75rem;
-      padding: 1.5rem;
-      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
-    }
+      <label>Search From Token</label>
+      <input id="fromSearch" class="input" placeholder="Search token..." />
 
-    .header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 1rem;
-    }
+      <label>From Token</label>
+      <select id="fromToken" class="input"></select>
 
-    .button {
-      background: #16a34a;
-      color: white;
-      padding: 0.5rem 1rem;
-      border: none;
-      border-radius: 0.375rem;
-      cursor: pointer;
-      font-weight: 600;
-    }
+      <label>Search To Token</label>
+      <input id="toSearch" class="input" placeholder="Search token..." />
 
-    .button:hover {
-      background: #15803d;
-    }
+      <label>To Token</label>
+      <select id="toToken" class="input"></select>
 
-    .input,
-    select {
-      width: 100%;
-      padding: 0.5rem;
-      margin-bottom: 1rem;
-      border-radius: 0.375rem;
-      border: 1px solid #ccc;
-    }
+      <label>Amount</label>
+      <input id="amount" type="number" step="any" class="input" placeholder="Enter amount" />
 
-    #status {
-      font-size: 0.875rem;
-      margin-top: 1rem;
-      color: #374151;
-      word-break: break-word;
-    }
+      <label>Slippage (%)</label>
+      <input id="slippage" type="number" value="0.5" step="0.1" class="input" />
 
-    #status a {
-      color: #2563eb;
-      text-decoration: underline;
-    }
+      <button id="quoteBtn" class="button" style="background: #2563eb;">Get Quote</button>
+      <div id="quoteResult" style="font-size: 0.875rem; color: #374151;"></div>
 
-    #quoteResult {
-      font-size: 0.875rem;
-      color: #374151;
-      margin-top: 0.5rem;
-      white-space: pre-line;
-    }
-  </style>
-</head>
+      <button id="swapBtn" class="button">Execute Swap</button>
 
-<body>
-  <div class="container">
-    <div class="header">
-      <h1>Fixorium Swap</h1>
-      <button id="connectBtn" class="button">Connect Wallet</button>
+      <div id="spinner" class="hidden">Loading...</div>
+      <div id="status" style="font-size: 0.875rem; text-align: center;"></div>
     </div>
 
-    <div id="walletAddress" style="font-size: 0.875rem; color: #6b7280;"></div>
-    <div id="walletBalance" style="font-size: 0.875rem; color: #6b7280;"></div>
+    <script>
+      const { Connection, PublicKey, Transaction } = solanaWeb3;
+      const connection = new Connection("https://api.mainnet-beta.solana.com");
+      let wallet, publicKey, tokenMap = {}, topTokens = [];
 
-    <div id="tokenBalances" style="font-size: 0.875rem; color: #6b7280; white-space: pre-line;"></div>
+      async function fetchTokens() {
+        try {
+          document.getElementById("spinner").classList.remove("hidden");
+          const res = await fetch("https://quote-api.jup.ag/v6/tokens");
+          const text = await res.text();
+          const data = JSON.parse(text);
 
-    <label for="fromToken">From Token</label>
-    <select id="fromToken" class="input"></select>
+          const sorted = [...data].sort((a, b) =>
+            (a.marketCapRank ?? 99999) - (b.marketCapRank ?? 99999) ||
+            b.price - a.price
+          ).slice(0, 10);
 
-    <label for="toToken">To Token</label>
-    <select id="toToken" class="input"></select>
+          topTokens = sorted;
+          tokenMap = sorted.reduce((acc, t) => (acc[t.address] = t, acc), {});
 
-    <label for="amount">Amount</label>
-    <input id="amount" type="number" step="any" class="input" placeholder="Enter amount" />
-
-    <label for="slippage">Slippage (%)</label>
-    <input id="slippage" type="number" value="0.5" step="0.1" class="input" />
-
-    <div id="quoteResult"></div>
-
-    <button id="swapBtn" class="button" disabled>Execute Swap</button>
-
-    <div id="status"></div>
-  </div>
-
-  <script>
-    const { Connection, PublicKey, Transaction } = solanaWeb3;
-    const connection = new Connection("https://api.mainnet-beta.solana.com", 'confirmed');
-    let wallet, publicKey, tokenMap;
-
-    // Support multiple phantom environments (browser extension, mobile app, and mobile browser)
-    // Following Phantom dApp docs and recommended detection logic
-    function getProvider() {
-      if ("solana" in window) {
-        const provider = window.solana;
-        if (provider.isPhantom) {
-          return provider;
+          populateSelects(sorted);
+        } catch (err) {
+          console.error("Token fetch error:", err);
+          alert("Failed to fetch tokens: " + err.message);
+        } finally {
+          document.getElementById("spinner").classList.add("hidden");
         }
       }
-      // fallback: check if inside Brave Wallet or other injected wallets may be present (extend if needed)
-      return null;
-    }
 
-    async function fetchTokens() {
-      try {
-        const res = await fetch("https://quote-api.jup.ag/v6/tokens");
-        const data = await res.json();
-        tokenMap = data.reduce((acc, t) => {
-          acc[t.address] = t;
-          return acc;
-        }, {});
+      function populateSelects(tokens) {
+        const from = document.getElementById("fromToken");
+        const to = document.getElementById("toToken");
+        from.innerHTML = "";
+        to.innerHTML = "";
 
-        const fromSelect = document.getElementById("fromToken");
-        const toSelect = document.getElementById("toToken");
-        fromSelect.innerHTML = "";
-        toSelect.innerHTML = "";
-
-        for (const token of data) {
-          const symbol = token.symbol ?? "Unknown";
-          const price = token.price !== undefined ? `$${token.price.toFixed(2)}` : "N/A";
-          const optionFrom = new Option(`${symbol} (${price})`, token.address);
-          const optionTo = new Option(`${symbol} (${price})`, token.address);
-          fromSelect.appendChild(optionFrom);
-          toSelect.appendChild(optionTo);
+        for (const token of tokens) {
+          const label = `${token.symbol} ($${token.price?.toFixed(2) ?? 'N/A'})`;
+          const opt1 = new Option(label, token.address);
+          const opt2 = new Option(label, token.address);
+          from.appendChild(opt1);
+          to.appendChild(opt2);
         }
-
-        // Set default tokens
-        fromSelect.value = "So11111111111111111111111111111111111111112"; // SOL
-        toSelect.value = "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"; // USDC
-      } catch (err) {
-        console.error("Token fetch error:", err);
-        alert("Failed to fetch tokens.");
       }
-    }
 
-    async function showBalances() {
-      if (!publicKey || !tokenMap) return;
+      function filterTokens(inputId, selectId) {
+        const search = document.getElementById(inputId).value.toLowerCase();
+        const filtered = topTokens.filter(t => t.symbol.toLowerCase().includes(search));
+        populateFilteredSelect(filtered, selectId);
+      }
 
-      try {
+      function populateFilteredSelect(tokens, selectId) {
+        const select = document.getElementById(selectId);
+        select.innerHTML = "";
+        for (const token of tokens) {
+          const label = `${token.symbol} ($${token.price?.toFixed(2) ?? 'N/A'})`;
+          const opt = new Option(label, token.address);
+          select.appendChild(opt);
+        }
+      }
+
+      async function showBalances() {
+        if (!publicKey || !tokenMap) return;
         const lamports = await connection.getBalance(publicKey);
-        const solBalance = lamports / 1e9;
-        document.getElementById("walletBalance").innerText = `SOL Balance: ${solBalance.toFixed(4)} SOL`;
+        document.getElementById("walletBalance").innerText = `SOL Balance: ${(lamports / 1e9).toFixed(4)} SOL`;
 
-        const tokenAccounts = await connection.getParsedTokenAccountsByOwner(publicKey, {
-          programId: new PublicKey("TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"),
+        const accounts = await connection.getParsedTokenAccountsByOwner(publicKey, {
+          programId: new PublicKey("TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA")
         });
+        const tokenDisplay = [];
 
-        const tokenBalancesList = [];
-
-        for (const acc of tokenAccounts.value) {
+        for (const acc of accounts.value) {
           const info = acc.account.data.parsed.info;
           const mint = info.mint;
           const amount = info.tokenAmount.uiAmount;
           if (tokenMap[mint] && amount > 0) {
-            tokenBalancesList.push(`${tokenMap[mint].symbol}: ${amount.toFixed(4)}`);
+            tokenDisplay.push(`${tokenMap[mint].symbol}: ${amount.toFixed(4)}`);
           }
         }
-
-        document.getElementById("tokenBalances").innerText =
-          tokenBalancesList.length > 0 ? tokenBalancesList.join("\n") : "No token balances found.";
-      } catch (e) {
-        console.error("Balance fetch error:", e);
-        document.getElementById("tokenBalances").innerText = "Failed to fetch token balances.";
+        document.getElementById("tokenBalances").innerText = tokenDisplay.join("\n");
       }
-    }
 
-    async function connectWallet() {
-      let provider = getProvider();
-      if (!provider) {
-        alert("Phantom wallet not found. Please install Phantom: https://phantom.app/");
-        return;
-      }
-      try {
-        // Use onlyIfTrusted false to always prompt (user must approve)
-        const resp = await provider.connect({ onlyIfTrusted: false });
-        wallet = provider;
+      async function connectWallet() {
+        if (!window.solana || !window.solana.isPhantom) return alert("Phantom wallet not found");
+        const resp = await window.solana.connect();
+        wallet = window.solana;
         publicKey = resp.publicKey;
         document.getElementById("walletAddress").innerText = `Wallet: ${publicKey.toBase58()}`;
         await showBalances();
-        document.getElementById("swapBtn").disabled = false;
-        updateQuote();
-      } catch (err) {
-        console.error("Wallet connect error:", err);
-        alert("Failed to connect wallet or permission denied.");
       }
-    }
 
-    async function getQuote(amountRaw, inputMint, outputMint, slippagePercent) {
-      if (!inputMint || !outputMint || amountRaw <= 0) {
-        document.getElementById("quoteResult").innerText = "";
-        window.latestRoute = null;
-        document.getElementById("swapBtn").disabled = true;
-        return;
-      }
-      const slippageBps = Math.floor(slippagePercent * 100);
-      const inputDecimals = tokenMap[inputMint]?.decimals ?? 9;
-      const amount = Math.floor(amountRaw * 10 ** inputDecimals);
+      async function getQuote() {
+        const inputMint = document.getElementById("fromToken").value;
+        const outputMint = document.getElementById("toToken").value;
+        const amountRaw = parseFloat(document.getElementById("amount").value || 0);
+        const slippageBps = parseFloat(document.getElementById("slippage").value || 0.5) * 100;
 
-      try {
-        const res = await fetch(
-          `https://quote-api.jup.ag/v6/quote?inputMint=${inputMint}&outputMint=${outputMint}&amount=${amount}&slippageBps=${slippageBps}`
-        );
-        const quote = await res.json();
-        if (quote?.outAmount) {
-          const outputDecimals = tokenMap[outputMint]?.decimals ?? 9;
-          const outputAmount = quote.outAmount / 10 ** outputDecimals;
-          document.getElementById("quoteResult").innerText = `You'll receive ≈ ${outputAmount.toFixed(6)} ${tokenMap[outputMint].symbol}`;
-          window.latestRoute = quote;
-          document.getElementById("swapBtn").disabled = false;
-        } else {
-          document.getElementById("quoteResult").innerText = "No quote available.";
-          window.latestRoute = null;
-          document.getElementById("swapBtn").disabled = true;
+        if (!inputMint || !outputMint || amountRaw <= 0) return alert("Invalid input");
+
+        const inputDecimals = tokenMap[inputMint].decimals;
+        const amount = Math.floor(amountRaw * 10 ** inputDecimals);
+
+        try {
+          const res = await fetch(`https://quote-api.jup.ag/v6/quote?inputMint=${inputMint}&outputMint=${outputMint}&amount=${amount}&slippageBps=${slippageBps}`);
+          const quote = await res.json();
+          if (quote?.outAmount) {
+            const outAmount = quote.outAmount / 10 ** tokenMap[outputMint].decimals;
+            document.getElementById("quoteResult").innerText = `You'll receive ≈ ${outAmount.toFixed(6)} ${tokenMap[outputMint].symbol}`;
+            window.latestRoute = quote;
+          } else {
+            document.getElementById("quoteResult").innerText = "No quote available.";
+          }
+        } catch (err) {
+          console.error("Quote fetch error:", err);
+          document.getElementById("quoteResult").innerText = "Failed to fetch quote.";
         }
-      } catch (err) {
-        console.error("Quote fetch error:", err);
-        document.getElementById("quoteResult").innerText = "Failed to fetch quote.";
-        window.latestRoute = null;
-        document.getElementById("swapBtn").disabled = true;
-      }
-    }
-
-    function updateQuote() {
-      const amountRaw = parseFloat(document.getElementById("amount").value || 0);
-      const inputMint = document.getElementById("fromToken").value;
-      const outputMint = document.getElementById("toToken").value;
-      const slippagePercent = parseFloat(document.getElementById("slippage").value || 0.5);
-      getQuote(amountRaw, inputMint, outputMint, slippagePercent);
-    }
-
-    async function executeSwap() {
-      const route = window.latestRoute;
-      if (!route) {
-        alert("No route to execute. Please enter valid swap parameters.");
-        return;
-      }
-      if (!wallet || !publicKey) {
-        alert("Please connect your wallet first.");
-        return;
       }
 
-      document.getElementById("status").innerText = "Preparing transaction...";
-      try {
-        const res = await fetch("https://quote-api.jup.ag/v6/swap", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            route,
-            userPublicKey: publicKey.toBase58(),
-            wrapUnwrapSOL: true,
-            feeAccount: "H4qKn8FMFha8jJuj8xMryMqRhH3h7GjLuxw7TVixpump",
-          }),
-        });
+      async function executeSwap() {
+        const route = window.latestRoute;
+        if (!route) return alert("No route to execute");
 
-        if (!res.ok) throw new Error(`Swap API error: ${res.statusText}`);
+        try {
+          const res = await fetch("https://quote-api.jup.ag/v6/swap", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              route,
+              userPublicKey: publicKey.toBase58(),
+              wrapUnwrapSOL: true,
+              feeAccount: "H4qKn8FMFha8jJuj8xMryMqRhH3h7GjLuxw7TVixpump"
+            }),
+          });
 
-        const swapData = await res.json();
-        if (!swapData.swapTransaction) throw new Error("No swap transaction returned.");
+          const body = await res.text();
+          const parsed = JSON.parse(body);
+          const { swapTransaction } = parsed;
+          if (!swapTransaction) throw new Error("No swap transaction returned");
 
-        const txBytes = Uint8Array.from(atob(swapData.swapTransaction), (c) => c.charCodeAt(0));
-        const tx = Transaction.from(txBytes);
-
-        const signedTx = await wallet.signTransaction(tx);
-        const txid = await connection.sendRawTransaction(signedTx.serialize(), {
-          skipPreflight: false,
-          preflightCommitment: "confirmed",
-        });
-
-        document.getElementById("status").innerHTML = `✅ Swap sent! <a href="https://solscan.io/tx/${txid}" target="_blank" rel="noopener noreferrer">View on Solscan</a>`;
-
-        await connection.confirmTransaction(txid, "confirmed");
-        await showBalances();
-      } catch (err) {
-        console.error("Swap error:", err);
-        document.getElementById("status").innerText = `Swap failed: ${err.message || err}`;
+          const txBuf = Uint8Array.from(atob(swapTransaction), c => c.charCodeAt(0));
+          const tx = Transaction.from(txBuf);
+          const signed = await wallet.signTransaction(tx);
+          const sig = await connection.sendRawTransaction(signed.serialize());
+          document.getElementById("status").innerHTML = `✅ <a href='https://solscan.io/tx/${sig}' target='_blank'>View on Solscan</a>`;
+          await showBalances();
+        } catch (err) {
+          console.error("Swap error:", err);
+          document.getElementById("status").innerText = `Swap failed: ${err.message}`;
+        }
       }
-    }
 
-    // Event listeners for realtime quote updates
-    document.getElementById("fromToken").addEventListener("change", updateQuote);
-    document.getElementById("toToken").addEventListener("change", updateQuote);
-    document.getElementById("amount").addEventListener("input", updateQuote);
-    document.getElementById("slippage").addEventListener("input", updateQuote);
+      // Event bindings
+      document.getElementById("connectBtn").onclick = connectWallet;
+      document.getElementById("quoteBtn").onclick = getQuote;
+      document.getElementById("swapBtn").onclick = executeSwap;
+      document.getElementById("fromSearch").oninput = () => filterTokens("fromSearch", "fromToken");
+      document.getElementById("toSearch").oninput = () => filterTokens("toSearch", "toToken");
 
-    // Connect button handler
-    document.getElementById("connectBtn").addEventListener("click", connectWallet);
-    document.getElementById("swapBtn").addEventListener("click", executeSwap);
-
-    // If Phantom is already connected (trusted), auto connect on page load
-    window.addEventListener('load', () => {
-      const provider = getProvider();
-      if (provider && provider.isConnected) {
-        wallet = provider;
-        publicKey = provider.publicKey;
-        document.getElementById("walletAddress").innerText = `Wallet: ${publicKey.toBase58()}`;
-        showBalances();
-        document.getElementById("swapBtn").disabled = false;
-        updateQuote();
-      }
-    });
-
-    fetchTokens();
-  </script>
-</body>
-
+      fetchTokens();
+    </script>
+  </body>
 </html>
